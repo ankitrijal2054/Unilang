@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, View, Text } from "react-native";
 import { LoginScreen } from "../screens/AuthStack/LoginScreen";
 import { SignUpScreen } from "../screens/AuthStack/SignUpScreen";
+import { AppStack } from "./AppStack";
 import { useAuthStore } from "../store/authStore";
 import { onAuthStateChanged } from "../services/authService";
 
@@ -66,11 +67,11 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
         }}
       >
         {isAuthenticated ? (
-          // App Stack (authenticated user)
+          // App Stack (authenticated user) - with bottom tab navigator
           <Stack.Group>
             <Stack.Screen
               name="AppStack"
-              component={AppPlaceholder}
+              component={AppStack}
               options={{ title: "App" }}
             />
           </Stack.Group>
@@ -91,45 +92,5 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
         )}
       </Stack.Navigator>
     </NavigationContainer>
-  );
-};
-
-// Placeholder for App Stack (will be built in Phase 3)
-const AppPlaceholder = () => {
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#f5f5f5",
-      }}
-    >
-      <View
-        style={{
-          padding: 20,
-          backgroundColor: "#e8f5e9",
-          borderRadius: 8,
-          borderLeftWidth: 4,
-          borderLeftColor: "#4caf50",
-          marginHorizontal: 20,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 18,
-            fontWeight: "bold",
-            color: "#2e7d32",
-            marginBottom: 8,
-          }}
-        >
-          ✅ Authentication Complete
-        </Text>
-        <Text style={{ color: "#555", marginBottom: 4 }}>
-          Phase 2 Auth is working!
-        </Text>
-        <Text style={{ color: "#555" }}>Chat UI coming in Phase 3...</Text>
-      </View>
-    </View>
   );
 };

@@ -47,7 +47,7 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [setIsAuthenticated, setIsLoading, logout]);
 
   // Show loading screen while checking auth state
   if (isLoading) {

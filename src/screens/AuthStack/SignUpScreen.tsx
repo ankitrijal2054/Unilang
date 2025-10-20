@@ -5,8 +5,11 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  FlatList,
+  TouchableOpacity,
 } from "react-native";
-import { TextInput, Button, Text, Snackbar, Menu } from "react-native-paper";
+import { TextInput, Button, Text, Snackbar } from "react-native-paper";
 import { signUp } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
 import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from "../../utils/constants";
@@ -165,31 +168,14 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
           {/* Language Selector */}
           <View style={styles.languageContainer}>
             <Text style={styles.languageLabel}>Preferred Language</Text>
-            <Menu
-              visible={languageMenuVisible}
-              onDismiss={() => setLanguageMenuVisible(false)}
-              anchor={
-                <Button
-                  mode="outlined"
-                  onPress={() => setLanguageMenuVisible(true)}
-                  disabled={isLoading}
-                  style={styles.languageButton}
-                >
-                  {selectedLanguageLabel}
-                </Button>
-              }
+            <Button
+              mode="outlined"
+              onPress={() => setLanguageMenuVisible(true)}
+              disabled={isLoading}
+              style={styles.languageButton}
             >
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <Menu.Item
-                  key={lang.code}
-                  onPress={() => {
-                    setSelectedLanguage(lang.code);
-                    setLanguageMenuVisible(false);
-                  }}
-                  title={lang.name}
-                />
-              ))}
-            </Menu>
+              {selectedLanguageLabel}
+            </Button>
           </View>
 
           {/* Sign Up Button */}
@@ -225,6 +211,52 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
       >
         {error}
       </Snackbar>
+
+      {/* Language Picker Modal */}
+      <Modal
+        visible={languageMenuVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setLanguageMenuVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Language</Text>
+              <TouchableOpacity onPress={() => setLanguageMenuVisible(false)}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={SUPPORTED_LANGUAGES}
+              keyExtractor={(item) => item.code}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.languageOption,
+                    selectedLanguage === item.code &&
+                      styles.languageOptionSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectedLanguage(item.code);
+                    setLanguageMenuVisible(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.languageOptionText,
+                      selectedLanguage === item.code &&
+                        styles.languageOptionTextSelected,
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -304,5 +336,52 @@ const styles = StyleSheet.create({
   },
   snackbar: {
     backgroundColor: "#f44336",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 20,
+    width: "80%",
+    alignItems: "center",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 15,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  modalClose: {
+    fontSize: 24,
+    color: "#666",
+  },
+  languageOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  languageOptionSelected: {
+    backgroundColor: "#e0f2f7",
+    borderRadius: 5,
+  },
+  languageOptionText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  languageOptionTextSelected: {
+    fontWeight: "bold",
+    color: "#2196F3",
   },
 });

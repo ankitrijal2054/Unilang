@@ -1,0 +1,90 @@
+import { formatDistanceToNow, isToday, isYesterday } from "date-fns";
+
+/**
+ * Format timestamp to display time (e.g., "2:30 PM")
+ */
+export const formatTime = (timestamp: string): string => {
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return "";
+  }
+};
+
+/**
+ * Format timestamp to relative time (e.g., "2 minutes ago")
+ */
+export const formatRelativeTime = (timestamp: string): string => {
+  try {
+    const date = new Date(timestamp);
+    return formatDistanceToNow(date, { addSuffix: true });
+  } catch {
+    return "";
+  }
+};
+
+/**
+ * Format timestamp for chat list (e.g., "2:30 PM", "Yesterday", "Oct 20")
+ */
+export const formatChatTime = (timestamp: string): string => {
+  try {
+    const date = new Date(timestamp);
+
+    if (isToday(date)) {
+      return formatTime(timestamp);
+    }
+
+    if (isYesterday(date)) {
+      return "Yesterday";
+    }
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return "";
+  }
+};
+
+/**
+ * Format date for message separators (e.g., "Today", "Yesterday", "October 20, 2025")
+ */
+export const formatMessageDate = (timestamp: string): string => {
+  try {
+    const date = new Date(timestamp);
+
+    if (isToday(date)) {
+      return "Today";
+    }
+
+    if (isYesterday(date)) {
+      return "Yesterday";
+    }
+
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year:
+        date.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined,
+    });
+  } catch {
+    return "";
+  }
+};
+
+/**
+ * Truncate text to specific length with ellipsis
+ */
+export const truncateText = (text: string, length: number = 50): string => {
+  if (text.length <= length) {
+    return text;
+  }
+  return text.substring(0, length) + "...";
+};

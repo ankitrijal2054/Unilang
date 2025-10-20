@@ -13,7 +13,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.unilang.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,10 +26,28 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.unilang.app",
+      "permissions": [
+        "INTERNET",
+        "NOTIFICATIONS",
+        "READ_NOTIFICATIONS",
+        "POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "sounds": ["./assets/notification-sound.wav"],
+          "icons": ["./assets/notification-icon.png"],
+          "colors": ["#2196F3"]
+        }
+      ]
+    ],
+    "scheme": "unilang"
   }
 }

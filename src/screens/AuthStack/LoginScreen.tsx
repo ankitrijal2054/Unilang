@@ -13,8 +13,16 @@ import {
   Snackbar,
   ActivityIndicator,
 } from "react-native-paper";
-import { signIn } from "../../services/authService";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { signIn, signInWithGoogle } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
+
+// Initialize Google Sign-In
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  offlineAccess: true,
+});
 
 interface LoginScreenProps {
   navigation: any;
@@ -69,9 +77,45 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
   };
 
   const handleGoogleSignIn = async () => {
-    // TODO: Implement Google Sign-In
-    // For MVP, we'll show a placeholder
-    setError("Google Sign-In coming soon");
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Sign in with Google
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+
+      if (userInfo.data?.idToken) {
+        // Call our Firebase service to sign in with Google
+        const result = await signInWithGoogle(userInfo.data.idToken);
+
+        if (result.success) {
+          console.log("✅ Google Sign-In successful");
+          // Navigation will be handled by auth state observer
+        } else {
+          setError(result.error || "Google Sign-In failed. Please try again.");
+          setStoreError(result.error || null);
+        }
+      } else {
+        setError("Failed to get Google credentials");
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        // Google Sign-In cancelled by user
+        if (err.message.includes("Sign in action cancelled")) {
+          console.log("Google Sign-In cancelled by user");
+        } else {
+          setError(err.message);
+          setStoreError(err.message);
+        }
+      } else {
+        const errorMessage = "Google Sign-In failed";
+        setError(errorMessage);
+        setStoreError(errorMessage);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -1,12 +1,15 @@
 import { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { ActivityIndicator, View, Text } from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import { doc, getDoc } from "firebase/firestore";
 import { LoginScreen } from "../screens/AuthStack/LoginScreen";
 import { SignUpScreen } from "../screens/AuthStack/SignUpScreen";
 import { AppStack } from "./AppStack";
 import { useAuthStore } from "../store/authStore";
 import { onAuthStateChanged } from "../services/authService";
+import { db } from "../services/firebase";
+import { COLLECTIONS } from "../utils/constants";
 
 const Stack = createNativeStackNavigator();
 
@@ -31,9 +34,44 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
         if (firebaseUser) {
           // User is logged in
           console.log("✅ Auth state: User logged in", firebaseUser.email);
+
+          // Fetch full user profile from Firestore
+          const userDocRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            const data = userDocSnap.data();
+            const user = {
+              uid: firebaseUser.uid,
+              name: data.name,
+              email: data.email,
+              preferred_language: data.preferred_language,
+              status: data.status || "online",
+              lastSeen: data.lastSeen,
+              createdAt: data.createdAt,
+              fcmToken: data.fcmToken,
+            };
+
+            console.log("✅ User profile loaded:", user.uid);
+            setUser(user);
+          } else {
+            // Fallback user object if Firestore doc doesn't exist
+            console.warn("⚠️ User doc not found in Firestore, using fallback");
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || "",
+              name:
+                firebaseUser.displayName ||
+                firebaseUser.email?.split("@")[0] ||
+                "User",
+              preferred_language: "en",
+              status: "online",
+              lastSeen: new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+            });
+          }
+
           setIsAuthenticated(true);
-          // Note: Full user profile will be fetched from Firestore in Phase 3
-          // For now, we just mark as authenticated
         } else {
           // User is logged out
           console.log("✅ Auth state: User logged out");
@@ -48,7 +86,7 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
     });
 
     return () => unsubscribe();
-  }, [setIsAuthenticated, setIsLoading, logout]);
+  }, [setIsAuthenticated, setIsLoading, logout, setUser]);
 
   // Show loading screen while checking auth state
   if (isLoading) {

@@ -43,41 +43,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<SectionList>(null);
   const optimisticMessagesRef = useRef<Set<string>>(new Set());
-
-  // Subscribe to real-time messages
-  useEffect(() => {
-    if (!chatId || !user?.uid) {
-      setLoading(false);
-      return;
-    }
-
-    console.log("💬 Setting up message listener for chat:", chatId);
-
-    const unsubscribe = subscribeToMessages(chatId, (updatedMessages) => {
-      setMessages(updatedMessages);
-      setLoading(false);
-
-      // Auto-scroll to bottom
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-
-      console.log("✅ Messages updated:", updatedMessages.length);
-    });
-
-    // Mark messages as read when opening chat
-    markMessagesAsRead(chatId, user.uid).catch((err) => {
-      console.error("Error marking messages as read:", err);
-    });
-
-    // Cleanup listener on unmount
-    return () => {
-      console.log("🧹 Unsubscribing from message listener");
-      unsubscribe();
-    };
-  }, [chatId, user?.uid]);
 
   // Group messages by date
   const groupedMessages: MessageGroup[] = React.useMemo(() => {
@@ -96,6 +63,56 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       data: msgs,
     }));
   }, [messages]);
+
+  // Subscribe to real-time messages
+  useEffect(() => {
+    if (!chatId || !user?.uid) {
+      setLoading(false);
+      return;
+    }
+
+    console.log("💬 Setting up message listener for chat:", chatId);
+
+    const unsubscribe = subscribeToMessages(chatId, (updatedMessages) => {
+      setMessages(updatedMessages);
+      setLoading(false);
+      console.log("✅ Messages updated:", updatedMessages.length);
+    });
+
+    // Mark messages as read when opening chat
+    markMessagesAsRead(chatId, user.uid).catch((err) => {
+      console.error("Error marking messages as read:", err);
+    });
+
+    // Cleanup listener on unmount
+    return () => {
+      console.log("🧹 Unsubscribing from message listener");
+      unsubscribe();
+    };
+  }, [chatId, user?.uid]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (groupedMessages.length > 0) {
+      setTimeout(() => {
+        try {
+          const lastSectionIndex = groupedMessages.length - 1;
+          const lastItemIndex = Math.max(
+            0,
+            groupedMessages[lastSectionIndex].data.length - 1
+          );
+          flatListRef.current?.scrollToLocation({
+            sectionIndex: lastSectionIndex,
+            itemIndex: lastItemIndex,
+            animated: true,
+            viewOffset: 0,
+          });
+        } catch (error) {
+          // Silently ignore scroll errors (ref may not be ready)
+        }
+      }, 50);
+    }
+  }, [groupedMessages]);
 
   const handleSendMessage = async () => {
     if (!messageText.trim() || !user?.uid || sending) {
@@ -128,11 +145,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
       // Add to UI immediately
       setMessages((prev) => [...prev, optimisticMessage]);
-
-      // Scroll to bottom
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
 
       // Send to Firestore
       const result = await sendMessage(chatId, textToSend, user.uid);

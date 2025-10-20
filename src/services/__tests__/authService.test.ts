@@ -95,6 +95,20 @@ describe("authService", () => {
         user: { uid: "user123", email: "test@example.com" },
       });
 
+      // Mock getDoc to return user from Firestore
+      (firestoreLib.getDoc as jest.Mock).mockResolvedValue({
+        exists: () => true,
+        data: () => ({
+          uid: "user123",
+          name: "Test User",
+          email: "test@example.com",
+          preferred_language: "en",
+          status: "online",
+          lastSeen: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        }),
+      });
+
       const result = await signIn("test@example.com", "password123");
 
       expect(result.success).toBe(true);

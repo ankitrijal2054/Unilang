@@ -10,6 +10,8 @@ import {
   onSnapshot,
   Unsubscribe,
   serverTimestamp,
+  getDocs,
+  writeBatch,
 } from "firebase/firestore";
 import { Message } from "../types";
 import { COLLECTIONS } from "../utils/constants";
@@ -123,31 +125,37 @@ export const markMessagesAsRead = async (
 ): Promise<{ success: boolean; error?: any }> => {
   try {
     // For MVP: Just update status to "read" for all messages in chat
-    // In production, would track per-participant
-    const unreadQuery = query(
+    // Simple query without composite index requirement
+    const messagesQuery = query(
       collection(db, COLLECTIONS.MESSAGES),
-      where("chatId", "==", chatId),
-      where("status", "!=", "read")
+      where("chatId", "==", chatId)
     );
 
-    // Get unread messages and batch update them
-    const snapshot = await (
-      await import("firebase/firestore")
-    ).getDocs(unreadQuery);
+    // Get all messages for this chat
+    const snapshot = await getDocs(messagesQuery);
 
     if (snapshot.empty) {
       return { success: true };
     }
 
-    const batch = (await import("firebase/firestore")).writeBatch(db);
+    // Batch update only messages that aren't already read
+    const batch = writeBatch(db);
+    let updateCount = 0;
 
     snapshot.forEach((doc) => {
-      batch.update(doc.ref, { status: "read" });
+      const data = doc.data();
+      // Only update if not already read
+      if (data.status !== "read") {
+        batch.update(doc.ref, { status: "read" });
+        updateCount++;
+      }
     });
 
-    await batch.commit();
+    if (updateCount > 0) {
+      await batch.commit();
+      console.log(`✅ ${updateCount} messages marked as read`);
+    }
 
-    console.log("✅ Messages marked as read");
     return { success: true };
   } catch (error) {
     console.error("❌ Error marking messages as read:", error);

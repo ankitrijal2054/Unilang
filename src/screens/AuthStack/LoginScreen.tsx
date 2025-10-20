@@ -13,16 +13,16 @@ import {
   Snackbar,
   ActivityIndicator,
 } from "react-native-paper";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { signIn, signInWithGoogle } from "../../services/authService";
+// import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { signIn } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
 
-// Initialize Google Sign-In
-GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-  offlineAccess: true,
-});
+// // Initialize Google Sign-In (disabled for Expo Go - requires native build)
+// GoogleSignin.configure({
+//   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+//   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+//   offlineAccess: true,
+// });
 
 interface LoginScreenProps {
   navigation: any;
@@ -76,47 +76,44 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setError(null);
+  // Disabled Google Sign-In for Expo Go (requires native module)
+  // const handleGoogleSignIn = async () => {
+  //   setIsLoading(true);
+  //   setError(null);
 
-    try {
-      // Sign in with Google
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
+  //   try {
+  //     await GoogleSignin.hasPlayServices();
+  //     const userInfo = await GoogleSignin.signIn();
 
-      if (userInfo.data?.idToken) {
-        // Call our Firebase service to sign in with Google
-        const result = await signInWithGoogle(userInfo.data.idToken);
+  //     if (userInfo.data?.idToken) {
+  //       const result = await signInWithGoogle(userInfo.data.idToken);
 
-        if (result.success) {
-          console.log("✅ Google Sign-In successful");
-          // Navigation will be handled by auth state observer
-        } else {
-          setError(result.error || "Google Sign-In failed. Please try again.");
-          setStoreError(result.error || null);
-        }
-      } else {
-        setError("Failed to get Google credentials");
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        // Google Sign-In cancelled by user
-        if (err.message.includes("Sign in action cancelled")) {
-          console.log("Google Sign-In cancelled by user");
-        } else {
-          setError(err.message);
-          setStoreError(err.message);
-        }
-      } else {
-        const errorMessage = "Google Sign-In failed";
-        setError(errorMessage);
-        setStoreError(errorMessage);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //       if (result.success) {
+  //         console.log("✅ Google Sign-In successful");
+  //       } else {
+  //         setError(result.error || "Google Sign-In failed. Please try again.");
+  //         setStoreError(result.error || null);
+  //       }
+  //     } else {
+  //       setError("Failed to get Google credentials");
+  //     }
+  //   } catch (err) {
+  //     if (err instanceof Error) {
+  //       if (err.message.includes("Sign in action cancelled")) {
+  //         console.log("Google Sign-In cancelled by user");
+  //       } else {
+  //         setError(err.message);
+  //         setStoreError(err.message);
+  //       }
+  //     } else {
+  //       const errorMessage = "Google Sign-In failed";
+  //       setError(errorMessage);
+  //       setStoreError(errorMessage);
+  //     }
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   return (
     <KeyboardAvoidingView
@@ -179,22 +176,11 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
             Sign In
           </Button>
 
-          {/* Divider */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>Or</Text>
-            <View style={styles.divider} />
-          </View>
-
-          {/* Google Sign-In Button */}
-          <Button
-            mode="outlined"
-            onPress={handleGoogleSignIn}
-            disabled={isLoading}
-            style={styles.googleButton}
-          >
-            Sign In with Google
-          </Button>
+          {/* Note about Google Sign-In */}
+          <Text style={styles.note}>
+            💡 Google Sign-In is disabled in Expo Go (requires native build).
+            Use email/password to test.
+          </Text>
         </View>
 
         {/* Sign Up Link */}
@@ -268,23 +254,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingVertical: 8,
   },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 20,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#ddd",
-  },
-  dividerText: {
-    marginHorizontal: 12,
-    color: "#999",
-    fontSize: 13,
-  },
-  googleButton: {
-    paddingVertical: 8,
+  note: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 16,
+    fontStyle: "italic",
+    lineHeight: 18,
   },
   footer: {
     flexDirection: "row",

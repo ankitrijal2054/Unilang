@@ -72,7 +72,7 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
   };
 
   const handleNewChat = () => {
-    navigation.navigate("NewChat");
+    navigation.getParent().navigate("ContactsTab");
   };
 
   const renderChatItem = ({ item }: { item: Chat }) => (

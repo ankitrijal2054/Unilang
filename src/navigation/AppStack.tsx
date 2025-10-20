@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ChatListScreen } from "../screens/ChatsTab/ChatListScreen";
 import { ChatScreen } from "../screens/ChatsTab/ChatScreen";
+import { NewChatScreen } from "../screens/ContactsTab/NewChatScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -34,12 +35,33 @@ const ChatsStack = () => (
 );
 
 /**
- * Placeholder screens for Contacts and Profile (will be built later)
+ * ContactsStack - Stack navigator for contacts/user discovery
  */
-const ContactsPlaceholder = () => {
-  return null; // Placeholder - will be built in Phase 3
-};
+const ContactsStack = () => (
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: false,
+    }}
+  >
+    <Stack.Screen
+      name="NewChat"
+      component={NewChatScreen}
+      options={{ title: "New Chat" }}
+    />
+    <Stack.Screen
+      name="Chat"
+      component={ChatScreen}
+      options={{
+        title: "Chat",
+        animationEnabled: true,
+      }}
+    />
+  </Stack.Navigator>
+);
 
+/**
+ * Placeholder for Profile (will be built later)
+ */
 const ProfilePlaceholder = () => {
   return null; // Placeholder - will be built in Phase 3
 };
@@ -93,16 +115,10 @@ export const AppStack = () => (
 
     <Tab.Screen
       name="ContactsTab"
-      component={ContactsPlaceholder}
+      component={ContactsStack}
       options={{
         title: "Contacts",
       }}
-      listeners={({ navigation }) => ({
-        tabPress: (e) => {
-          e.preventDefault();
-          // Placeholder - will navigate to NewChatScreen in Phase 3
-        },
-      })}
     />
 
     <Tab.Screen

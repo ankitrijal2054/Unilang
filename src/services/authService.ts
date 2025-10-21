@@ -6,7 +6,7 @@ import {
   signInWithCredential,
   AuthError,
 } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore";
+import { setDoc, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { User } from "../types";
 import { COLLECTIONS } from "../utils/constants";
@@ -82,10 +82,40 @@ export const signIn = async (
     );
     const { uid } = userCredential.user;
 
+    // Fetch user profile from Firestore to get full user data
+    const userDocRef = doc(db, COLLECTIONS.USERS, uid);
+    const userDocSnap = await getDoc(userDocRef);
+
+    let userData: User | null = null;
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      userData = {
+        uid,
+        name: data.name,
+        email: data.email,
+        preferred_language: data.preferred_language,
+        status: "online",
+        lastSeen: new Date().toISOString(),
+        createdAt: data.createdAt,
+        fcmToken: data.fcmToken,
+      };
+    } else {
+      // Fallback if user doc doesn't exist
+      userData = {
+        uid,
+        name: email.split("@")[0],
+        email,
+        preferred_language: "en",
+        status: "online",
+        lastSeen: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+    }
+
     console.log("✅ User signed in successfully:", email);
     return {
       success: true,
-      user: userCredential.user,
+      user: userData,
     };
   } catch (error) {
     const authError = error as AuthError;
@@ -134,10 +164,27 @@ export const signInWithGoogle = async (
 
     await setDoc(userRef, userData, { merge: true });
 
+    // Fetch full user profile to return
+    const userDocSnap = await getDoc(userRef);
+    let fullUserData: User | null = null;
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      fullUserData = {
+        uid,
+        name: data.name,
+        email: data.email,
+        preferred_language: data.preferred_language || "en",
+        status: "online",
+        lastSeen: new Date().toISOString(),
+        createdAt: data.createdAt || new Date().toISOString(),
+        fcmToken: data.fcmToken,
+      };
+    }
+
     console.log("✅ User signed in with Google:", email);
     return {
       success: true,
-      user: userCredential.user,
+      user: fullUserData || userData,
     };
   } catch (error) {
     const authError = error as AuthError;

@@ -1,6 +1,6 @@
 # Unilang - Progress Tracker
 
-## Current Status: 📋 Phase 2 COMPLETE - Ready for Phase 3
+## Current Status: 📋 Phase 3 COMPLETE ✅ - Ready for Phase 4: Group Chat
 
 ### Quick Stats
 
@@ -9,114 +9,101 @@
 | Documentation Complete | ✅ 100%      |
 | Phase 1 Code Written   | ✅ 100%      |
 | Phase 2 Code Written   | ✅ 100%      |
-| Unit Tests Written     | ✅ 41/41     |
-| Hours Spent            | ~18 hours    |
-| Hours Remaining        | ~6 hours     |
-| MVP Completion Status  | 75% Complete |
+| Phase 3 Code Written   | ✅ 100%      |
+| Unit Tests Written     | ✅ 60/60     |
+| Hours Spent            | ~20.5 hours  |
+| Hours Remaining        | ~3.5 hours   |
+| MVP Completion Status  | 85% Complete |
 | Estimated MVP Time     | On Track     |
 
 ---
 
 ## What's Working ✅
 
-### Phase 1: Foundation & Authentication (COMPLETE)
+### Phase 3: User Presence & Profile (COMPLETE) ✅
 
-**Infrastructure:**
+**Presence System:**
 
-- [x] Expo project with TypeScript
-- [x] 879+ npm packages installed
-- [x] Folder structure organized
-- [x] Firebase project created ("Unilang")
-- [x] Firestore Database enabled
-- [x] Firebase Auth enabled (Email/Password + Google)
-- [x] Cloud Messaging enabled
-- [x] 2 Composite indexes created
-- [x] Security rules deployed
-- [x] Cloud Functions initialized
+- [x] User status auto-updates to "online" on app open
+- [x] User status auto-updates to "offline" on app background
+- [x] Last seen timestamps updated with status changes
+- [x] Real-time listeners for chat partner presence
+- [x] Green dot indicator for online users in chat header
+- [x] "Last seen X minutes ago" display in chat header
+- [x] Proper AppState listener for foreground/background transitions
+- [x] Presence listener properly cleaned up on logout
+- [x] Presence listener re-setup on new login
 
-**Code:**
+**Profile Screen:**
 
-- [x] firebase.ts service with config from .env
-- [x] authService.ts with signup, login, Google Sign-In
-- [x] authStore.ts (Zustand)
-- [x] LoginScreen with email/password + Google Sign-In
-- [x] SignUpScreen with 10 language picker
-- [x] Error handling with Snackbar
-- [x] User document creation in Firestore
-- [x] Auth state observer in RootNavigator
+- [x] Beautiful Material Design UI with avatar
+- [x] Display user name and email
+- [x] Display preferred language (10 supported)
+- [x] Edit display name with save/cancel
+- [x] Change language via dialog with radio buttons
+- [x] Logout button with confirmation
+- [x] Profile wrapped with PaperProvider for Dialog/Portal support
+- [x] Status display (Online/Offline) with color coding
 
-### Phase 2: Core Messaging Infrastructure (COMPLETE)
+**User Discovery (NewChatScreen):**
 
-**Data Models & Services:**
+- [x] Real-time user list with online/offline status
+- [x] Search/filter users by name (case-insensitive)
+- [x] Online status indicators for each user
+- [x] "Active now" / "Last seen X" display
+- [x] One-tap chat creation
+- [x] Duplicate chat prevention
+- [x] Real-time listeners for user presence updates
+- [x] Auto re-sort to show online users first
 
-- [x] User, Message, Chat TypeScript interfaces
-- [x] Firestore CRUD service (create, read, update, delete, batch)
-- [x] Message service (send, subscribe, status, read receipts)
-- [x] Chat service (direct/group create, subscribe, duplicate prevention)
-- [x] User service (status, profile, presence, FCM)
+**Bug Fixes (Phase 3):**
 
-**UI Screens & Components:**
+- [x] Fixed PaperProvider wrapping in App.tsx
+- [x] Fixed profile status showing offline on login
+- [x] Fixed other users' status not updating in contact list
+- [x] Fixed own user status not updating in profile
+- [x] Fixed presence listener not re-setting on login/logout
 
-- [x] ChatListScreen (real-time, pull-to-refresh, empty states)
-- [x] ChatScreen (messages, input, send, auto-scroll)
-- [x] NewChatScreen (user discovery, search, online status)
-- [x] ChatListItem component (with badge, time, preview)
-- [x] MessageBubble component (own/other styling, status icons)
-- [x] StatusIndicator component (sending/sent/delivered/read)
+**Unit Tests for Phase 3:**
 
-**Core Features:**
-
-- [x] Real-time messaging with Firestore listeners
-- [x] Optimistic UI (messages appear immediately)
-- [x] Message status lifecycle (sending → sent → delivered → read)
-- [x] Direct chat creation with duplicate prevention
-- [x] Offline message queueing with automatic sync
-- [x] Read receipts (batch mark as read)
-- [x] User discovery with online indicators
-- [x] Navigation structure (tabs, stacks, flows)
-
-**Unit Testing:**
-
-- [x] Jest configured with TypeScript
-- [x] Firebase modules fully mocked
-- [x] 41 comprehensive tests created
-- [x] **All 41 tests PASSING** ✅
-  - authService: 13 tests
-  - messageService: 10 tests
-  - chatService: 10 tests
-  - authStore: 8 tests
-- [x] npm test command (350ms execution)
-- [x] npm run test:watch (available)
-- [x] npm run test:coverage (available)
+- [x] userService.test.ts created with 19 comprehensive tests
+  - updateUserStatus: 3 tests
+  - updateUserProfile: 4 tests
+  - subscribeToUserPresence: 4 tests
+  - getAllUsers: 4 tests
+  - updateUserFCMToken: 2 tests
+  - Presence system integration: 2 tests
+- [x] All 19 new tests passing
+- [x] Firebase modules properly mocked
+- [x] Error scenarios covered
+- [x] Real-time listener testing
+- [x] Integration tests for status transitions
 
 ---
 
 ## What's Left to Build 🏗️
 
-### Phase 3: User Presence & Profile (Hours 18-21)
+### Phase 4: Group Chat (Hours 20.5-22)
 
-- [ ] User presence system (online/offline with timers)
-- [ ] ProfileScreen (edit name, language, logout)
-- [ ] Last seen timestamps
-- [ ] Online indicator in chat list
-- [ ] Presence listener integration
+- [ ] New Group screen with participant selection
+- [ ] Group creation UI with admin assignment
+- [ ] Group Info screen for management
+- [ ] Edit group name (admin only)
+- [ ] Add/remove members (admin only)
+- [ ] Delete group (admin only)
+- [ ] Leave group (members)
+- [ ] Group sender names in messages
 
-### Phase 4: Group Chat (Hours 21-22)
+### Phase 5: Notifications (Hours 22-23)
 
-- [ ] Group creation UI
-- [ ] Add/remove members
-- [ ] Group management
-
-### Phase 5: Notifications (Hours 22-24)
-
-- [ ] FCM setup
-- [ ] Cloud Function trigger
+- [ ] FCM setup and configuration
+- [ ] Cloud Function triggers
+- [ ] Badge count implementation
 - [ ] Notification handling
-- [ ] Push notification delivery
 
-### Phase 6: Testing & Validation
+### Phase 6: Testing & Validation (Hours 23-24)
 
-- [ ] 10 core tests execution
+- [ ] 10 core functionality tests
 - [ ] Stress testing
 - [ ] Offline/online sync verification
 - [ ] End-to-end user flows
@@ -127,46 +114,35 @@
 
 ### Checkpoint 1: Auth Working ✅ COMPLETE
 
-- [x] Firebase project created
-- [x] Auth screens built
-- [x] Can signup with email + language
-- [x] Can login with email
-- [x] Google Sign-In working
-- [x] Navigation to chat list works
-- [x] Logout removes user session
-
 **Status:** ✅ PASSED
 
 ### Checkpoint 2: Chat Infrastructure ✅ COMPLETE
-
-- [x] Firebase rules deployed
-- [x] Composite indexes created & enabled
-- [x] Chat list loads user's chats (real-time)
-- [x] Can start new chat with another user
-- [x] Can open chat and see message history
-- [x] Can send message (shows in UI immediately)
-- [x] Message appears on recipient's device in <500ms
-- [x] Offline message queuing works
-- [x] Message status updates (sent → delivered → read)
 
 **Status:** ✅ PASSED
 
 ### Checkpoint 3: Testing Suite ✅ COMPLETE
 
-- [x] 41 unit tests created
-- [x] All 41 tests passing
-- [x] Firebase mocked
-- [x] No external dependencies
-- [x] Quick execution (350ms)
+**Status:** ✅ PASSED (41/41 tests)
+
+### Checkpoint 4: Presence & Profile ✅ COMPLETE
+
+- [x] User presence system working
+- [x] Profile screen functional
+- [x] Last seen updating correctly
+- [x] Online indicators showing in real-time
+- [x] Status changes on login/logout working
 
 **Status:** ✅ PASSED
 
-### Checkpoint 4: Presence & Profile (NEXT)
+### Checkpoint 5: Unit Tests for Phase 3 ✅ COMPLETE
 
-- [ ] User presence system working
-- [ ] Profile screen functional
-- [ ] Last seen updating
-- [ ] Online indicators showing
+- [x] 19 new userService tests created
+- [x] All tests passing
+- [x] Presence system covered
+- [x] Profile operations covered
+- [x] Error handling tested
+
+**Status:** ✅ PASSED
 
 ---
 
@@ -194,16 +170,17 @@ All deferred to Phase 2+ when core is proven.
 | Phase 1 (Foundation)    | 4 hours      | ✅ Done    | 4          | Firebase + Expo setup  |
 | Phase 2 (Auth)          | 5 hours      | ✅ Done    | 5          | Login/signup screens   |
 | Phase 2 (Messaging)     | 6 hours      | ✅ Done    | 7          | Real-time sync + tests |
-| Phase 3 (Presence)      | 2-3 hours    | ⏳ Pending | 0          | Presence system        |
+| Phase 3 (Presence)      | 2-3 hours    | ✅ Done    | 2.5        | Presence system        |
+| Phase 3 (Testing)       | 1 hour       | ✅ Done    | 1          | 19 new unit tests      |
 | Phase 4 (Groups)        | 1-2 hours    | ⏳ Pending | 0          | Group management       |
 | Phase 5 (Notifications) | 1-2 hours    | ⏳ Pending | 0          | FCM setup              |
 | Phase 6 (Testing)       | 1-2 hours    | ⏳ Pending | 0          | Run all tests          |
-| **Total**               | **24 hours** | 75% Done   | 18         | MVP ready at end       |
+| **Total**               | **24 hours** | 85% Done   | 20.5       | MVP ready at end       |
 
 ---
 
-**Last Updated:** October 20, 2025 (Session 1, Phase 2 Complete)
-**Next Update:** After Phase 3 completion (Hour 21)
+**Last Updated:** October 21, 2025 (Session 2, Phase 3 Complete + Tests)
+**Next Update:** After Phase 4 completion (Hour 22)
 
 ---
 
@@ -215,13 +192,13 @@ When you resume:
 2. ✅ Review activeContext.md for current focus
 3. ✅ Check this progress.md for what's done/remaining
 4. ✅ Look at Architecture.md for technical details
-5. ⏭️ Follow Tasklist_MVP.md from Phase 3 onwards
+5. ⏭️ Follow Tasklist_MVP.md from Phase 4 onwards
 
-**Phase 2 Status:** ✅ 100% COMPLETE
-**Ready for:** Phase 3 - User Presence & Profile Screen
-**Next Work:** Implement presence system, profile screen, group enhancements
+**Phase 3 Status:** ✅ 100% COMPLETE
+**Ready for:** Phase 4 - Group Chat Management
+**Next Work:** Implement group creation, management, and member operations
 
-**Test Status:** ✅ 41/41 PASSING
-**Command:** `npm test` runs all tests in 350ms
+**Test Status:** ✅ 60/60 PASSING (41 existing + 19 new)
+**Command:** `npm test` runs all tests in ~0.8 seconds
 
 The memory bank is your source of truth. It survives sessions.

@@ -6,6 +6,8 @@ import { ChatListScreen } from "../screens/ChatsTab/ChatListScreen";
 import { ChatScreen } from "../screens/ChatsTab/ChatScreen";
 import { GroupInfoScreen } from "../screens/ChatsTab/GroupInfoScreen";
 import { NewChatScreen } from "../screens/ContactsTab/NewChatScreen";
+import { ContactsListScreen } from "../screens/ContactsTab/ContactsListScreen";
+import { ContactCardScreen } from "../screens/ContactsTab/ContactCardScreen";
 import { NewGroupScreen } from "../screens/ContactsTab/NewGroupScreen";
 import { ProfileScreen } from "../screens/ProfileTab/ProfileScreen";
 
@@ -25,6 +27,11 @@ const ChatsStack = () => (
       name="ChatList"
       component={ChatListScreen}
       options={{ title: "Chats" }}
+    />
+    <Stack.Screen
+      name="QuickChat"
+      component={NewChatScreen}
+      options={{ title: "New Chat" }}
     />
     <Stack.Screen
       name="Chat"
@@ -53,9 +60,16 @@ const ContactsStack = () => (
     }}
   >
     <Stack.Screen
-      name="NewChat"
-      component={NewChatScreen}
-      options={{ title: "New Chat" }}
+      name="Contacts"
+      component={ContactsListScreen}
+      options={{ title: "Contacts" }}
+    />
+    <Stack.Screen
+      name="ContactCard"
+      component={ContactCardScreen}
+      options={{
+        title: "Contact Details",
+      }}
     />
     <Stack.Screen
       name="NewGroup"

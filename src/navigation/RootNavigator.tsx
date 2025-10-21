@@ -1,13 +1,14 @@
 import { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, View, AppState } from "react-native";
 import { doc, getDoc } from "firebase/firestore";
 import { LoginScreen } from "../screens/AuthStack/LoginScreen";
 import { SignUpScreen } from "../screens/AuthStack/SignUpScreen";
 import { AppStack } from "./AppStack";
 import { useAuthStore } from "../store/authStore";
 import { onAuthStateChanged } from "../services/authService";
+import { updateUserStatus } from "../services/userService";
 import { db } from "../services/firebase";
 import { COLLECTIONS } from "../utils/constants";
 
@@ -54,6 +55,9 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
 
             console.log("✅ User profile loaded:", user.uid);
             setUser(user);
+
+            // Update user status to online
+            await updateUserStatus(firebaseUser.uid, "online");
           } else {
             // Fallback user object if Firestore doc doesn't exist
             console.warn("⚠️ User doc not found in Firestore, using fallback");
@@ -69,6 +73,9 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
               lastSeen: new Date().toISOString(),
               createdAt: new Date().toISOString(),
             });
+
+            // Update status to online
+            await updateUserStatus(firebaseUser.uid, "online");
           }
 
           setIsAuthenticated(true);
@@ -87,6 +94,35 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
 
     return () => unsubscribe();
   }, [setIsAuthenticated, setIsLoading, logout, setUser]);
+
+  // Listen to app state changes (foreground/background) for presence
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  // Handle app state changes
+  const handleAppStateChange = async (state: any) => {
+    const { user } = useAuthStore.getState();
+
+    if (!user) return;
+
+    if (state === "active") {
+      // App came to foreground
+      console.log("📱 App in foreground - setting status to online");
+      await updateUserStatus(user.uid, "online");
+    } else if (state === "background" || state === "inactive") {
+      // App went to background
+      console.log("📱 App in background - setting status to offline");
+      await updateUserStatus(user.uid, "offline");
+    }
+  };
 
   // Show loading screen while checking auth state
   if (isLoading) {

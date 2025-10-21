@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ChatListScreen } from "../screens/ChatsTab/ChatListScreen";
 import { ChatScreen } from "../screens/ChatsTab/ChatScreen";
 import { NewChatScreen } from "../screens/ContactsTab/NewChatScreen";
+import { ProfileScreen } from "../screens/ProfileTab/ProfileScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -28,7 +29,6 @@ const ChatsStack = () => (
       component={ChatScreen}
       options={{
         title: "Chat",
-        animationEnabled: true,
       }}
     />
   </Stack.Navigator>
@@ -53,18 +53,27 @@ const ContactsStack = () => (
       component={ChatScreen}
       options={{
         title: "Chat",
-        animationEnabled: true,
       }}
     />
   </Stack.Navigator>
 );
 
 /**
- * Placeholder for Profile (will be built later)
+ * ProfileStack - Stack navigator for profile-related screens
  */
-const ProfilePlaceholder = () => {
-  return null; // Placeholder - will be built in Phase 3
-};
+const ProfileStack = () => (
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: false,
+    }}
+  >
+    <Stack.Screen
+      name="ProfileMain"
+      component={ProfileScreen}
+      options={{ title: "Profile" }}
+    />
+  </Stack.Navigator>
+);
 
 /**
  * AppStack - Bottom tab navigator with Chats, Contacts, and Profile tabs
@@ -123,16 +132,10 @@ export const AppStack = () => (
 
     <Tab.Screen
       name="ProfileTab"
-      component={ProfilePlaceholder}
+      component={ProfileStack}
       options={{
         title: "Profile",
       }}
-      listeners={({ navigation }) => ({
-        tabPress: (e) => {
-          e.preventDefault();
-          // Placeholder - will navigate to ProfileScreen in Phase 3
-        },
-      })}
     />
   </Tab.Navigator>
 );

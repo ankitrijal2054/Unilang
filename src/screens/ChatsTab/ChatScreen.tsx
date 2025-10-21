@@ -17,9 +17,13 @@ import {
   markMessagesAsRead,
 } from "../../services/messageService";
 import { updateChatLastMessage } from "../../services/chatService";
-import { Message } from "../../types";
+import { subscribeToUserPresence } from "../../services/userService";
+import { Message, User, Chat } from "../../types";
 import { MessageBubble } from "../../components/MessageBubble";
-import { formatMessageDate } from "../../utils/formatters";
+import { formatMessageDate, formatRelativeTime } from "../../utils/formatters";
+import { db } from "../../services/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { COLLECTIONS } from "../../utils/constants";
 
 interface ChatScreenProps {
   navigation: any;
@@ -42,6 +46,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [messageText, setMessageText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [otherUser, setOtherUser] = useState<User | null>(null);
+  const [chat, setChat] = useState<Chat | null>(null);
 
   const flatListRef = useRef<SectionList>(null);
   const optimisticMessagesRef = useRef<Set<string>>(new Set());
@@ -63,6 +69,55 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       data: msgs,
     }));
   }, [messages]);
+
+  // Fetch chat data and setup presence listener for direct chats
+  useEffect(() => {
+    if (!chatId || !user?.uid) {
+      return;
+    }
+
+    let unsubscribePresence: (() => void) | null = null;
+
+    const fetchChatAndPresence = async () => {
+      try {
+        // Fetch chat data
+        const chatDoc = await getDoc(doc(db, COLLECTIONS.CHATS, chatId));
+        if (chatDoc.exists()) {
+          const chatData = chatDoc.data() as Chat;
+          setChat(chatData);
+
+          // For direct chats, find and subscribe to the other user's presence
+          if (chatType === "direct" && chatData.participants.length === 2) {
+            const otherUserId = chatData.participants.find(
+              (id) => id !== user.uid
+            );
+            if (otherUserId) {
+              console.log("👤 Subscribing to presence for user:", otherUserId);
+              unsubscribePresence = subscribeToUserPresence(
+                otherUserId,
+                (userData) => {
+                  if (userData) {
+                    setOtherUser(userData);
+                  }
+                }
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching chat or presence:", error);
+      }
+    };
+
+    fetchChatAndPresence();
+
+    return () => {
+      console.log("🧹 Unsubscribing from presence");
+      if (unsubscribePresence) {
+        unsubscribePresence();
+      }
+    };
+  }, [chatId, chatType, user?.uid]);
 
   // Subscribe to real-time messages
   useEffect(() => {
@@ -113,6 +168,33 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       }, 50);
     }
   }, [groupedMessages]);
+
+  // Update header subtitle with presence info for direct chats
+  const getHeaderSubtitle = (): string => {
+    if (chatType === "group") {
+      return "Group";
+    }
+
+    if (!otherUser) {
+      return "Direct Message";
+    }
+
+    if (otherUser.status === "online") {
+      return "Online";
+    }
+
+    if (otherUser.lastSeen) {
+      return `Last seen ${formatRelativeTime(otherUser.lastSeen)}`;
+    }
+
+    return "Offline";
+  };
+
+  // Get presence indicator color
+  const getPresenceColor = (): string => {
+    if (chatType === "group") return "transparent";
+    return otherUser?.status === "online" ? "#4CAF50" : "#999";
+  };
 
   const handleSendMessage = async () => {
     if (!messageText.trim() || !user?.uid || sending) {
@@ -203,10 +285,20 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       {/* Header */}
       <Appbar.Header>
         <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content
-          title={chatName}
-          subtitle={chatType === "group" ? "Group" : "Direct Message"}
-        />
+        <View style={styles.headerContent}>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>{chatName}</Text>
+            {chatType === "direct" && (
+              <View
+                style={[
+                  styles.presenceIndicator,
+                  { backgroundColor: getPresenceColor() },
+                ]}
+              />
+            )}
+          </View>
+          <Text style={styles.headerSubtitle}>{getHeaderSubtitle()}</Text>
+        </View>
       </Appbar.Header>
 
       {/* Messages List */}
@@ -267,6 +359,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  headerContent: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  headerTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  presenceIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 2,
   },
   loadingContainer: {
     flex: 1,

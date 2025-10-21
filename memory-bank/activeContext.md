@@ -2,70 +2,76 @@
 
 ## Current Phase
 
-**Phase: Phase 2 Core Messaging - 100% COMPLETE ✅ → Ready for Phase 3: Presence & Profile**
+**Phase: Phase 3 User Presence & Profile - 100% COMPLETE ✅ → Ready for Phase 4: Group Chat**
 
-- ✅ Phase 2.1: Data models & Firestore services (DONE)
-- ✅ Phase 2.2: Chat List screen with real-time data (DONE)
-- ✅ Phase 2.3: Chat screen with messaging & optimistic UI (DONE)
-- ✅ Phase 2.4: UI components (MessageBubble, ChatListItem, StatusIndicator) (DONE)
-- ✅ Phase 2.5: Message status system (sent/delivered/read) (DONE)
-- ✅ Phase 2.6: Offline support with Firestore persistence (DONE)
-- ✅ Phase 2.7: Navigation & integration (DONE)
-- ✅ Phase 2.8: Unit testing - 41/41 tests passing (DONE)
-- ⏭️ Phase 3: User Presence & Profile Screen (NEXT - READY TO START)
+- ✅ Phase 3.1: User Presence System (DONE)
+- ✅ Phase 3.2: Profile Screen (DONE)
+- ✅ Phase 3.3: User Discovery Real-time Updates (DONE)
+- ✅ Phase 3.4: Bug Fixes - Status on Login/Logout (DONE)
+- ✅ Phase 3.5: Bug Fixes - Presence Listener Setup (DONE)
+- ✅ Phase 3.6: Unit Tests - 19 New Tests (DONE - ALL PASSING)
+- ⏭️ Phase 4: Group Chat Management (NEXT - READY TO START)
 
-**Time Checkpoint:** ~18 hours spent, ~6 hours remaining for MVP
+**Time Checkpoint:** ~20.5 hours spent, ~3.5 hours remaining for MVP
 
-## Recent Accomplishments (This Session - Phase 2)
+## Recent Accomplishments (Session 2 - Phase 3)
 
-### Phase 2 - Core Messaging Infrastructure - COMPLETED
+### Phase 3 - User Presence & Profile - COMPLETED ✅
 
-1. ✅ Firestore CRUD Services
+1. ✅ Presence System Implementation (RootNavigator + AppState)
 
-   - Generic `firestoreService.ts` with create, read, update, delete, batch operations
-   - Message service with send, subscribe, status updates, read receipts
-   - Chat service with direct/group creation, subscriptions, duplicate prevention
-   - User service with status, profile, presence, FCM token management
+   - Auto-update status to "online" when app opens
+   - Auto-update status to "offline" when app backgrounds
+   - Proper lastSeen timestamp updates
+   - AppState listener for foreground/background detection
+   - Presence listener setup/cleanup on auth changes
 
-2. ✅ Chat UI Screens
+2. ✅ Profile Screen (ProfileTab/ProfileScreen.tsx)
 
-   - ChatListScreen with real-time chat list, pull-to-refresh, empty states
-   - ChatScreen with message list, input, send button, auto-scroll
-   - NewChatScreen for user discovery with search, online status, self-exclusion
+   - Material Design UI with avatar
+   - Display name, email, language, status
+   - Inline name editing with save/cancel
+   - Language selection dialog (10 languages)
+   - Logout with confirmation
+   - Real-time status display
 
-3. ✅ UI Components
+3. ✅ User Discovery Real-time Updates (NewChatScreen)
 
-   - ChatListItem (avatar, name, preview, time, unread badge, online indicator)
-   - MessageBubble (different styling for own/other, status icons, timestamp)
-   - StatusIndicator (icons: sending/sent/delivered/read with color coding)
+   - Real-time listeners for each user's presence
+   - Automatic list updates when status changes
+   - Auto-sort to show online users first
+   - Search/filter with case-insensitive matching
 
-4. ✅ Core Features
+4. ✅ Bug Fixes
 
-   - Real-time messaging with Firestore listeners
-   - Optimistic UI (messages appear immediately)
-   - Message status lifecycle (sending → sent → delivered → read)
-   - Direct chat creation with duplicate prevention
-   - Offline message queueing with automatic sync
-   - Read receipts (batch mark as read)
-   - User discovery with online indicators
+   - Fixed missing PaperProvider in App.tsx (Dialog/Portal support)
+   - Fixed profile showing offline on login (set status to "online" immediately)
+   - Fixed other users' status not updating in contact list (added real-time listeners)
+   - Fixed own status not updating in profile (subscribe to own presence)
+   - Fixed presence listener not re-setting on login/logout (move setup to auth handler)
 
-5. ✅ Navigation & Integration
+5. ✅ Comprehensive Unit Tests
 
-   - AppStack with bottom tab navigation (Chats, Contacts, Profile)
-   - Chat list → Chat screen navigation
-   - User discovery → Chat screen creation
-   - All navigation flows working correctly
+   - userService.test.ts with 19 tests
+   - Tests for: updateUserStatus, updateUserProfile, subscribeToUserPresence, getAllUsers, updateUserFCMToken
+   - Presence system integration tests
+   - Error handling coverage
+   - All 19 tests passing ✅
 
-6. ✅ Unit Testing Infrastructure
-   - Jest configured with TypeScript support (ts-jest)
-   - Firebase modules fully mocked (no external dependencies)
-   - 41 comprehensive tests created
-   - All 41 tests PASSING ✅
-     - authService: 13 tests (signup, login, logout, errors)
-     - messageService: 10 tests (send, subscribe, all status types)
-     - chatService: 10 tests (create, subscribe, duplicate prevention, sorting)
-     - authStore: 8 tests (state management, actions, subscriptions)
-   - npm test command working (350ms execution time)
+## Files Created/Modified
+
+**New Files:**
+
+- src/screens/ProfileTab/ProfileScreen.tsx (479 lines)
+- src/services/**tests**/userService.test.ts (335 lines)
+
+**Modified Files:**
+
+- src/navigation/RootNavigator.tsx (presence listener, status updates)
+- src/screens/ChatsTab/ChatScreen.tsx (presence listener for chat partner)
+- src/navigation/AppStack.tsx (ProfileStack integration)
+- src/screens/ContactsTab/NewChatScreen.tsx (real-time user presence)
+- App.tsx (PaperProvider wrapping)
 
 ## Critical Path Items
 
@@ -80,60 +86,75 @@
 7. ✅ Message status system
 8. ✅ Offline support
 9. ✅ Navigation structure
-10. ✅ Unit testing (41/41 passing)
+10. ✅ Unit testing (41/41 existing tests)
+11. ✅ Presence system (online/offline)
+12. ✅ Profile screen (edit, language, logout)
+13. ✅ User discovery real-time updates
+14. ✅ Phase 3 unit tests (19 new tests)
 
-**Next (Tier 1 - PHASE 3):**
+**Next (Tier 1 - PHASE 4):**
 
-- ⏳ Presence system (online/offline status)
-- ⏳ Profile screen (edit, language, logout)
-- ⏳ Group chat creation
+- ⏳ Group chat creation with multi-select
+- ⏳ Group info screen
+- ⏳ Add/remove members (admin only)
+- ⏳ Delete group (admin only)
+- ⏳ Leave group (non-admin)
 
 **Later (Tier 2):**
 
+- ⏳ Notifications via FCM
 - ⏳ Typing indicators
 - ⏳ Dark mode
-- ⏳ Avatars
 
 **Final (Tier 3):**
 
-- ⏳ Notifications via FCM
 - ⏳ Comprehensive end-to-end testing
+- ⏳ Performance optimization
 
 ## Current Status Summary
 
 **Documentation:** ✅ 100% Complete + Updated
 
-- PRD finalized with Phase 2 details
+- PRD finalized with all phases detailed
 - Tasklist with all phases documented
 - Architecture documented with full tech stack
-- Memory bank fully active
-- Phase 2 Completion Checklist created
+- Memory bank fully updated
+- Phase 3 Completion Checklist completed
 
-**Code (Phase 2):** ✅ 100% Complete
+**Code (Phase 3):** ✅ 100% Complete
 
-- 27 source files created (types, services, screens, components)
-- 4 test files with 41 tests (all passing)
-- Complete real-time messaging infrastructure
-- Navigation fully integrated
-- TypeScript fully typed throughout
-- Firebase listeners with proper cleanup
-- Error handling in place
+- 2 new files created (ProfileScreen, userService.test.ts)
+- 5 files modified with phase 3 features
+- Complete presence system implementation
+- Profile management fully integrated
+- Real-time user discovery updates
+- Proper cleanup and error handling
 
 **Code Quality:** ✅ Excellent
 
-- Test Coverage: 41/41 passing
+- Test Coverage: 60/60 passing (41 existing + 19 new)
 - TypeScript: Full type safety
 - Components: Memoized for performance
 - Architecture: Clean service layer
 - Real-time: Firestore listeners working
 - Offline: Automatic message queuing
+- Presence: Real-time status updates
+- Error Handling: Comprehensive coverage
 
-**Estimated Time Used:** ~18 hours
-**Estimated Time Remaining:** ~6 hours
+**Bugs Fixed:** ✅ All Phase 3 Issues Resolved
+
+- PaperProvider wrapping fixed
+- Profile status on login fixed
+- User status in contact list fixed
+- Own status in profile fixed
+- Presence listener setup on login/logout fixed
+
+**Estimated Time Used:** ~20.5 hours
+**Estimated Time Remaining:** ~3.5 hours
 **Status:** ON TRACK for 24-hour MVP
 
 ---
 
-**Last Updated:** October 20, 2025 (Session 1, Phase 2 COMPLETE)
-**Next Phase:** Phase 3 - User Presence & Profile Screen (2-3 hours estimated)
-**Next Review:** After Phase 3 completion (Hour 21)
+**Last Updated:** October 21, 2025 (Session 2, Phase 3 Complete + Bug Fixes + Tests)
+**Next Phase:** Phase 4 - Group Chat Management (1-2 hours estimated)
+**Next Review:** After Phase 4 completion (Hour 22)

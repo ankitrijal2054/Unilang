@@ -36,6 +36,10 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [showAddMembers, setShowAddMembers] = useState(false);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [selectedNewMembers, setSelectedNewMembers] = useState<Set<string>>(
+    new Set()
+  );
 
   const isAdmin = user?.uid === chat?.adminId;
 
@@ -207,6 +211,83 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
     );
   };
 
+  const handleAddMembers = async () => {
+    try {
+      const result = await getAllUsers();
+      if (result.success && result.users) {
+        // Filter out users already in the group
+        const nonMembers = result.users.filter(
+          (u) => !chat?.participants.includes(u.uid)
+        );
+        setAllUsers(nonMembers);
+        setSelectedNewMembers(new Set());
+        setShowAddMembers(true);
+      } else {
+        Alert.alert("Error", "Failed to load users");
+      }
+    } catch (error) {
+      console.error("Error loading users:", error);
+      Alert.alert("Error", "An error occurred");
+    }
+  };
+
+  const handleConfirmAddMembers = async () => {
+    if (selectedNewMembers.size === 0) {
+      Alert.alert("Error", "Please select at least one member to add");
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const newParticipants = [
+        ...(chat?.participants || []),
+        ...Array.from(selectedNewMembers),
+      ];
+      const result = await updateChat(chatId, {
+        participants: newParticipants,
+      });
+
+      if (result.success) {
+        setChat((prev) =>
+          prev ? { ...prev, participants: newParticipants } : null
+        );
+        const addedMembers = allUsers.filter((u) =>
+          selectedNewMembers.has(u.uid)
+        );
+        const names = addedMembers.map((m) => m.name).join(", ");
+        Alert.alert("Success", `Added: ${names}`);
+        setShowAddMembers(false);
+        setSelectedNewMembers(new Set());
+
+        // Refresh members list
+        const result2 = await getAllUsers();
+        if (result2.success && result2.users) {
+          const chatMembers = result2.users.filter((u) =>
+            newParticipants.includes(u.uid)
+          );
+          setMembers(chatMembers);
+        }
+      } else {
+        Alert.alert("Error", "Failed to add members");
+      }
+    } catch (error) {
+      console.error("Error adding members:", error);
+      Alert.alert("Error", "An error occurred");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const toggleNewMemberSelection = (userId: string) => {
+    const newSelected = new Set(selectedNewMembers);
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId);
+    } else {
+      newSelected.add(userId);
+    }
+    setSelectedNewMembers(newSelected);
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -315,7 +396,7 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
               <Button
                 compact
                 icon="plus"
-                onPress={() => setShowAddMembers(true)}
+                onPress={handleAddMembers}
                 disabled={updating}
               >
                 Add
@@ -362,6 +443,78 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
           )}
         </View>
       </ScrollView>
+
+      {/* Add Members Modal */}
+      {showAddMembers && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Members</Text>
+              <Button
+                compact
+                onPress={() => setShowAddMembers(false)}
+                disabled={updating}
+              >
+                Close
+              </Button>
+            </View>
+
+            {allUsers.length === 0 ? (
+              <Text style={styles.modalEmptyText}>
+                All users are already members
+              </Text>
+            ) : (
+              <FlatList
+                data={allUsers}
+                renderItem={({ item }) => {
+                  const isSelected = selectedNewMembers.has(item.uid);
+                  return (
+                    <View
+                      style={[
+                        styles.memberSelectItem,
+                        isSelected && styles.memberSelectItemSelected,
+                      ]}
+                    >
+                      <Text
+                        style={styles.memberSelectName}
+                        onPress={() => toggleNewMemberSelection(item.uid)}
+                      >
+                        {item.name}
+                      </Text>
+                      <Button
+                        compact
+                        onPress={() => toggleNewMemberSelection(item.uid)}
+                        disabled={updating}
+                      >
+                        {isSelected ? "✓ Added" : "Add"}
+                      </Button>
+                    </View>
+                  );
+                }}
+                keyExtractor={(item) => item.uid}
+                style={styles.modalList}
+              />
+            )}
+
+            <View style={styles.modalFooter}>
+              <Button
+                onPress={() => setShowAddMembers(false)}
+                disabled={updating}
+              >
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleConfirmAddMembers}
+                loading={updating}
+                disabled={selectedNewMembers.size === 0 || updating}
+              >
+                Confirm ({selectedNewMembers.size})
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -450,5 +603,71 @@ const styles = StyleSheet.create({
   },
   leaveButtonLabel: {
     color: "#d32f2f",
+  },
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  modal: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    width: "80%",
+    maxHeight: "70%",
+    padding: 20,
+    alignItems: "center",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 15,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  modalEmptyText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginTop: 20,
+  },
+  modalList: {
+    width: "100%",
+    maxHeight: "50%",
+    marginBottom: 20,
+  },
+  memberSelectItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  memberSelectItemSelected: {
+    backgroundColor: "#e0f2f7",
+    borderBottomColor: "#2196F3",
+  },
+  memberSelectName: {
+    fontSize: 16,
+    color: "#333",
+    flex: 1,
+  },
+  modalFooter: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+    marginTop: 15,
   },
 });

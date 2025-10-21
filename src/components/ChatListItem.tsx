@@ -1,13 +1,11 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { Text, Badge } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { doc, getDoc } from "firebase/firestore";
 import { Chat } from "../types";
-import { db } from "../services/firebase";
-import { COLLECTIONS } from "../utils/constants";
 import { formatChatTime, truncateText } from "../utils/formatters";
 import { useAuthStore } from "../store/authStore";
+import { useChatDisplayName } from "../utils/useChatDisplayName";
 
 interface ChatListItemProps {
   chat: Chat;
@@ -24,42 +22,7 @@ interface ChatListItemProps {
 export const ChatListItem: React.FC<ChatListItemProps> = React.memo(
   ({ chat, onPress, unreadCount = 0, isOnline = false }) => {
     const { user } = useAuthStore();
-    const [otherUserName, setOtherUserName] = useState<string | null>(null);
-
-    // Fetch other participant's name for direct chats
-    useEffect(() => {
-      if (chat.type === "direct" && !otherUserName) {
-        const fetchOtherUserName = async () => {
-          try {
-            const otherParticipantId = chat.participants.find(
-              (p) => p !== user?.uid
-            );
-            if (otherParticipantId) {
-              const userDocRef = doc(db, COLLECTIONS.USERS, otherParticipantId);
-              const userDocSnap = await getDoc(userDocRef);
-              if (userDocSnap.exists()) {
-                setOtherUserName(userDocSnap.data().name);
-              }
-            }
-          } catch (error) {
-            console.error("Error fetching other user name:", error);
-          }
-        };
-
-        fetchOtherUserName();
-      }
-    }, [chat.id, chat.type, user?.uid, otherUserName]);
-
-    const chatName = useMemo(() => {
-      if (chat.type === "group" && chat.name) {
-        return chat.name;
-      }
-      // For direct chats, use fetched other user's name or fallback
-      if (chat.type === "direct" && otherUserName) {
-        return otherUserName;
-      }
-      return "Chat";
-    }, [chat.type, chat.name, otherUserName]);
+    const chatName = useChatDisplayName(chat, user?.uid);
 
     const messagePreview = useMemo(
       () => truncateText(chat.lastMessage || "No messages yet", 40),
@@ -127,20 +90,11 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(
     );
   },
   (prevProps, nextProps) => {
-    // Re-render if any prop changes or if chat details change
-    // Since we have internal state now, just check if the displayed content would change
-    const prevChatName =
-      prevProps.chat.type === "group" && prevProps.chat.name
-        ? prevProps.chat.name
-        : prevProps.chat.id;
-
-    const nextChatName =
-      nextProps.chat.type === "group" && nextProps.chat.name
-        ? nextProps.chat.name
-        : nextProps.chat.id;
-
+    // Only re-render if chat content that affects display has changed
     return (
-      prevChatName === nextChatName &&
+      prevProps.chat.id === nextProps.chat.id &&
+      prevProps.chat.type === nextProps.chat.type &&
+      prevProps.chat.name === nextProps.chat.name &&
       prevProps.chat.lastMessage === nextProps.chat.lastMessage &&
       prevProps.chat.lastMessageTime === nextProps.chat.lastMessageTime &&
       prevProps.unreadCount === nextProps.unreadCount &&

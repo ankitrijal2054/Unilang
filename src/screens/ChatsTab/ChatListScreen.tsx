@@ -7,17 +7,35 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Appbar, Button, Text } from "react-native-paper";
-import { doc, getDoc } from "firebase/firestore";
 import { useAuthStore } from "../../store/authStore";
 import { subscribeToUserChats } from "../../services/chatService";
-import { db } from "../../services/firebase";
-import { COLLECTIONS } from "../../utils/constants";
 import { Chat } from "../../types";
 import { ChatListItem } from "../../components/ChatListItem";
+import { useChatDisplayName } from "../../utils/useChatDisplayName";
 
 interface ChatListScreenProps {
   navigation: any;
 }
+
+/**
+ * Wrapper component to handle hook usage within FlatList renderItem
+ */
+const ChatItemWrapper: React.FC<{
+  chat: Chat;
+  currentUserId?: string;
+  onPress: (chat: Chat, chatName: string) => void;
+}> = ({ chat, currentUserId, onPress }) => {
+  const chatName = useChatDisplayName(chat, currentUserId);
+
+  return (
+    <ChatListItem
+      chat={chat}
+      onPress={() => onPress(chat, chatName)}
+      unreadCount={0}
+      isOnline={false}
+    />
+  );
+};
 
 export const ChatListScreen: React.FC<ChatListScreenProps> = ({
   navigation,
@@ -55,34 +73,9 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
     // Real-time listener will handle refresh
   };
 
-  const handleChatPress = async (chat: Chat) => {
+  const handleChatPress = (chat: Chat, chatName: string) => {
     if (chat.isDeleted) {
       return; // Prevent navigation to deleted chats
-    }
-
-    let chatName = "Chat";
-
-    if (chat.type === "group" && chat.name) {
-      // Group chat - use group name
-      chatName = chat.name;
-    } else if (chat.type === "direct") {
-      // Direct chat - find and fetch the other person's name
-      const otherParticipantId = chat.participants.find((p) => p !== user?.uid);
-
-      if (otherParticipantId) {
-        try {
-          // Fetch the other user's profile to get their name
-          const userDocRef = doc(db, COLLECTIONS.USERS, otherParticipantId);
-          const userDocSnap = await getDoc(userDocRef);
-
-          if (userDocSnap.exists()) {
-            chatName = userDocSnap.data().name || otherParticipantId;
-          }
-        } catch (error) {
-          console.error("Error fetching user name:", error);
-          chatName = otherParticipantId;
-        }
-      }
     }
 
     navigation.navigate("Chat", {
@@ -97,11 +90,10 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
   };
 
   const renderChatItem = ({ item }: { item: Chat }) => (
-    <ChatListItem
+    <ChatItemWrapper
       chat={item}
-      onPress={() => handleChatPress(item)}
-      unreadCount={0}
-      isOnline={false}
+      currentUserId={user?.uid}
+      onPress={handleChatPress}
     />
   );
 

@@ -48,6 +48,15 @@ jest.mock("firebase/messaging", () => ({
   getMessaging: jest.fn(() => ({})),
 }));
 
+jest.mock("expo-notifications", () => ({
+  setNotificationHandler: jest.fn(),
+  requestPermissionsAsync: jest.fn(),
+  getExpoPushTokenAsync: jest.fn(),
+  setBadgeCountAsync: jest.fn(),
+  addNotificationReceivedListener: jest.fn(),
+  addNotificationResponseReceivedListener: jest.fn(),
+}));
+
 // Mock console methods in tests
 global.console = {
   ...console,

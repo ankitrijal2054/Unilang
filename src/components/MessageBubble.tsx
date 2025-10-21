@@ -62,7 +62,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       prevProps.message.id === nextProps.message.id &&
       prevProps.message.text === nextProps.message.text &&
       prevProps.message.status === nextProps.message.status &&
-      prevProps.isOwnMessage === nextProps.isOwnMessage
+      prevProps.isOwnMessage === nextProps.isOwnMessage &&
+      prevProps.senderName === nextProps.senderName
     );
   }
 );

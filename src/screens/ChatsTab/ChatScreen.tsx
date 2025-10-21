@@ -48,10 +48,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [sending, setSending] = useState(false);
   const [otherUser, setOtherUser] = useState<User | null>(null);
   const [chat, setChat] = useState<Chat | null>(null);
+  const [senderNames, setSenderNames] = useState<{ [key: string]: string }>({});
 
   const flatListRef = useRef<SectionList>(null);
   const optimisticMessagesRef = useRef<Set<string>>(new Set());
-  const senderNamesRef = useRef<{ [key: string]: string }>({});
 
   // Group messages by date
   const groupedMessages: MessageGroup[] = React.useMemo(() => {
@@ -93,7 +93,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               (id) => id !== user.uid
             );
             if (otherUserId) {
-              console.log("👤 Subscribing to presence for user:", otherUserId);
               unsubscribePresence = subscribeToUserPresence(
                 otherUserId,
                 (userData) => {
@@ -113,7 +112,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     fetchChatAndPresence();
 
     return () => {
-      console.log("🧹 Unsubscribing from presence");
       if (unsubscribePresence) {
         unsubscribePresence();
       }
@@ -127,12 +125,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       return;
     }
 
-    console.log("💬 Setting up message listener for chat:", chatId);
-
     const unsubscribe = subscribeToMessages(chatId, (updatedMessages) => {
       setMessages(updatedMessages);
       setLoading(false);
-      console.log("✅ Messages updated:", updatedMessages.length);
     });
 
     // Mark messages as read when opening chat
@@ -142,36 +137,65 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
     // Cleanup listener on unmount
     return () => {
-      console.log("🧹 Unsubscribing from message listener");
       unsubscribe();
     };
   }, [chatId, user?.uid]);
 
-  // Fetch sender names for group chat messages
+  // Fetch sender names for group chat (all participants upfront)
   useEffect(() => {
-    if (chatType !== "group" || messages.length === 0) {
+    if (chatType !== "group" || !chat?.participants) {
       return;
     }
 
-    const fetchSenderNames = async () => {
+    const fetchAllSenderNames = async () => {
       const { getUserById } = await import("../../services/userService");
 
-      for (const msg of messages) {
-        if (!senderNamesRef.current[msg.senderId]) {
-          try {
-            const result = await getUserById(msg.senderId);
-            if (result.success && result.user) {
-              senderNamesRef.current[msg.senderId] = result.user.name;
-            }
-          } catch (error) {
-            console.error("Error fetching sender name:", error);
+      // Collect all unique sender IDs from messages + current participants
+      // This ensures we fetch names even for users who left the group
+      const senderIds = new Set<string>();
+
+      // Add current participants
+      chat.participants.forEach((id) => senderIds.add(id));
+
+      // Add all message senders (in case they left the group)
+      messages.forEach((msg) => senderIds.add(msg.senderId));
+
+      for (const participantId of Array.from(senderIds)) {
+        // Skip if already cached
+        if (senderNames[participantId]) {
+          continue;
+        }
+
+        try {
+          const result = await getUserById(participantId);
+          if (result.success && result.user) {
+            setSenderNames((prev) => {
+              return {
+                ...prev,
+                [participantId]: result.user.name,
+              };
+            });
+          } else {
+            setSenderNames((prev) => ({
+              ...prev,
+              [participantId]: "Unknown User",
+            }));
           }
+        } catch (error) {
+          console.error(
+            `Error fetching sender name for ${participantId}:`,
+            error
+          );
+          setSenderNames((prev) => ({
+            ...prev,
+            [participantId]: "Unknown User",
+          }));
         }
       }
     };
 
-    fetchSenderNames();
-  }, [messages, chatType]);
+    fetchAllSenderNames();
+  }, [chat?.participants, chatType, messages]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -290,7 +314,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     const isOwnMessage = item.senderId === user?.uid;
     const senderName =
       chatType === "group" && !isOwnMessage
-        ? senderNamesRef.current[item.senderId] || "Unknown User"
+        ? senderNames[item.senderId] || "Unknown User"
         : undefined;
 
     return (

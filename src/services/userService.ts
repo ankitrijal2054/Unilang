@@ -6,6 +6,7 @@ import {
   onSnapshot,
   Unsubscribe,
   getDocs,
+  getDoc,
 } from "firebase/firestore";
 import { User } from "../types";
 import { COLLECTIONS } from "../utils/constants";
@@ -149,7 +150,6 @@ export const getUserById = async (
   error?: any;
 }> => {
   try {
-    const { getDoc } = await import("firebase/firestore");
     const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
 
     if (userDoc.exists()) {

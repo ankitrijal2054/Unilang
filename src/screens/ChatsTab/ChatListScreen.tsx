@@ -7,8 +7,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Appbar, Button, Text } from "react-native-paper";
+import { doc, getDoc } from "firebase/firestore";
 import { useAuthStore } from "../../store/authStore";
 import { subscribeToUserChats } from "../../services/chatService";
+import { db } from "../../services/firebase";
+import { COLLECTIONS } from "../../utils/constants";
 import { Chat } from "../../types";
 import { ChatListItem } from "../../components/ChatListItem";
 
@@ -52,17 +55,35 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
     // Real-time listener will handle refresh
   };
 
-  const handleChatPress = (chat: Chat) => {
+  const handleChatPress = async (chat: Chat) => {
     if (chat.isDeleted) {
       return; // Prevent navigation to deleted chats
     }
 
-    const chatName =
-      chat.type === "group" && chat.name
-        ? chat.name
-        : chat.type === "direct"
-        ? "Direct Chat"
-        : "Group Chat";
+    let chatName = "Chat";
+
+    if (chat.type === "group" && chat.name) {
+      // Group chat - use group name
+      chatName = chat.name;
+    } else if (chat.type === "direct") {
+      // Direct chat - find and fetch the other person's name
+      const otherParticipantId = chat.participants.find((p) => p !== user?.uid);
+
+      if (otherParticipantId) {
+        try {
+          // Fetch the other user's profile to get their name
+          const userDocRef = doc(db, COLLECTIONS.USERS, otherParticipantId);
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            chatName = userDocSnap.data().name || otherParticipantId;
+          }
+        } catch (error) {
+          console.error("Error fetching user name:", error);
+          chatName = otherParticipantId;
+        }
+      }
+    }
 
     navigation.navigate("Chat", {
       chatId: chat.id,

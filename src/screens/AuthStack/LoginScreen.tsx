@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     alignItems: "center",
-    marginBottom: 48,
+    marginBottom: 40,
   },
   logoContainer: {
     marginBottom: 16,
@@ -225,12 +225,12 @@ const styles = StyleSheet.create({
   blurContainer: {
     borderRadius: 24,
     overflow: "hidden",
-    marginBottom: 32,
+    marginBottom: 24,
   },
   formCard: {
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     paddingHorizontal: 28,
-    paddingVertical: 32,
+    paddingVertical: 28,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.5)",
   },
@@ -243,10 +243,10 @@ const styles = StyleSheet.create({
   formSubtitle: {
     fontSize: 14,
     color: colorPalette.neutral[600],
-    marginBottom: 28,
+    marginBottom: 20,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   inputLabel: {
     fontSize: 13,

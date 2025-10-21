@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 32,
   },
   logoContainer: {
     marginBottom: 16,
@@ -337,12 +337,12 @@ const styles = StyleSheet.create({
   blurContainer: {
     borderRadius: 24,
     overflow: "hidden",
-    marginBottom: 32,
+    marginBottom: 24,
   },
   formCard: {
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     paddingHorizontal: 28,
-    paddingVertical: 28,
+    paddingVertical: 24,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.5)",
   },
@@ -350,21 +350,21 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     color: colorPalette.neutral[900],
-    marginBottom: 8,
+    marginBottom: 4,
   },
   formSubtitle: {
     fontSize: 14,
     color: colorPalette.neutral[600],
-    marginBottom: 24,
+    marginBottom: 16,
   },
   inputGroup: {
-    marginBottom: 18,
+    marginBottom: 14,
   },
   inputLabel: {
     fontSize: 13,
     fontWeight: "600",
     color: colorPalette.neutral[700],
-    marginBottom: 8,
+    marginBottom: 6,
     letterSpacing: 0.5,
   },
   input: {
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     color: colorPalette.neutral[700],
   },
   signUpButton: {
-    marginTop: 8,
+    marginTop: 6,
     paddingVertical: 12,
     backgroundColor: colorPalette.primary,
     borderRadius: 12,

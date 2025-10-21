@@ -8,6 +8,7 @@ import {
   Modal,
   FlatList,
   TouchableOpacity,
+  SafeAreaView,
 } from "react-native";
 import { TextInput, Button, Text, Snackbar } from "react-native-paper";
 import { signUp } from "../../services/authService";
@@ -87,177 +88,179 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollViewContent}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.appName}>Unilang</Text>
-          <Text style={styles.subtitle}>Create Account</Text>
-        </View>
+        <ScrollView
+          contentContainerStyle={styles.scrollViewContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.appName}>Unilang</Text>
+            <Text style={styles.subtitle}>Create Account</Text>
+          </View>
 
-        {/* Form */}
-        <View style={styles.form}>
-          <Text style={styles.formTitle}>Sign Up</Text>
+          {/* Form */}
+          <View style={styles.form}>
+            <Text style={styles.formTitle}>Sign Up</Text>
 
-          {/* Name Input */}
-          <TextInput
-            label="Full Name"
-            value={name}
-            onChangeText={setName}
-            mode="outlined"
-            placeholder="John Doe"
-            editable={!isLoading}
-            style={styles.input}
-          />
-
-          {/* Email Input */}
-          <TextInput
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            mode="outlined"
-            placeholder="you@example.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            editable={!isLoading}
-            style={styles.input}
-          />
-
-          {/* Password Input */}
-          <TextInput
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            mode="outlined"
-            placeholder="••••••••"
-            secureTextEntry={!showPassword}
-            right={
-              <TextInput.Icon
-                icon={showPassword ? "eye-off" : "eye"}
-                onPress={() => setShowPassword(!showPassword)}
-              />
-            }
-            editable={!isLoading}
-            style={styles.input}
-          />
-
-          {/* Confirm Password Input */}
-          <TextInput
-            label="Confirm Password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            mode="outlined"
-            placeholder="••••••••"
-            secureTextEntry={!showConfirmPassword}
-            right={
-              <TextInput.Icon
-                icon={showConfirmPassword ? "eye-off" : "eye"}
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              />
-            }
-            editable={!isLoading}
-            style={styles.input}
-          />
-
-          {/* Language Selector */}
-          <View style={styles.languageContainer}>
-            <Text style={styles.languageLabel}>Preferred Language</Text>
-            <Button
+            {/* Name Input */}
+            <TextInput
+              label="Full Name"
+              value={name}
+              onChangeText={setName}
               mode="outlined"
-              onPress={() => setLanguageMenuVisible(true)}
+              placeholder="John Doe"
+              editable={!isLoading}
+              style={styles.input}
+            />
+
+            {/* Email Input */}
+            <TextInput
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              mode="outlined"
+              placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!isLoading}
+              style={styles.input}
+            />
+
+            {/* Password Input */}
+            <TextInput
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              mode="outlined"
+              placeholder="••••••••"
+              secureTextEntry={!showPassword}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? "eye-off" : "eye"}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              }
+              editable={!isLoading}
+              style={styles.input}
+            />
+
+            {/* Confirm Password Input */}
+            <TextInput
+              label="Confirm Password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              mode="outlined"
+              placeholder="••••••••"
+              secureTextEntry={!showConfirmPassword}
+              right={
+                <TextInput.Icon
+                  icon={showConfirmPassword ? "eye-off" : "eye"}
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                />
+              }
+              editable={!isLoading}
+              style={styles.input}
+            />
+
+            {/* Language Selector */}
+            <View style={styles.languageContainer}>
+              <Text style={styles.languageLabel}>Preferred Language</Text>
+              <Button
+                mode="outlined"
+                onPress={() => setLanguageMenuVisible(true)}
+                disabled={isLoading}
+                style={styles.languageButton}
+              >
+                {selectedLanguageLabel}
+              </Button>
+            </View>
+
+            {/* Sign Up Button */}
+            <Button
+              mode="contained"
+              onPress={handleSignUp}
+              loading={isLoading}
               disabled={isLoading}
-              style={styles.languageButton}
+              style={styles.signUpButton}
             >
-              {selectedLanguageLabel}
+              Create Account
             </Button>
           </View>
 
-          {/* Sign Up Button */}
-          <Button
-            mode="contained"
-            onPress={handleSignUp}
-            loading={isLoading}
-            disabled={isLoading}
-            style={styles.signUpButton}
-          >
-            Create Account
-          </Button>
-        </View>
-
-        {/* Sign In Link */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
-          <Text
-            style={styles.signInLink}
-            onPress={() => navigation.navigate("Login")}
-          >
-            Sign In
-          </Text>
-        </View>
-      </ScrollView>
-
-      {/* Error Snackbar */}
-      <Snackbar
-        visible={!!error}
-        onDismiss={() => setError(null)}
-        duration={4000}
-        style={styles.snackbar}
-      >
-        {error}
-      </Snackbar>
-
-      {/* Language Picker Modal */}
-      <Modal
-        visible={languageMenuVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setLanguageMenuVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Language</Text>
-              <TouchableOpacity onPress={() => setLanguageMenuVisible(false)}>
-                <Text style={styles.modalClose}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={SUPPORTED_LANGUAGES}
-              keyExtractor={(item) => item.code}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.languageOption,
-                    selectedLanguage === item.code &&
-                      styles.languageOptionSelected,
-                  ]}
-                  onPress={() => {
-                    setSelectedLanguage(item.code);
-                    setLanguageMenuVisible(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.languageOptionText,
-                      selectedLanguage === item.code &&
-                        styles.languageOptionTextSelected,
-                    ]}
-                  >
-                    {item.name}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
+          {/* Sign In Link */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text
+              style={styles.signInLink}
+              onPress={() => navigation.navigate("Login")}
+            >
+              Sign In
+            </Text>
           </View>
-        </View>
-      </Modal>
-    </KeyboardAvoidingView>
+        </ScrollView>
+
+        {/* Error Snackbar */}
+        <Snackbar
+          visible={!!error}
+          onDismiss={() => setError(null)}
+          duration={4000}
+          style={styles.snackbar}
+        >
+          {error}
+        </Snackbar>
+
+        {/* Language Picker Modal */}
+        <Modal
+          visible={languageMenuVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setLanguageMenuVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select Language</Text>
+                <TouchableOpacity onPress={() => setLanguageMenuVisible(false)}>
+                  <Text style={styles.modalClose}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                data={SUPPORTED_LANGUAGES}
+                keyExtractor={(item) => item.code}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[
+                      styles.languageOption,
+                      selectedLanguage === item.code &&
+                        styles.languageOptionSelected,
+                    ]}
+                    onPress={() => {
+                      setSelectedLanguage(item.code);
+                      setLanguageMenuVisible(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.languageOptionText,
+                        selectedLanguage === item.code &&
+                          styles.languageOptionTextSelected,
+                      ]}
+                    >
+                      {item.name}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          </View>
+        </Modal>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -270,7 +273,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 20,
     paddingBottom: 20,
   },
   header: {

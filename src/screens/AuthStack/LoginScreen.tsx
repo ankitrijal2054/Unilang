@@ -5,6 +5,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
 } from "react-native";
 import {
   TextInput,
@@ -116,95 +117,97 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
   // };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollViewContent}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.appName}>Unilang</Text>
-          <Text style={styles.subtitle}>Real-time Messaging</Text>
-        </View>
+        <ScrollView
+          contentContainerStyle={styles.scrollViewContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.appName}>Unilang</Text>
+            <Text style={styles.subtitle}>Real-time Messaging</Text>
+          </View>
 
-        {/* Form */}
-        <View style={styles.form}>
-          <Text style={styles.formTitle}>Sign In</Text>
+          {/* Form */}
+          <View style={styles.form}>
+            <Text style={styles.formTitle}>Sign In</Text>
 
-          {/* Email Input */}
-          <TextInput
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            mode="outlined"
-            placeholder="you@example.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            editable={!isLoading}
-            style={styles.input}
-          />
+            {/* Email Input */}
+            <TextInput
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              mode="outlined"
+              placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!isLoading}
+              style={styles.input}
+            />
 
-          {/* Password Input */}
-          <TextInput
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            mode="outlined"
-            placeholder="••••••••"
-            secureTextEntry={!showPassword}
-            right={
-              <TextInput.Icon
-                icon={showPassword ? "eye-off" : "eye"}
-                onPress={() => setShowPassword(!showPassword)}
-              />
-            }
-            editable={!isLoading}
-            style={styles.input}
-          />
+            {/* Password Input */}
+            <TextInput
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              mode="outlined"
+              placeholder="••••••••"
+              secureTextEntry={!showPassword}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? "eye-off" : "eye"}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              }
+              editable={!isLoading}
+              style={styles.input}
+            />
 
-          {/* Login Button */}
-          <Button
-            mode="contained"
-            onPress={handleLogin}
-            loading={isLoading}
-            disabled={isLoading}
-            style={styles.loginButton}
-          >
-            Sign In
-          </Button>
+            {/* Login Button */}
+            <Button
+              mode="contained"
+              onPress={handleLogin}
+              loading={isLoading}
+              disabled={isLoading}
+              style={styles.loginButton}
+            >
+              Sign In
+            </Button>
 
-          {/* Note about Google Sign-In */}
-          <Text style={styles.note}>
-            💡 Google Sign-In is disabled in Expo Go (requires native build).
-            Use email/password to test.
-          </Text>
-        </View>
+            {/* Note about Google Sign-In */}
+            <Text style={styles.note}>
+              💡 Google Sign-In is disabled in Expo Go (requires native build).
+              Use email/password to test.
+            </Text>
+          </View>
 
-        {/* Sign Up Link */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <Text
-            style={styles.signUpLink}
-            onPress={() => navigation.navigate("SignUp")}
-          >
-            Sign Up
-          </Text>
-        </View>
-      </ScrollView>
+          {/* Sign Up Link */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text
+              style={styles.signUpLink}
+              onPress={() => navigation.navigate("SignUp")}
+            >
+              Sign Up
+            </Text>
+          </View>
+        </ScrollView>
 
-      {/* Error Snackbar */}
-      <Snackbar
-        visible={!!error}
-        onDismiss={() => setError(null)}
-        duration={4000}
-        style={styles.snackbar}
-      >
-        {error}
-      </Snackbar>
-    </KeyboardAvoidingView>
+        {/* Error Snackbar */}
+        <Snackbar
+          visible={!!error}
+          onDismiss={() => setError(null)}
+          duration={4000}
+          style={styles.snackbar}
+        >
+          {error}
+        </Snackbar>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -217,7 +220,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 20,
     paddingBottom: 20,
   },
   header: {

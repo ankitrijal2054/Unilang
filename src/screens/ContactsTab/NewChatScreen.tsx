@@ -9,7 +9,10 @@ import {
 import { Appbar, TextInput, Text, Avatar } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
-import { getAllUsers } from "../../services/userService";
+import {
+  getAllUsers,
+  subscribeToUserPresence,
+} from "../../services/userService";
 import { createDirectChat } from "../../services/chatService";
 import { User } from "../../types";
 
@@ -89,8 +92,10 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [creatingChat, setCreatingChat] = useState(false);
 
-  // Fetch all users
+  // Fetch all users and setup real-time listeners
   useEffect(() => {
+    let unsubscribers: Array<() => void> = [];
+
     const fetchUsers = async () => {
       try {
         // Guard: only fetch if we have current user
@@ -117,6 +122,28 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
 
           setAllUsers(filteredUsers);
           console.log("✅ Users fetched:", filteredUsers.length);
+
+          // Setup real-time listeners for each user's presence
+          filteredUsers.forEach((user) => {
+            const unsub = subscribeToUserPresence(user.uid, (updatedUser) => {
+              if (updatedUser) {
+                // Update the user in the list
+                setAllUsers((prev) =>
+                  prev
+                    .map((u) => (u.uid === updatedUser.uid ? updatedUser : u))
+                    .sort((a, b) => {
+                      // Re-sort to move online users to top
+                      if (a.status === "online" && b.status !== "online")
+                        return -1;
+                      if (a.status !== "online" && b.status === "online")
+                        return 1;
+                      return a.name.localeCompare(b.name);
+                    })
+                );
+              }
+            });
+            unsubscribers.push(unsub);
+          });
         }
       } catch (error) {
         console.error("❌ Error fetching users:", error);
@@ -126,6 +153,11 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
     };
 
     fetchUsers();
+
+    return () => {
+      console.log("🧹 Cleaning up user presence listeners");
+      unsubscribers.forEach((unsub) => unsub());
+    };
   }, [currentUser?.uid]);
 
   // Filter users based on search

@@ -8,10 +8,18 @@ import { SignUpScreen } from "../screens/AuthStack/SignUpScreen";
 import { AppStack } from "./AppStack";
 import { useAuthStore } from "../store/authStore";
 import { onAuthStateChanged } from "../services/authService";
-import { updateUserStatus } from "../services/userService";
+import {
+  updateUserStatus,
+  subscribeToUserPresence,
+} from "../services/userService";
+import { subscribeToUnreadCount } from "../services/messageService";
+import { setBadgeCount } from "../services/notificationService";
+import {
+  setupNotificationListeners,
+  registerForPushNotifications,
+} from "../services/notificationService";
 import { db } from "../services/firebase";
 import { COLLECTIONS } from "../utils/constants";
-import { subscribeToUserPresence } from "../services/userService";
 import { User } from "../types";
 
 const Stack = createNativeStackNavigator();
@@ -31,6 +39,7 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
   } = useAuthStore();
 
   const presenceUnsubRef = useRef<(() => void) | null>(null);
+  const unreadCountUnsubRef = useRef<(() => void) | null>(null);
 
   // Listen to Firebase auth state changes
   useEffect(() => {
@@ -77,6 +86,21 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
 
             // Store the unsubscriber in a ref so we can clean it up on logout
             presenceUnsubRef.current = presenceUnsub;
+
+            // Setup unread count listener for badge updates
+            console.log(
+              "📬 Setting up unread count listener for user:",
+              user.uid
+            );
+            const unreadCountUnsub = subscribeToUnreadCount(
+              user.uid,
+              async (count) => {
+                console.log("📱 Updating badge count:", count);
+                await setBadgeCount(count);
+              }
+            );
+
+            unreadCountUnsubRef.current = unreadCountUnsub;
           } else {
             // Fallback user object if Firestore doc doesn't exist
             console.warn("⚠️ User doc not found in Firestore, using fallback");
@@ -108,6 +132,17 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
             );
 
             presenceUnsubRef.current = presenceUnsub;
+
+            // Setup unread count listener
+            const unreadCountUnsub = subscribeToUnreadCount(
+              firebaseUser.uid,
+              async (count) => {
+                console.log("📱 Updating badge count:", count);
+                await setBadgeCount(count);
+              }
+            );
+
+            unreadCountUnsubRef.current = unreadCountUnsub;
           }
 
           setIsAuthenticated(true);
@@ -123,6 +158,16 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
             presenceUnsubRef.current();
             presenceUnsubRef.current = null;
           }
+
+          // Clean up unread count listener on logout
+          if (unreadCountUnsubRef.current) {
+            console.log("🧹 Cleaning up unread count listener on logout");
+            unreadCountUnsubRef.current();
+            unreadCountUnsubRef.current = null;
+          }
+
+          // Reset badge count on logout
+          await setBadgeCount(0);
         }
       } catch (error) {
         console.error("❌ Auth state change error:", error);
@@ -169,6 +214,47 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
       });
     }
   };
+
+  // Setup notification listeners (needs to be inside NavigationContainer context)
+  useEffect(() => {
+    let notificationListener: any;
+    let responseListener: any;
+
+    const setupNotifications = async () => {
+      if (!isAuthenticated) return;
+
+      const { unsubscribeNotification, unsubscribeResponse } =
+        setupNotificationListeners(
+          // Handle foreground notification
+          (notification) => {
+            console.log("📬 Notification received (foreground):", notification);
+          },
+          // Handle notification tap - will use deep linking
+          (response) => {
+            const { notification } = response;
+            const chatId = notification.request.content.data?.chatId;
+
+            if (chatId) {
+              console.log(
+                "📲 User tapped notification, navigating to chat:",
+                chatId
+              );
+              // Deep linking will be handled by NavigationContainer linking config
+            }
+          }
+        );
+
+      notificationListener = unsubscribeNotification;
+      responseListener = unsubscribeResponse;
+    };
+
+    setupNotifications();
+
+    return () => {
+      notificationListener?.();
+      responseListener?.();
+    };
+  }, [isAuthenticated]);
 
   // Show loading screen while checking auth state
   if (isLoading) {

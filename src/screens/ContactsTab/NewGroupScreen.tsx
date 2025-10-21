@@ -107,8 +107,8 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
       );
 
       if (result.success && result.chatId) {
-        // Navigate to the new group chat
-        navigation.navigate("Chat", {
+        // Navigate to the new group chat (use replace so back goes to ChatList)
+        navigation.replace("Chat", {
           chatId: result.chatId,
           chatName: groupName.trim(),
           chatType: "group",

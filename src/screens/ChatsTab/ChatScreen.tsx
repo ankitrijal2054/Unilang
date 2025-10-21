@@ -350,7 +350,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     >
       {/* Header */}
       <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
+        <Appbar.BackAction onPress={() => navigation.popToTop()} />
         <View style={styles.headerContent}>
           <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>{chatName}</Text>

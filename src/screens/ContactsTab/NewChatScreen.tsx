@@ -205,7 +205,7 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
     <View style={styles.container}>
       {/* Header */}
       <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.popToTop()} />
+        <Appbar.BackAction onPress={() => navigation.navigate("ChatList")} />
         <Appbar.Content title="New Chat" subtitle="Select a user" />
       </Appbar.Header>
 

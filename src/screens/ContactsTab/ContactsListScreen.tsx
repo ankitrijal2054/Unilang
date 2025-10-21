@@ -211,7 +211,7 @@ export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
     <View style={styles.container}>
       {/* Header */}
       <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.popToTop()} />
+        <Appbar.BackAction onPress={() => navigation.goBack()} />
         <Appbar.Content title="Contacts" subtitle="Select to view profile" />
       </Appbar.Header>
 

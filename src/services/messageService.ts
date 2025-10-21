@@ -162,3 +162,39 @@ export const markMessagesAsRead = async (
     return { success: false, error };
   }
 };
+
+/**
+ * Create a system message for group chat activities
+ * Used for admin actions like adding/removing members or user leaving
+ */
+export const createSystemMessage = async (
+  chatId: string,
+  text: string
+): Promise<{ success: boolean; messageId?: string; error?: any }> => {
+  try {
+    const messageData = {
+      chatId,
+      senderId: "system",
+      text,
+      timestamp: serverTimestamp(),
+      status: "read" as const,
+      type: "system" as const,
+      ai: {
+        translated_text: "",
+        detected_language: "",
+        summary: "",
+      },
+    };
+
+    const docRef = await addDoc(
+      collection(db, COLLECTIONS.MESSAGES),
+      messageData
+    );
+
+    console.log("✅ System message created:", docRef.id);
+    return { success: true, messageId: docRef.id };
+  } catch (error) {
+    console.error("❌ Error creating system message:", error);
+    return { success: false, error };
+  }
+};

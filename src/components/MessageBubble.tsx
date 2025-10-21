@@ -36,6 +36,15 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       [isOwnMessage]
     );
 
+    // System messages (join, leave, removed from group)
+    if (message.type === "system") {
+      return (
+        <View style={styles.systemMessageContainer}>
+          <Text style={styles.systemMessageText}>{message.text}</Text>
+        </View>
+      );
+    }
+
     // For own messages, just show the bubble
     if (isOwnMessage) {
       return (
@@ -179,5 +188,19 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#2196F3",
     marginBottom: 4,
+  },
+  systemMessageContainer: {
+    marginVertical: 8,
+    marginHorizontal: 12,
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  systemMessageText: {
+    fontSize: 13,
+    color: "#555",
+    textAlign: "center",
   },
 });

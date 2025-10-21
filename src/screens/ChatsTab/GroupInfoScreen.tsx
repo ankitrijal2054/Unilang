@@ -16,6 +16,7 @@ import { Chat, User } from "../../types";
 import { db } from "../../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { COLLECTIONS } from "../../utils/constants";
+import { createSystemMessage } from "../../services/messageService";
 
 interface GroupInfoScreenProps {
   navigation: any;
@@ -130,6 +131,13 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
                 prev ? { ...prev, participants: newParticipants! } : null
               );
               setMembers((prev) => prev.filter((m) => m.uid !== memberId));
+
+              // Create system message
+              await createSystemMessage(
+                chatId,
+                `${memberName} was removed from the group`
+              );
+
               Alert.alert("Success", `${memberName} has been removed`);
             } else {
               Alert.alert("Error", "Failed to remove member");
@@ -162,6 +170,9 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
             });
 
             if (result.success) {
+              // Create system message
+              await createSystemMessage(chatId, `${user?.name} left the group`);
+
               Alert.alert("Success", "You have left the group");
               navigation.navigate("ChatList");
             } else {
@@ -258,6 +269,14 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
         Alert.alert("Success", `Added: ${names}`);
         setShowAddMembers(false);
         setSelectedNewMembers(new Set());
+
+        // Create system message
+        await createSystemMessage(
+          chatId,
+          `${names} ${
+            addedMembers.length > 1 ? "were" : "was"
+          } added to the group`
+        );
 
         // Refresh members list
         const result2 = await getAllUsers();

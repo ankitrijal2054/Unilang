@@ -2,6 +2,7 @@ import {
   sendMessage,
   subscribeToMessages,
   updateMessageStatus,
+  createSystemMessage,
 } from "../messageService";
 import * as firestoreLib from "firebase/firestore";
 
@@ -147,6 +148,101 @@ describe("messageService", () => {
         expect(firestoreLib.updateDoc).toHaveBeenCalled();
         const callArgs = (firestoreLib.updateDoc as jest.Mock).mock.calls[0];
         expect(callArgs[1]).toEqual(expect.objectContaining({ status }));
+      }
+    });
+  });
+
+  describe("createSystemMessage", () => {
+    it("should successfully create a system message", async () => {
+      const mockDocRef = { id: "sysmsg123" };
+      (firestoreLib.addDoc as jest.Mock).mockResolvedValue(mockDocRef);
+
+      const result = await createSystemMessage(
+        "chat123",
+        "User John joined the group"
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.messageId).toBe("sysmsg123");
+      expect(firestoreLib.addDoc).toHaveBeenCalled();
+    });
+
+    it("should create system message with correct structure", async () => {
+      const mockDocRef = { id: "sysmsg123" };
+      (firestoreLib.addDoc as jest.Mock).mockResolvedValue(mockDocRef);
+
+      await createSystemMessage("chat123", "User left the group");
+
+      const callArgs = (firestoreLib.addDoc as jest.Mock).mock.calls[0];
+      const messageData = callArgs[1];
+
+      expect(messageData).toEqual(
+        expect.objectContaining({
+          chatId: "chat123",
+          senderId: "system",
+          text: "User left the group",
+          type: "system",
+          status: "read",
+          ai: expect.any(Object),
+        })
+      );
+    });
+
+    it("should have correct AI structure for system messages", async () => {
+      const mockDocRef = { id: "sysmsg123" };
+      (firestoreLib.addDoc as jest.Mock).mockResolvedValue(mockDocRef);
+
+      await createSystemMessage("chat123", "Admin added user");
+
+      const callArgs = (firestoreLib.addDoc as jest.Mock).mock.calls[0];
+      const messageData = callArgs[1];
+
+      expect(messageData.ai).toEqual({
+        translated_text: "",
+        detected_language: "",
+        summary: "",
+      });
+    });
+
+    it("should have timestamp in system message", async () => {
+      const mockDocRef = { id: "sysmsg123" };
+      (firestoreLib.addDoc as jest.Mock).mockResolvedValue(mockDocRef);
+
+      await createSystemMessage("chat123", "System message");
+
+      const callArgs = (firestoreLib.addDoc as jest.Mock).mock.calls[0];
+      const messageData = callArgs[1];
+
+      expect(messageData).toHaveProperty("timestamp");
+    });
+
+    it("should handle creation errors", async () => {
+      (firestoreLib.addDoc as jest.Mock).mockRejectedValue(
+        new Error("Firestore error")
+      );
+
+      const result = await createSystemMessage("chat123", "User joined");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+
+    it("should support different system message types", async () => {
+      const mockDocRef = { id: "sysmsg123" };
+      (firestoreLib.addDoc as jest.Mock).mockResolvedValue(mockDocRef);
+
+      const messages = [
+        "User John joined the group",
+        "Admin removed user Jane",
+        "User Mike left the group",
+        "Group name changed to New Group",
+      ];
+
+      for (const msg of messages) {
+        jest.clearAllMocks();
+        (firestoreLib.addDoc as jest.Mock).mockResolvedValue(mockDocRef);
+        const result = await createSystemMessage("chat123", msg);
+        expect(result.success).toBe(true);
       }
     });
   });

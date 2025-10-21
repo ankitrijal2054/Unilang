@@ -6,6 +6,7 @@ import {
   setupNotificationHandler,
   requestNotificationPermissions,
 } from "./src/services/notificationService";
+import { lightTheme } from "./src/utils/theme";
 
 // Configure how notifications are handled when app is in foreground
 setupNotificationHandler();
@@ -15,7 +16,7 @@ requestNotificationPermissions();
 
 export default function App() {
   return (
-    <PaperProvider>
+    <PaperProvider theme={lightTheme}>
       <RootNavigator />
     </PaperProvider>
   );

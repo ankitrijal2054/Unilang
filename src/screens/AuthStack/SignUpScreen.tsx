@@ -11,9 +11,12 @@ import {
   SafeAreaView,
 } from "react-native";
 import { TextInput, Button, Text, Snackbar } from "react-native-paper";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { signUp } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
 import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from "../../utils/constants";
+import { colorPalette } from "../../utils/theme";
 
 interface SignUpScreenProps {
   navigation: any;
@@ -42,7 +45,6 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     "Select Language";
 
   const handleSignUp = async () => {
-    // Validation
     if (!name.trim()) {
       setError("Please enter your name");
       return;
@@ -72,7 +74,6 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
 
       if (result.success) {
         console.log("✅ Sign up successful");
-        // Navigation will be handled by auth state observer in App.tsx
       } else {
         setError(result.error || "Sign up failed. Please try again.");
         setStoreError(result.error || null);
@@ -89,177 +90,210 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}
+      <LinearGradient
+        colors={["#F8FAFC", "#E2E8F0"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollViewContent}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardView}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.appName}>Unilang</Text>
-            <Text style={styles.subtitle}>Create Account</Text>
-          </View>
-
-          {/* Form */}
-          <View style={styles.form}>
-            <Text style={styles.formTitle}>Sign Up</Text>
-
-            {/* Name Input */}
-            <TextInput
-              label="Full Name"
-              value={name}
-              onChangeText={setName}
-              mode="outlined"
-              placeholder="John Doe"
-              editable={!isLoading}
-              style={styles.input}
-            />
-
-            {/* Email Input */}
-            <TextInput
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              mode="outlined"
-              placeholder="you@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={!isLoading}
-              style={styles.input}
-            />
-
-            {/* Password Input */}
-            <TextInput
-              label="Password"
-              value={password}
-              onChangeText={setPassword}
-              mode="outlined"
-              placeholder="••••••••"
-              secureTextEntry={!showPassword}
-              right={
-                <TextInput.Icon
-                  icon={showPassword ? "eye-off" : "eye"}
-                  onPress={() => setShowPassword(!showPassword)}
-                />
-              }
-              editable={!isLoading}
-              style={styles.input}
-            />
-
-            {/* Confirm Password Input */}
-            <TextInput
-              label="Confirm Password"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              mode="outlined"
-              placeholder="••••••••"
-              secureTextEntry={!showConfirmPassword}
-              right={
-                <TextInput.Icon
-                  icon={showConfirmPassword ? "eye-off" : "eye"}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                />
-              }
-              editable={!isLoading}
-              style={styles.input}
-            />
-
-            {/* Language Selector */}
-            <View style={styles.languageContainer}>
-              <Text style={styles.languageLabel}>Preferred Language</Text>
-              <Button
-                mode="outlined"
-                onPress={() => setLanguageMenuVisible(true)}
-                disabled={isLoading}
-                style={styles.languageButton}
-              >
-                {selectedLanguageLabel}
-              </Button>
-            </View>
-
-            {/* Sign Up Button */}
-            <Button
-              mode="contained"
-              onPress={handleSignUp}
-              loading={isLoading}
-              disabled={isLoading}
-              style={styles.signUpButton}
-            >
-              Create Account
-            </Button>
-          </View>
-
-          {/* Sign In Link */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <Text
-              style={styles.signInLink}
-              onPress={() => navigation.navigate("Login")}
-            >
-              Sign In
-            </Text>
-          </View>
-        </ScrollView>
-
-        {/* Error Snackbar */}
-        <Snackbar
-          visible={!!error}
-          onDismiss={() => setError(null)}
-          duration={4000}
-          style={styles.snackbar}
-        >
-          {error}
-        </Snackbar>
-
-        {/* Language Picker Modal */}
-        <Modal
-          visible={languageMenuVisible}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setLanguageMenuVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Select Language</Text>
-                <TouchableOpacity onPress={() => setLanguageMenuVisible(false)}>
-                  <Text style={styles.modalClose}>✕</Text>
-                </TouchableOpacity>
+          <ScrollView
+            contentContainerStyle={styles.scrollViewContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header Section */}
+            <View style={styles.headerSection}>
+              <View style={styles.logoContainer}>
+                <Text style={styles.appName}>Unilang</Text>
               </View>
-              <FlatList
-                data={SUPPORTED_LANGUAGES}
-                keyExtractor={(item) => item.code}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={[
-                      styles.languageOption,
-                      selectedLanguage === item.code &&
-                        styles.languageOptionSelected,
-                    ]}
-                    onPress={() => {
-                      setSelectedLanguage(item.code);
-                      setLanguageMenuVisible(false);
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.languageOptionText,
-                        selectedLanguage === item.code &&
-                          styles.languageOptionTextSelected,
-                      ]}
-                    >
-                      {item.name}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              />
+              <Text style={styles.tagline}>Chat freely, in any language</Text>
             </View>
+
+            {/* Form Card with Frosted Glass Effect */}
+            <BlurView intensity={90} style={styles.blurContainer}>
+              <View style={styles.formCard}>
+                <Text style={styles.formTitle}>Join Unilang</Text>
+                <Text style={styles.formSubtitle}>Create your account</Text>
+
+                {/* Name Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Full Name</Text>
+                  <TextInput
+                    value={name}
+                    onChangeText={setName}
+                    mode="outlined"
+                    placeholder="John Doe"
+                    editable={!isLoading}
+                    style={styles.input}
+                    outlineColor="#E2E8F0"
+                    activeOutlineColor={colorPalette.primary}
+                  />
+                </View>
+
+                {/* Email Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Email</Text>
+                  <TextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    mode="outlined"
+                    placeholder="you@example.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    editable={!isLoading}
+                    style={styles.input}
+                    outlineColor="#E2E8F0"
+                    activeOutlineColor={colorPalette.primary}
+                  />
+                </View>
+
+                {/* Password Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Password</Text>
+                  <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    mode="outlined"
+                    placeholder="••••••••"
+                    secureTextEntry={!showPassword}
+                    right={
+                      <TextInput.Icon
+                        icon={showPassword ? "eye-off" : "eye"}
+                        onPress={() => setShowPassword(!showPassword)}
+                      />
+                    }
+                    editable={!isLoading}
+                    style={styles.input}
+                    outlineColor="#E2E8F0"
+                    activeOutlineColor={colorPalette.primary}
+                  />
+                </View>
+
+                {/* Confirm Password Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Confirm Password</Text>
+                  <TextInput
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    mode="outlined"
+                    placeholder="••••••••"
+                    secureTextEntry={!showConfirmPassword}
+                    right={
+                      <TextInput.Icon
+                        icon={showConfirmPassword ? "eye-off" : "eye"}
+                        onPress={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                      />
+                    }
+                    editable={!isLoading}
+                    style={styles.input}
+                    outlineColor="#E2E8F0"
+                    activeOutlineColor={colorPalette.primary}
+                  />
+                </View>
+
+                {/* Language Selector */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Preferred Language</Text>
+                  <Button
+                    mode="outlined"
+                    onPress={() => setLanguageMenuVisible(true)}
+                    disabled={isLoading}
+                    style={styles.languageButton}
+                    labelStyle={styles.languageButtonLabel}
+                  >
+                    {selectedLanguageLabel}
+                  </Button>
+                </View>
+
+                {/* Sign Up Button */}
+                <Button
+                  mode="contained"
+                  onPress={handleSignUp}
+                  loading={isLoading}
+                  disabled={isLoading}
+                  style={styles.signUpButton}
+                  labelStyle={styles.buttonLabel}
+                >
+                  Create Account
+                </Button>
+              </View>
+            </BlurView>
+
+            {/* Sign In Link Section */}
+            <View style={styles.footerSection}>
+              <Text style={styles.footerText}>Already have an account? </Text>
+              <Text
+                style={styles.signInLink}
+                onPress={() => navigation.navigate("Login")}
+              >
+                Sign in
+              </Text>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+
+      {/* Error Snackbar */}
+      <Snackbar
+        visible={!!error}
+        onDismiss={() => setError(null)}
+        duration={4000}
+        style={styles.snackbar}
+      >
+        {error}
+      </Snackbar>
+
+      {/* Language Picker Modal */}
+      <Modal
+        visible={languageMenuVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setLanguageMenuVisible(false)}
+      >
+        <SafeAreaView style={styles.modalOverlay}>
+          <View style={styles.modalHandle} />
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Language</Text>
+            <TouchableOpacity onPress={() => setLanguageMenuVisible(false)}>
+              <Text style={styles.modalClose}>✕</Text>
+            </TouchableOpacity>
           </View>
-        </Modal>
-      </KeyboardAvoidingView>
+          <FlatList
+            data={SUPPORTED_LANGUAGES}
+            keyExtractor={(item) => item.code}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.languageOption,
+                  selectedLanguage === item.code &&
+                    styles.languageOptionSelected,
+                ]}
+                onPress={() => {
+                  setSelectedLanguage(item.code);
+                  setLanguageMenuVisible(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.languageOptionText,
+                    selectedLanguage === item.code &&
+                      styles.languageOptionTextSelected,
+                  ]}
+                >
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            )}
+            contentContainerStyle={styles.languageListContainer}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -267,124 +301,169 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#F8FAFC",
+  },
+  gradient: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
   },
   scrollViewContent: {
     flexGrow: 1,
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 32,
   },
-  header: {
+  headerSection: {
     alignItems: "center",
     marginBottom: 40,
   },
+  logoContainer: {
+    marginBottom: 16,
+  },
   appName: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#2196F3",
-    marginBottom: 8,
+    fontSize: 42,
+    fontWeight: "700",
+    color: colorPalette.primary,
+    letterSpacing: -0.5,
   },
-  subtitle: {
-    fontSize: 14,
-    color: "#666",
-  },
-  form: {
-    backgroundColor: "white",
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  formTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 20,
-    color: "#333",
-  },
-  input: {
-    marginBottom: 16,
-  },
-  languageContainer: {
-    marginBottom: 16,
-  },
-  languageLabel: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 8,
+  tagline: {
+    fontSize: 16,
+    color: colorPalette.neutral[600],
     fontWeight: "500",
   },
+  blurContainer: {
+    borderRadius: 24,
+    overflow: "hidden",
+    marginBottom: 32,
+  },
+  formCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    paddingHorizontal: 28,
+    paddingVertical: 28,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.5)",
+  },
+  formTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
+    marginBottom: 8,
+  },
+  formSubtitle: {
+    fontSize: 14,
+    color: colorPalette.neutral[600],
+    marginBottom: 24,
+  },
+  inputGroup: {
+    marginBottom: 18,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colorPalette.neutral[700],
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  input: {
+    backgroundColor: "rgba(248, 250, 252, 0.6)",
+    borderRadius: 12,
+    fontSize: 16,
+  },
   languageButton: {
-    justifyContent: "center",
-    paddingVertical: 8,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    backgroundColor: "rgba(248, 250, 252, 0.6)",
+  },
+  languageButtonLabel: {
+    fontSize: 16,
+    color: colorPalette.neutral[700],
   },
   signUpButton: {
     marginTop: 8,
-    paddingVertical: 8,
+    paddingVertical: 12,
+    backgroundColor: colorPalette.primary,
+    borderRadius: 12,
   },
-  footer: {
+  buttonLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  footerSection: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    paddingTop: 16,
   },
   footerText: {
-    color: "#666",
-    fontSize: 13,
+    color: colorPalette.neutral[600],
+    fontSize: 14,
   },
   signInLink: {
-    color: "#2196F3",
-    fontWeight: "600",
-    fontSize: 13,
+    color: colorPalette.primary,
+    fontWeight: "700",
+    fontSize: 14,
   },
   snackbar: {
-    backgroundColor: "#f44336",
+    backgroundColor: colorPalette.error,
+    marginBottom: 20,
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "flex-end",
   },
-  modalContent: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 20,
-    width: "80%",
-    alignItems: "center",
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: colorPalette.neutral[300],
+    borderRadius: 2,
+    alignSelf: "center",
+    marginTop: 8,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    width: "100%",
-    marginBottom: 15,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colorPalette.neutral[200],
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 18,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
   },
   modalClose: {
     fontSize: 24,
-    color: "#666",
+    color: colorPalette.neutral[600],
+    fontWeight: "600",
+  },
+  languageListContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
   },
   languageOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: colorPalette.neutral[100],
+    borderRadius: 12,
   },
   languageOptionSelected: {
-    backgroundColor: "#e0f2f7",
-    borderRadius: 5,
+    backgroundColor: colorPalette.primary,
   },
   languageOptionText: {
     fontSize: 16,
-    color: "#333",
+    color: colorPalette.neutral[900],
+    fontWeight: "500",
   },
   languageOptionTextSelected: {
-    fontWeight: "bold",
-    color: "#2196F3",
+    color: "white",
+    fontWeight: "700",
   },
 });

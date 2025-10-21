@@ -7,23 +7,12 @@ import {
   Platform,
   SafeAreaView,
 } from "react-native";
-import {
-  TextInput,
-  Button,
-  Text,
-  Snackbar,
-  ActivityIndicator,
-} from "react-native-paper";
-// import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { TextInput, Button, Text, Snackbar } from "react-native-paper";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { signIn } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
-
-// // Initialize Google Sign-In (disabled for Expo Go - requires native build)
-// GoogleSignin.configure({
-//   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-//   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-//   offlineAccess: true,
-// });
+import { colorPalette } from "../../utils/theme";
 
 interface LoginScreenProps {
   navigation: any;
@@ -43,7 +32,6 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
   } = useAuthStore();
 
   const handleLogin = async () => {
-    // Validation
     if (!email.trim()) {
       setError("Please enter your email");
       return;
@@ -61,8 +49,6 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
 
       if (result.success) {
         console.log("✅ Login successful");
-        // Navigation will be handled by auth state observer in App.tsx
-        // Store is updated by auth observer
       } else {
         setError(result.error || "Login failed. Please try again.");
         setStoreError(result.error || null);
@@ -77,136 +63,125 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
     }
   };
 
-  // Disabled Google Sign-In for Expo Go (requires native module)
-  // const handleGoogleSignIn = async () => {
-  //   setIsLoading(true);
-  //   setError(null);
-
-  //   try {
-  //     await GoogleSignin.hasPlayServices();
-  //     const userInfo = await GoogleSignin.signIn();
-
-  //     if (userInfo.data?.idToken) {
-  //       const result = await signInWithGoogle(userInfo.data.idToken);
-
-  //       if (result.success) {
-  //         console.log("✅ Google Sign-In successful");
-  //       } else {
-  //         setError(result.error || "Google Sign-In failed. Please try again.");
-  //         setStoreError(result.error || null);
-  //       }
-  //     } else {
-  //       setError("Failed to get Google credentials");
-  //     }
-  //   } catch (err) {
-  //     if (err instanceof Error) {
-  //       if (err.message.includes("Sign in action cancelled")) {
-  //         console.log("Google Sign-In cancelled by user");
-  //       } else {
-  //         setError(err.message);
-  //         setStoreError(err.message);
-  //       }
-  //     } else {
-  //       const errorMessage = "Google Sign-In failed";
-  //       setError(errorMessage);
-  //       setStoreError(errorMessage);
-  //     }
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}
+      <LinearGradient
+        colors={["#F8FAFC", "#E2E8F0"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollViewContent}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardView}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.appName}>Unilang</Text>
-            <Text style={styles.subtitle}>Real-time Messaging</Text>
-          </View>
+          <ScrollView
+            contentContainerStyle={styles.scrollViewContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header Section */}
+            <View style={styles.headerSection}>
+              <View style={styles.logoContainer}>
+                <Text style={styles.appName}>Unilang</Text>
+              </View>
+              <Text style={styles.tagline}>Chat freely, in any language</Text>
+            </View>
 
-          {/* Form */}
-          <View style={styles.form}>
-            <Text style={styles.formTitle}>Sign In</Text>
+            {/* Form Card with Frosted Glass Effect */}
+            <BlurView intensity={90} style={styles.blurContainer}>
+              <View style={styles.formCard}>
+                <Text style={styles.formTitle}>Welcome back</Text>
+                <Text style={styles.formSubtitle}>Sign in to your account</Text>
 
-            {/* Email Input */}
-            <TextInput
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              mode="outlined"
-              placeholder="you@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={!isLoading}
-              style={styles.input}
-            />
+                {/* Email Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Email</Text>
+                  <TextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    mode="outlined"
+                    placeholder="you@example.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    editable={!isLoading}
+                    style={styles.input}
+                    outlineColor="#E2E8F0"
+                    activeOutlineColor={colorPalette.primary}
+                  />
+                </View>
 
-            {/* Password Input */}
-            <TextInput
-              label="Password"
-              value={password}
-              onChangeText={setPassword}
-              mode="outlined"
-              placeholder="••••••••"
-              secureTextEntry={!showPassword}
-              right={
-                <TextInput.Icon
-                  icon={showPassword ? "eye-off" : "eye"}
-                  onPress={() => setShowPassword(!showPassword)}
-                />
-              }
-              editable={!isLoading}
-              style={styles.input}
-            />
+                {/* Password Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Password</Text>
+                  <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    mode="outlined"
+                    placeholder="••••••••"
+                    secureTextEntry={!showPassword}
+                    right={
+                      <TextInput.Icon
+                        icon={showPassword ? "eye-off" : "eye"}
+                        onPress={() => setShowPassword(!showPassword)}
+                      />
+                    }
+                    editable={!isLoading}
+                    style={styles.input}
+                    outlineColor="#E2E8F0"
+                    activeOutlineColor={colorPalette.primary}
+                  />
+                </View>
 
-            {/* Login Button */}
-            <Button
-              mode="contained"
-              onPress={handleLogin}
-              loading={isLoading}
-              disabled={isLoading}
-              style={styles.loginButton}
-            >
-              Sign In
-            </Button>
+                {/* Sign In Button */}
+                <Button
+                  mode="contained"
+                  onPress={handleLogin}
+                  loading={isLoading}
+                  disabled={isLoading}
+                  style={styles.loginButton}
+                  labelStyle={styles.buttonLabel}
+                >
+                  Sign In
+                </Button>
 
-            {/* Note about Google Sign-In */}
-            <Text style={styles.note}>
-              💡 Google Sign-In is disabled in Expo Go (requires native build).
-              Use email/password to test.
-            </Text>
-          </View>
+                {/* Divider */}
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>or</Text>
+                  <View style={styles.dividerLine} />
+                </View>
 
-          {/* Sign Up Link */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <Text
-              style={styles.signUpLink}
-              onPress={() => navigation.navigate("SignUp")}
-            >
-              Sign Up
-            </Text>
-          </View>
-        </ScrollView>
+                {/* Info Text */}
+                <Text style={styles.infoText}>
+                  💡 Testing tip: Use email/password to sign in
+                </Text>
+              </View>
+            </BlurView>
 
-        {/* Error Snackbar */}
-        <Snackbar
-          visible={!!error}
-          onDismiss={() => setError(null)}
-          duration={4000}
-          style={styles.snackbar}
-        >
-          {error}
-        </Snackbar>
-      </KeyboardAvoidingView>
+            {/* Sign Up Link Section */}
+            <View style={styles.footerSection}>
+              <Text style={styles.footerText}>Don't have an account? </Text>
+              <Text
+                style={styles.signUpLink}
+                onPress={() => navigation.navigate("SignUp")}
+              >
+                Create one
+              </Text>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+
+      {/* Error Snackbar */}
+      <Snackbar
+        visible={!!error}
+        onDismiss={() => setError(null)}
+        duration={4000}
+        style={styles.snackbar}
+      >
+        {error}
+      </Snackbar>
     </SafeAreaView>
   );
 };
@@ -214,71 +189,128 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#F8FAFC",
+  },
+  gradient: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
   },
   scrollViewContent: {
     flexGrow: 1,
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 32,
   },
-  header: {
+  headerSection: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 48,
+  },
+  logoContainer: {
+    marginBottom: 16,
   },
   appName: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#2196F3",
-    marginBottom: 8,
+    fontSize: 42,
+    fontWeight: "700",
+    color: colorPalette.primary,
+    letterSpacing: -0.5,
   },
-  subtitle: {
-    fontSize: 14,
-    color: "#666",
+  tagline: {
+    fontSize: 16,
+    color: colorPalette.neutral[600],
+    fontWeight: "500",
   },
-  form: {
-    backgroundColor: "white",
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    borderRadius: 12,
-    marginBottom: 20,
+  blurContainer: {
+    borderRadius: 24,
+    overflow: "hidden",
+    marginBottom: 32,
+  },
+  formCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    paddingHorizontal: 28,
+    paddingVertical: 32,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.5)",
   },
   formTitle: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: 28,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
+    marginBottom: 8,
+  },
+  formSubtitle: {
+    fontSize: 14,
+    color: colorPalette.neutral[600],
+    marginBottom: 28,
+  },
+  inputGroup: {
     marginBottom: 20,
-    color: "#333",
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colorPalette.neutral[700],
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   input: {
-    marginBottom: 16,
+    backgroundColor: "rgba(248, 250, 252, 0.6)",
+    borderRadius: 12,
+    fontSize: 16,
   },
   loginButton: {
     marginTop: 8,
-    paddingVertical: 8,
+    paddingVertical: 12,
+    backgroundColor: colorPalette.primary,
+    borderRadius: 12,
   },
-  note: {
+  buttonLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colorPalette.neutral[200],
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    color: colorPalette.neutral[500],
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  infoText: {
     fontSize: 12,
-    color: "#666",
-    marginTop: 16,
+    color: colorPalette.neutral[600],
+    textAlign: "center",
     fontStyle: "italic",
     lineHeight: 18,
   },
-  footer: {
+  footerSection: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    paddingTop: 16,
   },
   footerText: {
-    color: "#666",
-    fontSize: 13,
+    color: colorPalette.neutral[600],
+    fontSize: 14,
   },
   signUpLink: {
-    color: "#2196F3",
-    fontWeight: "600",
-    fontSize: 13,
+    color: colorPalette.primary,
+    fontWeight: "700",
+    fontSize: 14,
   },
   snackbar: {
-    backgroundColor: "#f44336",
+    backgroundColor: colorPalette.error,
+    marginBottom: 20,
   },
 });

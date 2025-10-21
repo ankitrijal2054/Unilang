@@ -16,7 +16,7 @@ import {
 import { createDirectChat } from "../../services/chatService";
 import { User } from "../../types";
 
-interface NewChatScreenProps {
+interface ContactsListScreenProps {
   navigation: any;
 }
 
@@ -78,17 +78,20 @@ const UserItem: React.FC<UserItemProps> = ({
       </View>
 
       {/* Arrow Icon */}
-      <MaterialCommunityIcons name="chevron-right" size={24} color="#999" />
+      {!isCurrentUser && (
+        <MaterialCommunityIcons name="chevron-right" size={24} color="#999" />
+      )}
     </TouchableOpacity>
   );
 };
 
-export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
+export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
+  navigation,
+}) => {
   const { user: currentUser } = useAuthStore();
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
 
   // Fetch all users and setup real-time listeners
   useEffect(() => {
@@ -96,6 +99,7 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
 
     const fetchUsers = async () => {
       try {
+        // Guard: only fetch if we have current user
         if (!currentUser?.uid) {
           setAllUsers([]);
           setLoading(false);
@@ -106,23 +110,30 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
         const result = await getAllUsers();
 
         if (result.success && result.users) {
+          // Filter out current user and sort by online status
           const filteredUsers = result.users
-            .filter((u) => u.uid !== currentUser.uid)
+            .filter((u) => u.uid !== currentUser.uid) // Exclude self
             .sort((a, b) => {
+              // Online users first
               if (a.status === "online" && b.status !== "online") return -1;
               if (a.status !== "online" && b.status === "online") return 1;
+              // Then by name
               return a.name.localeCompare(b.name);
             });
 
           setAllUsers(filteredUsers);
+          console.log("✅ Users fetched:", filteredUsers.length);
 
+          // Setup real-time listeners for each user's presence
           filteredUsers.forEach((user) => {
             const unsub = subscribeToUserPresence(user.uid, (updatedUser) => {
               if (updatedUser) {
+                // Update the user in the list
                 setAllUsers((prev) =>
                   prev
                     .map((u) => (u.uid === updatedUser.uid ? updatedUser : u))
                     .sort((a, b) => {
+                      // Re-sort to move online users to top
                       if (a.status === "online" && b.status !== "online")
                         return -1;
                       if (a.status !== "online" && b.status === "online")
@@ -136,7 +147,7 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
           });
         }
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("❌ Error fetching users:", error);
       } finally {
         setLoading(false);
       }
@@ -145,6 +156,7 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
     fetchUsers();
 
     return () => {
+      console.log("🧹 Cleaning up user presence listeners");
       unsubscribers.forEach((unsub) => unsub());
     };
   }, [currentUser?.uid]);
@@ -164,25 +176,10 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
   }, [allUsers, searchText]);
 
   const handleUserPress = async (selectedUser: User) => {
-    // Directly create and open chat with selected user
-    if (creating) return;
-
-    try {
-      setCreating(true);
-      const result = await createDirectChat(currentUser!.uid, selectedUser.uid);
-
-      if (result.success && result.chatId) {
-        navigation.navigate("Chat", {
-          chatId: result.chatId,
-          chatName: selectedUser.name,
-          chatType: "direct",
-        });
-      }
-    } catch (error) {
-      console.error("Error creating chat:", error);
-    } finally {
-      setCreating(false);
-    }
+    // Navigate to contact card to show user profile
+    navigation.navigate("ContactCard", {
+      userId: selectedUser.uid,
+    });
   };
 
   const renderUserItem = ({ item }: { item: User }) => (
@@ -190,14 +187,23 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
       user={item}
       isCurrentUser={false}
       onPress={handleUserPress}
-      loading={creating}
+      loading={false} // No longer creating chat, so loading is false
     />
   );
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
+      <MaterialCommunityIcons
+        name="account-search-outline"
+        size={64}
+        color="#ccc"
+      />
       <Text style={styles.emptyTitle}>No Users Found</Text>
-      <Text style={styles.emptySubtitle}>Start a new conversation</Text>
+      <Text style={styles.emptySubtitle}>
+        {searchText
+          ? "Try searching with a different name or email"
+          : "No other users available yet"}
+      </Text>
     </View>
   );
 
@@ -205,28 +211,29 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
     <View style={styles.container}>
       {/* Header */}
       <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.navigate("ChatList")} />
-        <Appbar.Content title="New Chat" subtitle="Select a user" />
+        <Appbar.BackAction onPress={() => navigation.goBack()} />
+        <Appbar.Content title="Contacts" subtitle="Select to view profile" />
       </Appbar.Header>
 
       {/* Search Input */}
       <View style={styles.searchContainer}>
         <TextInput
-          placeholder="Search users..."
+          placeholder="Search by name or email..."
           value={searchText}
           onChangeText={setSearchText}
-          mode="flat"
+          mode="outlined"
           left={<TextInput.Icon icon="magnify" />}
           style={styles.searchInput}
-          editable={!loading && !creating}
+          editable={!loading}
           dense
         />
       </View>
 
-      {/* User List */}
+      {/* Users List */}
       {loading ? (
-        <View style={styles.centerContainer}>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#2196F3" />
+          <Text style={styles.loadingText}>Loading users...</Text>
         </View>
       ) : (
         <FlatList
@@ -234,7 +241,10 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
           renderItem={renderUserItem}
           keyExtractor={(item) => item.uid}
           ListEmptyComponent={renderEmpty}
-          contentContainerStyle={styles.listContent}
+          scrollEnabled={true}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={20}
+          windowSize={10}
         />
       )}
     </View>
@@ -244,80 +254,26 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#f5f5f5",
   },
   searchContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    padding: 12,
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
   searchInput: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f9f9f9",
   },
-  userItemContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  disabledItem: {
-    opacity: 0.5,
-  },
-  avatarContainer: {
-    position: "relative",
-    marginRight: 12,
-  },
-  avatar: {
-    backgroundColor: "#2196F3",
-  },
-  onlineIndicator: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: "#4CAF50",
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-  userInfo: {
+  loadingContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  userName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
-  },
-  userEmail: {
-    fontSize: 13,
+  loadingText: {
+    marginTop: 12,
     color: "#666",
-    marginBottom: 2,
-  },
-  userStatus: {
-    fontSize: 12,
-  },
-  onlineStatus: {
-    color: "#4CAF50",
-    fontWeight: "500",
-  },
-  offlineStatus: {
-    color: "#999",
-  },
-  disabledText: {
-    opacity: 0.5,
-  },
-  listContent: {
-    paddingVertical: 8,
+    fontSize: 14,
   },
   emptyContainer: {
     flex: 1,
@@ -327,14 +283,73 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600",
     color: "#333",
+    marginTop: 16,
     marginBottom: 8,
     textAlign: "center",
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#666",
     textAlign: "center",
+    lineHeight: 20,
+  },
+  userItemContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+    backgroundColor: "#fff",
+  },
+  disabledItem: {
+    opacity: 0.6,
+  },
+  avatarContainer: {
+    position: "relative",
+    marginRight: 12,
+  },
+  avatar: {
+    backgroundColor: "#e3f2fd",
+  },
+  onlineIndicator: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#4caf50",
+    borderWidth: 2,
+    borderColor: "white",
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 12,
+    color: "#999",
+    marginBottom: 4,
+  },
+  userStatus: {
+    fontSize: 11,
+  },
+  onlineStatus: {
+    color: "#4caf50",
+    fontWeight: "500",
+  },
+  offlineStatus: {
+    color: "#999",
+  },
+  disabledText: {
+    color: "#999",
   },
 });

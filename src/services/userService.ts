@@ -6,6 +6,7 @@ import {
   onSnapshot,
   Unsubscribe,
   getDocs,
+  getDoc,
 } from "firebase/firestore";
 import { User } from "../types";
 import { COLLECTIONS } from "../utils/constants";
@@ -134,6 +135,41 @@ export const updateUserFCMToken = async (
     return { success: true };
   } catch (error) {
     console.error("❌ Error updating FCM token:", error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Get a single user by ID
+ */
+export const getUserById = async (
+  userId: string
+): Promise<{
+  success: boolean;
+  user?: User;
+  error?: any;
+}> => {
+  try {
+    const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
+
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      const user: User = {
+        uid: userDoc.id,
+        name: data.name,
+        email: data.email,
+        preferred_language: data.preferred_language,
+        status: data.status,
+        lastSeen: data.lastSeen,
+        fcmToken: data.fcmToken,
+        createdAt: data.createdAt,
+      };
+      return { success: true, user };
+    } else {
+      return { success: false, error: "User not found" };
+    }
+  } catch (error) {
+    console.error("❌ Error fetching user:", error);
     return { success: false, error };
   }
 };

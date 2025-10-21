@@ -4,7 +4,11 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ChatListScreen } from "../screens/ChatsTab/ChatListScreen";
 import { ChatScreen } from "../screens/ChatsTab/ChatScreen";
+import { GroupInfoScreen } from "../screens/ChatsTab/GroupInfoScreen";
 import { NewChatScreen } from "../screens/ContactsTab/NewChatScreen";
+import { ContactsListScreen } from "../screens/ContactsTab/ContactsListScreen";
+import { ContactCardScreen } from "../screens/ContactsTab/ContactCardScreen";
+import { NewGroupScreen } from "../screens/ContactsTab/NewGroupScreen";
 import { ProfileScreen } from "../screens/ProfileTab/ProfileScreen";
 
 const Stack = createNativeStackNavigator();
@@ -25,10 +29,22 @@ const ChatsStack = () => (
       options={{ title: "Chats" }}
     />
     <Stack.Screen
+      name="QuickChat"
+      component={NewChatScreen}
+      options={{ title: "New Chat" }}
+    />
+    <Stack.Screen
       name="Chat"
       component={ChatScreen}
       options={{
         title: "Chat",
+      }}
+    />
+    <Stack.Screen
+      name="GroupInfo"
+      component={GroupInfoScreen}
+      options={{
+        title: "Group Info",
       }}
     />
   </Stack.Navigator>
@@ -44,9 +60,21 @@ const ContactsStack = () => (
     }}
   >
     <Stack.Screen
-      name="NewChat"
-      component={NewChatScreen}
-      options={{ title: "New Chat" }}
+      name="Contacts"
+      component={ContactsListScreen}
+      options={{ title: "Contacts" }}
+    />
+    <Stack.Screen
+      name="ContactCard"
+      component={ContactCardScreen}
+      options={{
+        title: "Contact Details",
+      }}
+    />
+    <Stack.Screen
+      name="NewGroup"
+      component={NewGroupScreen}
+      options={{ title: "New Group" }}
     />
     <Stack.Screen
       name="Chat"

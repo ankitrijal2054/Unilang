@@ -86,7 +86,13 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
   };
 
   const handleNewChat = () => {
-    navigation.getParent().navigate("ContactsTab");
+    navigation.navigate("QuickChat");
+  };
+
+  const handleNewGroup = () => {
+    navigation.getParent().navigate("ContactsTab", {
+      screen: "NewGroup",
+    });
   };
 
   const renderChatItem = ({ item }: { item: Chat }) => (
@@ -119,6 +125,7 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
       <Appbar.Header>
         <Appbar.Content title="Unilang" subtitle="Messages" />
         <Appbar.Action icon="plus" onPress={handleNewChat} />
+        <Appbar.Action icon="account-group" onPress={handleNewGroup} />
       </Appbar.Header>
 
       {/* Loading state */}

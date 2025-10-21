@@ -79,6 +79,7 @@ export const subscribeToMessages = (
             data.timestamp?.toDate?.().toISOString() ||
             new Date().toISOString(),
           status: data.status,
+          type: data.type || "user", // Map type field (default to "user")
           ai: data.ai || {
             translated_text: "",
             detected_language: "",

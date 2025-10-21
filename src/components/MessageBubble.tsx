@@ -112,6 +112,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       prevProps.message.id === nextProps.message.id &&
       prevProps.message.text === nextProps.message.text &&
       prevProps.message.status === nextProps.message.status &&
+      prevProps.message.type === nextProps.message.type &&
       prevProps.isOwnMessage === nextProps.isOwnMessage &&
       prevProps.senderName === nextProps.senderName
     );
@@ -190,17 +191,18 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   systemMessageContainer: {
-    marginVertical: 8,
+    marginVertical: 12,
     marginHorizontal: 12,
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
   systemMessageText: {
     fontSize: 13,
-    color: "#555",
+    color: "#65676b",
     textAlign: "center",
+    fontStyle: "italic",
+    fontWeight: "500",
   },
 });

@@ -311,9 +311,12 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   };
 
   const renderMessageItem = ({ item }: { item: Message }) => {
+    // System messages should not show sender name
+    const isSystemMessage = item.type === "system";
     const isOwnMessage = item.senderId === user?.uid;
+
     const senderName =
-      chatType === "group" && !isOwnMessage
+      !isSystemMessage && chatType === "group" && !isOwnMessage
         ? senderNames[item.senderId] || "Unknown User"
         : undefined;
 
@@ -321,7 +324,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       <MessageBubble
         message={item}
         isOwnMessage={isOwnMessage}
-        showSenderName={chatType === "group" && !isOwnMessage}
+        showSenderName={
+          !isSystemMessage && chatType === "group" && !isOwnMessage
+        }
         senderName={senderName}
       />
     );

@@ -137,3 +137,39 @@ export const updateUserFCMToken = async (
     return { success: false, error };
   }
 };
+
+/**
+ * Get a single user by ID
+ */
+export const getUserById = async (
+  userId: string
+): Promise<{
+  success: boolean;
+  user?: User;
+  error?: any;
+}> => {
+  try {
+    const { getDoc } = await import("firebase/firestore");
+    const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, userId));
+
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      const user: User = {
+        uid: userDoc.id,
+        name: data.name,
+        email: data.email,
+        preferred_language: data.preferred_language,
+        status: data.status,
+        lastSeen: data.lastSeen,
+        fcmToken: data.fcmToken,
+        createdAt: data.createdAt,
+      };
+      return { success: true, user };
+    } else {
+      return { success: false, error: "User not found" };
+    }
+  } catch (error) {
+    console.error("❌ Error fetching user:", error);
+    return { success: false, error };
+  }
+};

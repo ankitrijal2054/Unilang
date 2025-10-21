@@ -51,6 +51,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
   const flatListRef = useRef<SectionList>(null);
   const optimisticMessagesRef = useRef<Set<string>>(new Set());
+  const senderNamesRef = useRef<{ [key: string]: string }>({});
 
   // Group messages by date
   const groupedMessages: MessageGroup[] = React.useMemo(() => {
@@ -146,6 +147,32 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     };
   }, [chatId, user?.uid]);
 
+  // Fetch sender names for group chat messages
+  useEffect(() => {
+    if (chatType !== "group" || messages.length === 0) {
+      return;
+    }
+
+    const fetchSenderNames = async () => {
+      const { getUserById } = await import("../../services/userService");
+
+      for (const msg of messages) {
+        if (!senderNamesRef.current[msg.senderId]) {
+          try {
+            const result = await getUserById(msg.senderId);
+            if (result.success && result.user) {
+              senderNamesRef.current[msg.senderId] = result.user.name;
+            }
+          } catch (error) {
+            console.error("Error fetching sender name:", error);
+          }
+        }
+      }
+    };
+
+    fetchSenderNames();
+  }, [messages, chatType]);
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (groupedMessages.length > 0) {
@@ -194,6 +221,12 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const getPresenceColor = (): string => {
     if (chatType === "group") return "transparent";
     return otherUser?.status === "online" ? "#4CAF50" : "#999";
+  };
+
+  const handleOpenGroupInfo = () => {
+    if (chatType === "group") {
+      navigation.navigate("GroupInfo", { chatId });
+    }
   };
 
   const handleSendMessage = async () => {
@@ -255,13 +288,17 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
   const renderMessageItem = ({ item }: { item: Message }) => {
     const isOwnMessage = item.senderId === user?.uid;
+    const senderName =
+      chatType === "group" && !isOwnMessage
+        ? senderNamesRef.current[item.senderId] || "Unknown User"
+        : undefined;
 
     return (
       <MessageBubble
         message={item}
         isOwnMessage={isOwnMessage}
         showSenderName={chatType === "group" && !isOwnMessage}
-        senderName="User"
+        senderName={senderName}
       />
     );
   };
@@ -297,8 +334,15 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               />
             )}
           </View>
-          <Text style={styles.headerSubtitle}>{getHeaderSubtitle()}</Text>
+          <Text style={styles.headerSubtitle}>
+            {chatType === "group"
+              ? `${chat?.participants?.length || 0} participants`
+              : getHeaderSubtitle()}
+          </Text>
         </View>
+        {chatType === "group" && (
+          <Appbar.Action icon="information" onPress={handleOpenGroupInfo} />
+        )}
       </Appbar.Header>
 
       {/* Messages List */}

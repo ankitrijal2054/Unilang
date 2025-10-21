@@ -3,6 +3,7 @@ import {
   createGroupChat,
   subscribeToUserChats,
   updateChatLastMessage,
+  updateChat,
 } from "../chatService";
 import * as firestoreLib from "firebase/firestore";
 
@@ -240,6 +241,113 @@ describe("chatService", () => {
         "Hello",
         new Date()
       );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+  });
+
+  describe("updateChat", () => {
+    it("should update group name", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      const result = await updateChat("chat123", { name: "New Group Name" });
+
+      expect(result.success).toBe(true);
+      expect(firestoreLib.updateDoc).toHaveBeenCalled();
+      const callArgs = (firestoreLib.updateDoc as jest.Mock).mock.calls[0];
+      expect(callArgs[1]).toEqual(
+        expect.objectContaining({
+          name: "New Group Name",
+        })
+      );
+    });
+
+    it("should add members to group (update participants)", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      const newParticipants = ["user1", "user2", "user3", "user4"];
+      const result = await updateChat("chat123", {
+        participants: newParticipants,
+      });
+
+      expect(result.success).toBe(true);
+      const callArgs = (firestoreLib.updateDoc as jest.Mock).mock.calls[0];
+      expect(callArgs[1]).toEqual(
+        expect.objectContaining({
+          participants: newParticipants,
+        })
+      );
+    });
+
+    it("should remove member from group (update participants array)", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      const newParticipants = ["user1", "user3"]; // user2 removed
+      const result = await updateChat("chat123", {
+        participants: newParticipants,
+      });
+
+      expect(result.success).toBe(true);
+      expect(newParticipants.length).toBe(2);
+      expect(newParticipants).not.toContain("user2");
+    });
+
+    it("should delete group by setting isDeleted flag", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      const result = await updateChat("chat123", { isDeleted: true });
+
+      expect(result.success).toBe(true);
+      const callArgs = (firestoreLib.updateDoc as jest.Mock).mock.calls[0];
+      expect(callArgs[1]).toEqual(
+        expect.objectContaining({
+          isDeleted: true,
+        })
+      );
+    });
+
+    it("should handle member leaving group", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      const newParticipants = ["user1", "user3", "user4"]; // user2 (self) left
+      const result = await updateChat("chat123", {
+        participants: newParticipants,
+      });
+
+      expect(result.success).toBe(true);
+      expect(newParticipants.length).toBe(3);
+    });
+
+    it("should update multiple fields at once", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      const updates = {
+        name: "Updated Group",
+        participants: ["user1", "user2"],
+      };
+      const result = await updateChat("chat123", updates);
+
+      expect(result.success).toBe(true);
+      const callArgs = (firestoreLib.updateDoc as jest.Mock).mock.calls[0];
+      expect(callArgs[1]).toEqual(expect.objectContaining(updates));
+    });
+
+    it("should include updatedAt timestamp in update", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      await updateChat("chat123", { name: "New Name" });
+
+      const callArgs = (firestoreLib.updateDoc as jest.Mock).mock.calls[0];
+      expect(callArgs[1]).toHaveProperty("updatedAt");
+    });
+
+    it("should handle update errors", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockRejectedValue(
+        new Error("Update failed")
+      );
+
+      const result = await updateChat("chat123", { name: "New Name" });
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();

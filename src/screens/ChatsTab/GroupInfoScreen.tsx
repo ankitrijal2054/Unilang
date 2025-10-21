@@ -305,6 +305,7 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
   const renderMemberItem = ({ item }: { item: User }) => {
     const isAdmin = item.uid === chat?.adminId;
     const isCurrentUser = item.uid === user?.uid;
+    const isCurrentUserAdmin = user?.uid === chat?.adminId;
 
     return (
       <View style={styles.memberItem}>
@@ -314,14 +315,15 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
           </Text>
           {isAdmin && <Text style={styles.adminBadge}>Admin</Text>}
         </View>
-        {isAdmin && user?.uid === chat?.adminId && !isCurrentUser && (
+        {isCurrentUserAdmin && !isCurrentUser && (
           <Button
-            compact
+            icon="minus"
+            mode="text"
+            textColor="#d32f2f"
             onPress={() => handleRemoveMember(item.uid, item.name)}
             disabled={updating}
-          >
-            Remove
-          </Button>
+            compact
+          />
         )}
       </View>
     );

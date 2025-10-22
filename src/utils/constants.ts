@@ -40,4 +40,5 @@ export const COLLECTIONS = {
   USERS: "users",
   CHATS: "chats",
   MESSAGES: "messages",
+  TYPING_STATUS: "typingStatus",
 } as const;

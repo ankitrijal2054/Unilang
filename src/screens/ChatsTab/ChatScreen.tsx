@@ -61,7 +61,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [chat, setChat] = useState<Chat | null>(null);
   const [senderNames, setSenderNames] = useState<{ [key: string]: string }>({});
   const [isNetworkOnline, setIsNetworkOnline] = useState(true);
-  const [showSyncingToast, setShowSyncingToast] = useState(false);
 
   const flatListRef = useRef<SectionList>(null);
   const optimisticMessagesRef = useRef<Set<string>>(new Set());
@@ -330,9 +329,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       setMessages((prev) => [...prev, optimisticMessage]);
 
       // Show syncing toast if offline
-      if (!online) {
-        setShowSyncingToast(true);
-      }
 
       // Send to Firestore
       const result = await sendMessage(chatId, textToSend, user.uid);
@@ -510,18 +506,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           />
         </View>
       </View>
-
-      <Snackbar
-        visible={showSyncingToast}
-        onDismiss={() => setShowSyncingToast(false)}
-        duration={3000}
-        action={{
-          label: "OK",
-          onPress: () => setShowSyncingToast(false),
-        }}
-      >
-        {isNetworkOnline ? "Message sent" : "Sending message offline"}
-      </Snackbar>
     </KeyboardAvoidingView>
   );
 };

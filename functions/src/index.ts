@@ -7,7 +7,6 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import { setGlobalOptions } from "firebase-functions";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
@@ -20,15 +19,15 @@ const messaging = admin.messaging();
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
 
-// For cost control, set the maximum number of containers
-setGlobalOptions({ maxInstances: 10 });
-
 /**
  * Cloud Function triggered on new message creation
  * Sends push notification to all recipients (non-senders) in the chat
  */
 export const sendNotificationOnNewMessage = onDocumentCreated(
-  "messages/{messageId}",
+  {
+    document: "messages/{messageId}",
+    maxInstances: 10, // For cost control
+  },
   async (event) => {
     try {
       const messageId = event.params.messageId;

@@ -28,6 +28,7 @@ import {
 import { updateChatLastMessage } from "../../services/chatService";
 import { subscribeToUserPresence } from "../../services/userService";
 import { subscribeToNetworkStatus, isOnline } from "../../utils/networkUtils";
+import { useMessageStore } from "../../store/messageStore";
 import { Message, User, Chat } from "../../types";
 import { MessageBubble } from "../../components/MessageBubble";
 import { formatMessageDate, formatRelativeTime } from "../../utils/formatters";
@@ -147,8 +148,31 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       return;
     }
 
+    // Check if store is hydrated before reading cached messages
+    const isHydrated = useMessageStore.getState().isHydrated;
+
+    if (!isHydrated) {
+      // Store not ready yet, wait a bit and retry
+      const timer = setTimeout(() => {
+        const cachedMessages = useMessageStore.getState().getMessages(chatId);
+        if (cachedMessages.length > 0) {
+          setMessages(cachedMessages);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+
+    // Store is hydrated, load cached messages immediately (if available)
+    const cachedMessages = useMessageStore.getState().getMessages(chatId);
+    if (cachedMessages.length > 0) {
+      setMessages(cachedMessages); // React state - updates UI
+    }
+
+    // Subscribe to Firestore for real-time updates
     const unsubscribe = subscribeToMessages(chatId, (updatedMessages) => {
-      setMessages(updatedMessages);
+      setMessages(updatedMessages); // React state - updates UI
+      // Also update the persistent store
+      useMessageStore.getState().setMessages(chatId, updatedMessages);
       setLoading(false);
     });
 

@@ -178,15 +178,25 @@ export const updateChatOnNewMessage = onDocumentCreated(
         chatId,
       });
 
+      // Convert Firestore Timestamp to ISO string
+      let timestampISO: string;
+      if (timestamp && timestamp.toDate) {
+        // Firestore Timestamp object
+        timestampISO = timestamp.toDate().toISOString();
+      } else if (timestamp) {
+        // Already a string or Date
+        timestampISO = new Date(timestamp).toISOString();
+      } else {
+        // Fallback to current time
+        timestampISO = new Date().toISOString();
+      }
+
       // Update the chat document
-      await db
-        .collection("chats")
-        .doc(chatId)
-        .update({
-          lastMessage: text,
-          lastMessageTime: timestamp || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
+      await db.collection("chats").doc(chatId).update({
+        lastMessage: text,
+        lastMessageTime: timestampISO,
+        updatedAt: new Date().toISOString(),
+      });
 
       logger.log("✅ Chat document updated:", chatId);
     } catch (error) {

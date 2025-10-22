@@ -294,13 +294,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   };
 
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !user?.uid || sending) {
+    if (!messageText.trim() || !user?.uid) {
       return;
     }
 
     const textToSend = messageText.trim();
     setMessageText("");
-    setSending(true);
+    // Don't set setSending(true) to allow multiple messages to queue
 
     try {
       // Check current network status
@@ -315,7 +315,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         text: textToSend,
         timestamp: new Date().toISOString(),
         status: "sending",
-        localStatus: online ? "sent" : "pending", // Set pending if offline
+        localStatus: online ? undefined : "pending", // Only set pending if offline
         ai: {
           translated_text: "",
           detected_language: "",
@@ -354,9 +354,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     } catch (error) {
       console.error("❌ Error sending message:", error);
       setMessageText(textToSend); // Restore text for retry
-    } finally {
-      setSending(false);
     }
+    // Remove finally block - no need to set setSending(false)
   };
 
   const renderMessageItem = ({
@@ -407,6 +406,19 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       style={styles.container}
       keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
     >
+      {/* Offline Banner - Show at top */}
+      {!isNetworkOnline && (
+        <View style={styles.offlineBanner}>
+          <MaterialCommunityIcons
+            name="wifi-off"
+            size={16}
+            color="#FFF"
+            style={{ marginRight: 8 }}
+          />
+          <Text style={styles.offlineBannerText}>No connection</Text>
+        </View>
+      )}
+
       {/* Header */}
       <Appbar.Header>
         <Appbar.BackAction onPress={() => navigation.popToTop()} />
@@ -609,5 +621,23 @@ const styles = StyleSheet.create({
   sendButton: {
     margin: 0,
     padding: 0,
+  },
+  offlineBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colorPalette.error,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  offlineBannerText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

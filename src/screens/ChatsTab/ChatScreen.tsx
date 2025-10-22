@@ -75,6 +75,16 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     }));
   }, [messages]);
 
+  // Get the ID of the last non-system message for status display
+  const lastMessageId = React.useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].type !== "system") {
+        return messages[i].id;
+      }
+    }
+    return null;
+  }, [messages]);
+
   // Fetch chat data and setup presence listener for direct chats
   useEffect(() => {
     if (!chatId || !user?.uid) {
@@ -314,7 +324,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     }
   };
 
-  const renderMessageItem = ({ item }: { item: Message }) => {
+  const renderMessageItem = ({
+    item,
+  }: {
+    item: Message;
+    index: number;
+    section: MessageGroup;
+  }) => {
     // System messages should not show sender name
     const isSystemMessage = item.type === "system";
     const isOwnMessage = item.senderId === user?.uid;
@@ -324,6 +340,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         ? senderNames[item.senderId] || "Unknown User"
         : undefined;
 
+    // Show status only for the absolute last non-system message
+    const isLatestMessage = !isSystemMessage && item.id === lastMessageId;
+
     return (
       <MessageBubble
         message={item}
@@ -332,6 +351,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           !isSystemMessage && chatType === "group" && !isOwnMessage
         }
         senderName={senderName}
+        isLatestFromUser={isLatestMessage}
       />
     );
   };

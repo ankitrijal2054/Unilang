@@ -11,6 +11,7 @@ interface MessageBubbleProps {
   isOwnMessage: boolean;
   showSenderName?: boolean;
   senderName?: string;
+  isLatestFromUser?: boolean;
 }
 
 /**
@@ -18,7 +19,13 @@ interface MessageBubbleProps {
  * Displays a single message in a chat with modern minimalist design
  */
 export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
-  ({ message, isOwnMessage, showSenderName, senderName }) => {
+  ({
+    message,
+    isOwnMessage,
+    showSenderName,
+    senderName,
+    isLatestFromUser = false,
+  }) => {
     const bubbleStyle = useMemo(
       () => [
         styles.bubble,
@@ -44,7 +51,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       );
     }
 
-    // For own messages, just show the bubble
+    // For own messages, show bubble with status below if latest
     if (isOwnMessage) {
       return (
         <View style={[styles.container, styles.ownContainer]}>
@@ -55,9 +62,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
               <Text style={styles.ownTimestamp}>
                 {formatTime(message.timestamp)}
               </Text>
-              <StatusIndicator status={message.status} size={12} />
             </View>
           </View>
+          {/* Status indicator below and outside bubble for latest message only */}
+          {isLatestFromUser && (
+            <View style={styles.statusContainer}>
+              <StatusIndicator status={message.status} size={14} />
+            </View>
+          )}
         </View>
       );
     }
@@ -112,7 +124,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       prevProps.message.status === nextProps.message.status &&
       prevProps.message.type === nextProps.message.type &&
       prevProps.isOwnMessage === nextProps.isOwnMessage &&
-      prevProps.senderName === nextProps.senderName
+      prevProps.senderName === nextProps.senderName &&
+      prevProps.isLatestFromUser === nextProps.isLatestFromUser
     );
   }
 );
@@ -125,9 +138,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     flexDirection: "row",
     justifyContent: "flex-start",
+    alignItems: "flex-end",
+    gap: 6,
   },
   ownContainer: {
     justifyContent: "flex-end",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: 2,
   },
   otherContainer: {
     justifyContent: "flex-start",
@@ -193,6 +211,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colorPalette.primary,
     marginBottom: 4,
+  },
+  statusContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingRight: 4,
   },
   systemMessageContainer: {
     marginVertical: 12,

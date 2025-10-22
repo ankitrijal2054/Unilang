@@ -4,6 +4,7 @@ import { Text, Avatar } from "react-native-paper";
 import { Message } from "../types";
 import { formatTime } from "../utils/formatters";
 import { StatusIndicator } from "./StatusIndicator";
+import { colorPalette } from "../utils/theme";
 
 interface MessageBubbleProps {
   message: Message;
@@ -14,9 +15,7 @@ interface MessageBubbleProps {
 
 /**
  * MessageBubble Component
- * Displays a single message in a chat
- * For group chats: shows sender name above message with small avatar on left
- * For direct chats: shows message bubble only
+ * Displays a single message in a chat with modern minimalist design
  */
 export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
   ({ message, isOwnMessage, showSenderName, senderName }) => {
@@ -53,7 +52,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
             <Text style={textStyle}>{message.text}</Text>
 
             <View style={styles.footer}>
-              <Text style={styles.timestamp}>
+              <Text style={styles.ownTimestamp}>
                 {formatTime(message.timestamp)}
               </Text>
               <StatusIndicator status={message.status} size={12} />
@@ -81,7 +80,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
               <Text style={textStyle}>{message.text}</Text>
 
               <View style={styles.footer}>
-                <Text style={styles.timestamp}>
+                <Text style={styles.otherTimestamp}>
                   {formatTime(message.timestamp)}
                 </Text>
               </View>
@@ -98,7 +97,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
           <Text style={textStyle}>{message.text}</Text>
 
           <View style={styles.footer}>
-            <Text style={styles.timestamp}>
+            <Text style={styles.otherTimestamp}>
               {formatTime(message.timestamp)}
             </Text>
           </View>
@@ -107,7 +106,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
     );
   },
   (prevProps, nextProps) => {
-    // Only re-render if message content or status changed
     return (
       prevProps.message.id === nextProps.message.id &&
       prevProps.message.text === nextProps.message.text &&
@@ -123,7 +121,7 @@ MessageBubble.displayName = "MessageBubble";
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 4,
+    marginVertical: 6,
     marginHorizontal: 12,
     flexDirection: "row",
     justifyContent: "flex-start",
@@ -142,7 +140,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   avatar: {
-    backgroundColor: "#2196F3",
+    backgroundColor: colorPalette.primary,
   },
   messageColumn: {
     flex: 1,
@@ -150,17 +148,17 @@ const styles = StyleSheet.create({
   },
   bubble: {
     maxWidth: "85%",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
     marginBottom: 2,
   },
   ownBubble: {
-    backgroundColor: "#2196F3",
+    backgroundColor: colorPalette.primary,
     borderBottomRightRadius: 4,
   },
   otherBubble: {
-    backgroundColor: "#e0e0e0",
+    backgroundColor: colorPalette.neutral[100],
     borderBottomLeftRadius: 4,
   },
   messageText: {
@@ -169,25 +167,31 @@ const styles = StyleSheet.create({
   },
   ownText: {
     color: "white",
+    fontWeight: "500",
   },
   otherText: {
-    color: "#333",
+    color: colorPalette.neutral[900],
+    fontWeight: "500",
   },
   footer: {
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
-    marginTop: 4,
-    gap: 4,
+    marginTop: 6,
+    gap: 6,
   },
-  timestamp: {
-    fontSize: 11,
-    color: "#999",
+  ownTimestamp: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.7)",
+  },
+  otherTimestamp: {
+    fontSize: 12,
+    color: colorPalette.neutral[500],
   },
   senderName: {
     fontSize: 12,
-    fontWeight: "600",
-    color: "#2196F3",
+    fontWeight: "700",
+    color: colorPalette.primary,
     marginBottom: 4,
   },
   systemMessageContainer: {
@@ -195,12 +199,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 16,
   },
   systemMessageText: {
     fontSize: 13,
-    color: "#65676b",
+    color: colorPalette.neutral[500],
     textAlign: "center",
     fontStyle: "italic",
     fontWeight: "500",

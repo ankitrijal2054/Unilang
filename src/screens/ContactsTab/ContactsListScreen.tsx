@@ -5,9 +5,12 @@ import {
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
+  SafeAreaView,
 } from "react-native";
 import { Appbar, TextInput, Text, Avatar } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useAuthStore } from "../../store/authStore";
 import {
   getAllUsers,
@@ -15,6 +18,8 @@ import {
 } from "../../services/userService";
 import { createDirectChat } from "../../services/chatService";
 import { User } from "../../types";
+import { colorPalette } from "../../utils/theme";
+import { formatLastSeen } from "../../utils/formatters";
 
 interface ContactsListScreenProps {
   navigation: any;
@@ -73,13 +78,21 @@ const UserItem: React.FC<UserItemProps> = ({
             isCurrentUser && styles.disabledText,
           ]}
         >
-          {isOnline ? "Active now" : `Last seen ${user.lastSeen || "recently"}`}
+          {isOnline
+            ? "Active now"
+            : `Last seen ${formatLastSeen(
+                user.lastSeen || new Date().toISOString()
+              )}`}
         </Text>
       </View>
 
       {/* Arrow Icon */}
       {!isCurrentUser && (
-        <MaterialCommunityIcons name="chevron-right" size={24} color="#999" />
+        <MaterialCommunityIcons
+          name="chevron-right"
+          size={24}
+          color={colorPalette.neutral[500]}
+        />
       )}
     </TouchableOpacity>
   );
@@ -208,31 +221,57 @@ export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title="Contacts" subtitle="Select to view profile" />
-      </Appbar.Header>
+      <View style={styles.header}>
+        <LinearGradient
+          colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
+          locations={[0, 1]}
+          style={styles.headerGradient}
+        >
+          <BlurView intensity={50} tint="light" style={styles.headerBlur}>
+            <View style={styles.headerContent}>
+              <View style={styles.headerLeft}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                  <MaterialCommunityIcons
+                    name="arrow-left"
+                    size={28}
+                    color={colorPalette.neutral[900]}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.headerCenter}>
+                <Text style={styles.headerTitle}>Contacts</Text>
+              </View>
+              <View style={styles.headerRight} />
+            </View>
+          </BlurView>
+        </LinearGradient>
+      </View>
 
       {/* Search Input */}
       <View style={styles.searchContainer}>
         <TextInput
           placeholder="Search by name or email..."
+          placeholderTextColor={colorPalette.neutral[400]}
           value={searchText}
           onChangeText={setSearchText}
           mode="outlined"
-          left={<TextInput.Icon icon="magnify" />}
+          left={
+            <TextInput.Icon icon="magnify" color={colorPalette.neutral[400]} />
+          }
           style={styles.searchInput}
           editable={!loading}
-          dense
+          outlineColor={colorPalette.neutral[200]}
+          activeOutlineColor={colorPalette.primary}
+          outlineStyle={{ borderRadius: 12 }}
         />
       </View>
 
       {/* Users List */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2196F3" />
+          <ActivityIndicator size="large" color={colorPalette.primary} />
           <Text style={styles.loadingText}>Loading users...</Text>
         </View>
       ) : (
@@ -247,23 +286,76 @@ export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
           windowSize={10}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colorPalette.background,
+  },
+  header: {
+    height: 70,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: colorPalette.neutral[100],
+    shadowColor: colorPalette.neutral[900],
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  headerGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  headerBlur: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  headerLeft: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerRight: {
+    width: 44,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
   },
   searchContainer: {
     padding: 12,
-    backgroundColor: "#fff",
+    backgroundColor: colorPalette.background,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: colorPalette.neutral[200],
   },
   searchInput: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "rgba(248, 250, 252, 0.8)",
+    borderRadius: 12,
+    fontSize: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -272,7 +364,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: "#666",
+    color: colorPalette.neutral[600],
     fontSize: 14,
   },
   emptyContainer: {
@@ -283,15 +375,15 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
     marginTop: 16,
     marginBottom: 8,
     textAlign: "center",
   },
   emptySubtitle: {
     fontSize: 13,
-    color: "#666",
+    color: colorPalette.neutral[600],
     textAlign: "center",
     lineHeight: 20,
   },
@@ -301,8 +393,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    backgroundColor: "#fff",
+    borderBottomColor: colorPalette.neutral[100],
+    backgroundColor: colorPalette.background,
   },
   disabledItem: {
     opacity: 0.6,
@@ -312,7 +404,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   avatar: {
-    backgroundColor: "#e3f2fd",
+    backgroundColor: colorPalette.primary,
   },
   onlineIndicator: {
     position: "absolute",
@@ -321,35 +413,36 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: "#4caf50",
+    backgroundColor: colorPalette.success,
     borderWidth: 2,
-    borderColor: "white",
+    borderColor: colorPalette.background,
   },
   userInfo: {
     flex: 1,
+    gap: 2,
   },
   userName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
+    marginBottom: 2,
   },
   userEmail: {
-    fontSize: 12,
-    color: "#999",
-    marginBottom: 4,
+    fontSize: 13,
+    color: colorPalette.neutral[600],
+    marginBottom: 2,
   },
   userStatus: {
-    fontSize: 11,
+    fontSize: 12,
   },
   onlineStatus: {
-    color: "#4caf50",
-    fontWeight: "500",
+    color: colorPalette.success,
+    fontWeight: "600",
   },
   offlineStatus: {
-    color: "#999",
+    color: colorPalette.neutral[500],
   },
   disabledText: {
-    color: "#999",
+    opacity: 0.5,
   },
 });

@@ -88,3 +88,36 @@ export const truncateText = (text: string, length: number = 50): string => {
   }
   return text.substring(0, length) + "...";
 };
+
+/**
+ * Format last seen timestamp for contacts list (simplified)
+ * Shows: "Today", "Yesterday", "2 days ago", "3 days ago", or date like "Oct 20"
+ */
+export const formatLastSeen = (timestamp: string): string => {
+  try {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (isToday(date)) {
+      return "Today";
+    }
+
+    if (isYesterday(date)) {
+      return "Yesterday";
+    }
+
+    if (diffInDays < 7) {
+      return `${diffInDays} days ago`;
+    }
+
+    // For older dates, show just the date without time
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return "";
+  }
+};

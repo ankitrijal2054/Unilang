@@ -6,6 +6,7 @@ import { Chat } from "../types";
 import { formatChatTime, truncateText } from "../utils/formatters";
 import { useAuthStore } from "../store/authStore";
 import { useChatDisplayName } from "../utils/useChatDisplayName";
+import { colorPalette } from "../utils/theme";
 
 interface ChatListItemProps {
   chat: Chat;
@@ -16,8 +17,7 @@ interface ChatListItemProps {
 
 /**
  * ChatListItem Component
- * Displays a single chat in the chat list
- * Shows chat name, last message preview, timestamp, and unread badge
+ * Displays a single chat in the chat list with modern minimalist design
  */
 export const ChatListItem: React.FC<ChatListItemProps> = React.memo(
   ({ chat, onPress, unreadCount = 0, isOnline = false }) => {
@@ -39,7 +39,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(
     return (
       <TouchableOpacity
         onPress={onPress}
-        activeOpacity={0.7}
+        activeOpacity={0.6}
         style={styles.container}
       >
         {/* Avatar / Icon */}
@@ -48,7 +48,11 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(
             <MaterialCommunityIcons
               name={isGroupChat ? "account-multiple" : "account"}
               size={24}
-              color={chat.isDeleted ? "#999" : "#2196F3"}
+              color={
+                chat.isDeleted
+                  ? colorPalette.neutral[400]
+                  : colorPalette.primary
+              }
             />
           </View>
 
@@ -62,7 +66,11 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(
         <View style={styles.chatInfo}>
           <View style={styles.header}>
             <Text
-              style={[styles.chatName, chat.isDeleted && styles.deletedText]}
+              style={[
+                styles.chatName,
+                chat.isDeleted && styles.deletedText,
+                unreadCount > 0 && styles.unreadName,
+              ]}
               numberOfLines={1}
             >
               {chatName}
@@ -90,7 +98,6 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(
     );
   },
   (prevProps, nextProps) => {
-    // Only re-render if chat content that affects display has changed
     return (
       prevProps.chat.id === nextProps.chat.id &&
       prevProps.chat.type === nextProps.chat.type &&
@@ -111,25 +118,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    backgroundColor: "white",
+    borderBottomColor: colorPalette.neutral[100],
+    backgroundColor: colorPalette.background,
   },
   avatarContainer: {
     position: "relative",
-    marginRight: 12,
+    marginRight: 14,
   },
   avatar: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#e3f2fd",
+    backgroundColor: colorPalette.primary,
     justifyContent: "center",
     alignItems: "center",
+    opacity: 0.1,
   },
   deletedAvatar: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colorPalette.neutral[400],
   },
   onlineIndicator: {
     position: "absolute",
@@ -138,9 +146,9 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: "#4caf50",
+    backgroundColor: colorPalette.success,
     borderWidth: 2,
-    borderColor: "white",
+    borderColor: colorPalette.background,
   },
   chatInfo: {
     flex: 1,
@@ -149,20 +157,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 8,
   },
   chatName: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#333",
+    color: colorPalette.neutral[900],
     flex: 1,
   },
+  unreadName: {
+    fontWeight: "700",
+  },
   deletedText: {
-    color: "#999",
+    color: colorPalette.neutral[500],
   },
   time: {
     fontSize: 12,
-    color: "#999",
+    color: colorPalette.neutral[500],
     marginLeft: 8,
   },
   previewRow: {
@@ -172,15 +183,15 @@ const styles = StyleSheet.create({
   },
   preview: {
     fontSize: 13,
-    color: "#999",
+    color: colorPalette.neutral[600],
     flex: 1,
     marginRight: 8,
   },
   unreadPreview: {
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: "700",
+    color: colorPalette.neutral[700],
   },
   badge: {
-    backgroundColor: "#2196F3",
+    backgroundColor: colorPalette.primary,
   },
 });

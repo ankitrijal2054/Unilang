@@ -10,6 +10,7 @@ import { ContactsListScreen } from "../screens/ContactsTab/ContactsListScreen";
 import { ContactCardScreen } from "../screens/ContactsTab/ContactCardScreen";
 import { NewGroupScreen } from "../screens/ContactsTab/NewGroupScreen";
 import { ProfileScreen } from "../screens/ProfileTab/ProfileScreen";
+import { colorPalette } from "../utils/theme";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -126,19 +127,20 @@ export const AppStack = () => (
           <MaterialCommunityIcons name={iconName} size={size} color={color} />
         );
       },
-      tabBarActiveTintColor: "#2196F3",
-      tabBarInactiveTintColor: "#999",
+      tabBarActiveTintColor: colorPalette.primary,
+      tabBarInactiveTintColor: colorPalette.gray,
       tabBarStyle: {
-        backgroundColor: "#fff",
+        backgroundColor: colorPalette.white,
         borderTopWidth: 1,
-        borderTopColor: "#e0e0e0",
-        paddingBottom: 4,
-        height: 56,
+        borderTopColor: colorPalette.border,
+        paddingBottom: 8,
+        height: 70,
       },
       tabBarLabelStyle: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: "600",
-        marginBottom: 4,
+        marginBottom: 6,
+        marginTop: 2,
       },
     })}
   >

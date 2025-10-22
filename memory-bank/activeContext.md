@@ -2,182 +2,137 @@
 
 ## Current Phase
 
-**Phase: Phase 6 UI Overhaul - IN PROGRESS 🎨**
+**Phase: Phase 2 Planning COMPLETE ✅ → Ready for Implementation 🚀**
 
-- ✅ Phase 3.1-3.6: User Presence & Profile (DONE)
-- ✅ Phase 4.1-4.6: Group Chat Management & Member Management (DONE)
-- ✅ Phase 5.1-5.6: Push Notifications & Testing (DONE)
-- 🎨 Phase 6.1: LoginScreen & SignUpScreen (DONE)
-- 🎨 Phase 6.2: ChatListScreen (DONE)
-- 🎨 Phase 6.3: ChatScreen (DONE)
-- 🎨 Phase 6.4: ContactsListScreen (DONE)
-- 🎨 Phase 6.5: ContactCardScreen (DONE)
-- 🎨 Phase 6.6: NewChatScreen (DONE)
-- 🎨 Phase 6.7: NewGroupScreen - Participant Selection & Group Name Form (DONE)
-- 🎨 Phase 6.8: GroupInfoScreen (DONE)
-- 🎨 Phase 6.9: ProfileScreen (DONE - Modern circular avatar, Material icons, reduced gaps)
-- ⏭️ Phase 6.10: UI Testing & Final Polish (NEXT)
+- ✅ Phase 1-5: Core MVP (Foundation, Auth, Messaging, Presence, Notifications)
+- ✅ Phase 6: UI Overhaul (Complete - All 10 screens modernized)
+- ✅ Phase 2 PRD: Finalized (v2.0 - All 8 features spec'd, 17 hours planned)
+- ⏭️ **Phase 2 Implementation: NEXT** (Pending/Sync, Typing, Read Receipts, Pagination, Images, Delete Chat, etc.)
 
-**Time Checkpoint:** ~24 hours (MVP scope complete, now in UI refinement phase)
-
-## Recent Accomplishments (Session 5 - Phase 6 UI Overhaul Continuation)
-
-### Phase 6 - UI Overhaul - IN PROGRESS 🎨
-
-**ProfileScreen Update (Phase 6.9):**
-
-1. ✅ Modern Frosted Glass Header
-
-   - Replaced `Appbar.Header` with custom frosted header (70px height)
-   - LinearGradient + BlurView for sophisticated appearance
-   - Back arrow button with proper touch targets (44x44px)
-   - Centered "Profile" title
-   - Shadow separation with elevation 6
-
-2. ✅ Circular Avatar - Facebook Style
-
-   - Created 100x100px circular avatar container
-   - Border radius 50 for perfect circle
-   - Background: `colorPalette.neutral[100]`
-   - Proper centering and alignment
-
-3. ✅ Modern Material Community Icons
-
-   - Replaced old emoji IconText component (removed)
-   - Email: `email` icon in primary color
-   - Display Name: `account` icon in primary color
-   - Language: `translate` icon in primary color
-   - Icon size: 20px, color: primary
-   - All icons properly aligned with labels
-
-4. ✅ Improved Layout & Spacing
-
-   - Avatar section `paddingVertical` reduced from 32 to 12px (eliminated huge gap)
-   - Avatar emoji font reduced from 80 to 48px for better proportion
-   - Added `gap: 12px` between icons and labels in `infoLabel`
-   - Clean, professional spacing throughout
-
-5. ✅ Code Cleanup
-
-   - Removed `IconText` helper component (no longer needed)
-   - Removed unused `iconText` style
-   - Removed `marginTop: 100` from ScrollView (now using proper header positioning)
-   - Cleaner, more maintainable codebase
-
-6. ✅ Unit Test Verification
-   - All 103 tests passing (100% pass rate)
-   - No breaking changes introduced
-   - ProfileScreen changes are backward compatible
-   - All services and business logic intact
-
-## Screens Updated (Phase 6 Progress)
-
-| Screen             | Status  | Description                                                       |
-| ------------------ | ------- | ----------------------------------------------------------------- |
-| LoginScreen        | ✅ DONE | Modern gradient, frosted glass form, auto-scroll text fields      |
-| SignUpScreen       | ✅ DONE | Gradient background, frosted form, language selector bottom sheet |
-| ChatListScreen     | ✅ DONE | Frosted header, modern buttons, inline new chat/group actions     |
-| ChatScreen         | ✅ DONE | Modern input field, modern send button, keyboard alignment        |
-| ContactsListScreen | ✅ DONE | Frosted header, search field consistency, formatLastSeen          |
-| ContactCardScreen  | ✅ DONE | Frosted header, simplified last seen, consistent styling          |
-| NewChatScreen      | ✅ DONE | Frosted header, modern input, consistent design                   |
-| NewGroupScreen     | ✅ DONE | Frosted header, modern circular checkboxes, group name form       |
-| GroupInfoScreen    | ✅ DONE | Frosted header, modern section headers, updated buttons           |
-| ProfileScreen      | ✅ DONE | Frosted header, circular avatar, Material icons, no emoji         |
-| Bottom Navigation  | ✅ DONE | Increased height (70px), proper padding and sizing                |
-
-## Key Technical Improvements (Phase 6)
-
-**Frosted Glass Effect:**
-
-- LinearGradient with `colorPalette.neutral[100]`
-- BlurView with intensity 50, tint "light"
-- Consistent across all headers
-- Creates modern, sophisticated appearance
-
-**Header Standardization (70px):**
-
-- Height: 70px
-- PaddingTop: 12px, PaddingBottom: 12px
-- Back arrow: 28px size, touch target 44x44px
-- Shadow: elevation 6 for subtle separation
-- Applied to ChatListScreen, ContactsListScreen, ContactCardScreen, NewChatScreen, NewGroupScreen, GroupInfoScreen, ProfileScreen
-
-**Text Input Consistency:**
-
-- Mode: "outlined"
-- Background: `rgba(248, 250, 252, 0.8)`
-- BorderRadius: 12
-- Font size: 16
-- OutlineColor: `colorPalette.neutral[200]`
-- ActiveOutlineColor: `colorPalette.primary`
-- PlaceholderTextColor: `colorPalette.neutral[400]`
-
-**Icon Standardization:**
-
-- Replaced emoji icons with Material Community Icons
-- Consistent sizing (20-24px)
-- Color: primary or neutral based on context
-- Proper spacing (gap: 12px) from labels
-
-**Modern Checkboxes:**
-
-- Custom circular checkboxes in NewGroupScreen & GroupInfoScreen
-- MaterialCommunityIcons "check-circle" when selected
-- Modern, clean appearance
-- Better UX than default checkboxes
-
-## Files Modified (Phase 6)
-
-**Phase 6.1-6.9:**
-
-- src/screens/AuthStack/LoginScreen.tsx
-- src/screens/AuthStack/SignUpScreen.tsx
-- src/screens/ChatsTab/ChatListScreen.tsx
-- src/screens/ChatsTab/ChatScreen.tsx
-- src/screens/ChatsTab/GroupInfoScreen.tsx
-- src/screens/ContactsTab/ContactsListScreen.tsx
-- src/screens/ContactsTab/ContactCardScreen.tsx
-- src/screens/ContactsTab/NewChatScreen.tsx
-- src/screens/ContactsTab/NewGroupScreen.tsx
-- src/screens/ProfileTab/ProfileScreen.tsx
-- src/navigation/AppStack.tsx
-- src/utils/theme.ts (created)
-- src/utils/formatters.ts (updated with formatLastSeen)
-
-## Current Unit Test Status
-
-**103 Tests Total - 100% Passing ✅**
-
-After ProfileScreen refactor:
-
-- All 103 tests still passing
-- No breaking changes
-- All services working correctly
-- Business logic intact
-- UI layer changes don't affect backend
-
-| Service              | Tests   | Status      |
-| -------------------- | ------- | ----------- |
-| User Service         | 19      | ✅ PASS     |
-| Message Service      | 19      | ✅ PASS     |
-| Chat Service         | 13      | ✅ PASS     |
-| Auth Service         | 13      | ✅ PASS     |
-| Notification Service | 9       | ✅ PASS     |
-| Auth Store           | 8       | ✅ PASS     |
-| **TOTAL**            | **103** | **✅ PASS** |
-
-## What This Means
-
-- ✅ **MVP Core Functionality:** Still 100% working
-- ✅ **UI/UX:** Completely modernized (90%+ complete)
-- ✅ **Consistency:** All screens follow same design system
-- ✅ **Professional Look:** Modern, minimalist, iOS-inspired
-- ✅ **Quality:** All tests passing, no regressions
-- ✅ **Ready for:** Phase 6.10 final polish and user testing
+**Time Checkpoint:** 24 hours MVP complete + 1 hour Phase 2 planning = 25 hours total. Phase 2 implementation starting now (~17 hours estimated).
 
 ---
 
-**Last Updated:** October 22, 2025 (Session 5, Phase 6.9 ProfileScreen + Unit Test Verification)
-**Next Phase:** Phase 6.10 - UI Testing & Final Polish
-**Status:** MVP core complete, UI modernization ~90% done
+## Phase 2 Planning Complete (Session 6 - Oct 22, 2025)
+
+### What Was Done This Session
+
+**Phase 2 PRD Finalized (v2.0):**
+
+- 8 core features with detailed specs (no AI features)
+- Exact UI/UX behavior defined for each feature
+- Firestore schema changes documented
+- Code examples and implementation patterns provided
+- Success criteria locked in
+
+**Phase 2 Implementation Tasklist Created (v2.0):**
+
+- 5-day breakdown (17 hours total)
+- Specific code files to create/update (11 new, 6 updated)
+- Hour-by-hour estimates with test cases
+- 25+ new unit tests required (total ≥ 128)
+- Daily testing checklist included
+
+**Documentation Created:**
+
+- ai-docs/PRD_Phase2.md (523 lines, production-ready)
+- ai-docs/Tasklist_Phase2.md (411 lines, task-by-task)
+- PHASE2_KICKOFF.md (quick reference guide)
+
+**Key Decisions Locked In:**
+
+- Typing: Auto-expire TTL (5 sec), no manual cleanup
+- Read Receipts: Screen open trigger, show 3 avatars + "+N more"
+- Pagination: 20 msg loads, 500 msg max per chat
+- Images: JPEG only, profile 200x200px, messages 800px, 85% quality
+- Delete Chat: `deletedBy` array + Cloud Function auto-purge
+- Rate Limit: Per-chat client-side, 5 msg/sec, button disable 2s
+- Architecture: Storage, typing service, image service, delete function
+
+### Phase 2 Features (8 Total)
+
+| #   | Feature                   | Time | Day | Status           |
+| --- | ------------------------- | ---- | --- | ---------------- |
+| 1️⃣  | Pending/Syncing Indicator | 1.5h | 1   | ⏳ Ready to code |
+| 2️⃣  | Typing Indicators         | 1.5h | 2   | ⏳ Ready to code |
+| 3️⃣  | Who-Read Receipts         | 2h   | 3   | ⏳ Ready to code |
+| 4️⃣  | Rate Limiting             | 1h   | 1   | ⏳ Ready to code |
+| 5️⃣  | Message Pagination        | 2h   | 4   | ⏳ Ready to code |
+| 6️⃣  | Profile Picture Upload    | 2.5h | 4   | ⏳ Ready to code |
+| 7️⃣  | Image Attachments         | 3h   | 5   | ⏳ Ready to code |
+| 8️⃣  | Delete Chat               | 3.5h | 5   | ⏳ Ready to code |
+
+**TOTAL:** 17 hours over 5 days
+
+---
+
+## Phase 6 UI Overhaul: COMPLETE ✅
+
+All 10 screens modernized with frosted glass headers, Material icons, and consistent design system.
+
+**Status:** ✅ 100% Complete
+
+- 10/10 screens modernized
+- All 103 tests still passing
+- Bottom navigation height increased (70px)
+- Color palette: src/utils/theme.ts created
+- Formatters: formatLastSeen utility added
+
+### Key Design Decisions Implemented
+
+- **Frosted Glass Headers (70px):** LinearGradient + BlurView, consistent across all screens
+- **Modern Icons:** Material Community Icons (no emoji), 20-24px, proper spacing
+- **Text Inputs:** Mode "outlined", background rgba(248,250,252,0.8), borderRadius 12
+- **Avatars:** Circular (100x100px), Facebook style, clean aesthetics
+- **Checkboxes:** Custom circular checkboxes with Material icons
+
+---
+
+## Recommended Next Session Tasks
+
+### Before Day 1 Implementation:
+
+1. Enable Firebase Cloud Storage (2 minutes)
+2. Install new dependencies (`npm install...`)
+3. Create Firestore TTL policy
+
+### Day 1 (3 hours):
+
+- [ ] Setup Firebase Storage + create typingStatus collection
+- [ ] Implement pending/syncing indicator (network detection)
+- [ ] Implement rate limiting (client-side, 5 msg/sec)
+- [ ] Test: Offline → online sync, rate limiting
+
+### Day 2 (3.5 hours):
+
+- [ ] Typing service (TTL-based, debounced)
+- [ ] Typing indicator UI banner
+- [ ] Test: 3 users typing < 500ms
+
+### Day 3 (3.5 hours):
+
+- [ ] Read receipts schema (readBy array)
+- [ ] Mark as read logic (batch update on chat open)
+- [ ] Read receipt UI (avatars + count)
+- [ ] Test: Badges appear < 500ms
+
+### Day 4 (4 hours):
+
+- [ ] Message pagination (20-msg loads)
+- [ ] Load Earlier button + infinite scroll
+- [ ] Profile picture upload (ImagePicker + compress + Storage)
+- [ ] Test: Smooth scrolling, avatars cached
+
+### Day 5 (3 hours):
+
+- [ ] Image attachment message type
+- [ ] Image preview UI (📎 button + thumbnail + zoom modal)
+- [ ] Delete chat feature (long-press + modal + deletedBy)
+- [ ] Cloud Function auto-purge
+- [ ] Test: E2E on all features
+
+---
+
+**Last Updated:** October 22, 2025 (Session 6, Phase 2 Planning Complete)
+**Next Phase:** Phase 2 Implementation - Start Day 1
+**Status:** All planning complete, 100% ready for coding

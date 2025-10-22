@@ -53,13 +53,23 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
 
     // For own messages, show bubble with status below if latest
     if (isOwnMessage) {
+      // Check if message is pending (offline)
+      const isPending = (message as any).localStatus === "pending";
+
       return (
         <View style={[styles.container, styles.ownContainer]}>
-          <View style={bubbleStyle}>
-            <Text style={textStyle}>{message.text}</Text>
+          <View style={[bubbleStyle, isPending && styles.pendingBubble]}>
+            <Text style={[textStyle, isPending && styles.pendingText]}>
+              {message.text}
+            </Text>
 
             <View style={styles.footer}>
-              <Text style={styles.ownTimestamp}>
+              <Text
+                style={[
+                  styles.ownTimestamp,
+                  isPending && styles.pendingTimestamp,
+                ]}
+              >
                 {formatTime(message.timestamp)}
               </Text>
             </View>
@@ -231,5 +241,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontStyle: "italic",
     fontWeight: "500",
+  },
+  pendingBubble: {
+    backgroundColor: colorPalette.neutral[200],
+  },
+  pendingText: {
+    color: colorPalette.neutral[700],
+  },
+  pendingTimestamp: {
+    color: colorPalette.neutral[600],
   },
 });

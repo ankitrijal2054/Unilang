@@ -6,6 +6,7 @@ export interface Message {
   timestamp: string;
   status: "sending" | "sent" | "delivered" | "read";
   type?: "user" | "system"; // "system" for admin/group notifications
+  localStatus?: "pending" | "sent"; // Client-only: pending if offline, sent if online
   ai: {
     translated_text: string;
     detected_language: string;

@@ -9,7 +9,13 @@ import {
   SectionList,
   Text as RNText,
 } from "react-native";
-import { Appbar, TextInput, IconButton, Text } from "react-native-paper";
+import {
+  Appbar,
+  TextInput,
+  IconButton,
+  Text,
+  Snackbar,
+} from "react-native-paper";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -21,6 +27,8 @@ import {
 } from "../../services/messageService";
 import { updateChatLastMessage } from "../../services/chatService";
 import { subscribeToUserPresence } from "../../services/userService";
+import { subscribeToNetworkStatus, isOnline } from "../../utils/networkUtils";
+import { useMessageStore } from "../../store/messageStore";
 import { Message, User, Chat } from "../../types";
 import { MessageBubble } from "../../components/MessageBubble";
 import { formatMessageDate, formatRelativeTime } from "../../utils/formatters";
@@ -53,6 +61,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [otherUser, setOtherUser] = useState<User | null>(null);
   const [chat, setChat] = useState<Chat | null>(null);
   const [senderNames, setSenderNames] = useState<{ [key: string]: string }>({});
+  const [isNetworkOnline, setIsNetworkOnline] = useState(true);
 
   const flatListRef = useRef<SectionList>(null);
   const optimisticMessagesRef = useRef<Set<string>>(new Set());
@@ -139,8 +148,31 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       return;
     }
 
+    // Check if store is hydrated before reading cached messages
+    const isHydrated = useMessageStore.getState().isHydrated;
+
+    if (!isHydrated) {
+      // Store not ready yet, wait a bit and retry
+      const timer = setTimeout(() => {
+        const cachedMessages = useMessageStore.getState().getMessages(chatId);
+        if (cachedMessages.length > 0) {
+          setMessages(cachedMessages);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+
+    // Store is hydrated, load cached messages immediately (if available)
+    const cachedMessages = useMessageStore.getState().getMessages(chatId);
+    if (cachedMessages.length > 0) {
+      setMessages(cachedMessages); // React state - updates UI
+    }
+
+    // Subscribe to Firestore for real-time updates
     const unsubscribe = subscribeToMessages(chatId, (updatedMessages) => {
-      setMessages(updatedMessages);
+      setMessages(updatedMessages); // React state - updates UI
+      // Also update the persistent store
+      useMessageStore.getState().setMessages(chatId, updatedMessages);
       setLoading(false);
     });
 
@@ -154,6 +186,23 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       unsubscribe();
     };
   }, [chatId, user?.uid]);
+
+  // Subscribe to network status changes
+  useEffect(() => {
+    const unsubscribeNetwork = subscribeToNetworkStatus((isConnected) => {
+      setIsNetworkOnline(isConnected);
+      if (isConnected) {
+        // Show brief "online" indicator
+        console.log("🟢 Back online - messages will sync");
+      } else {
+        console.log("🔴 Offline - messages will be queued");
+      }
+    });
+
+    return () => {
+      unsubscribeNetwork();
+    };
+  }, []);
 
   // Fetch sender names for group chat (all participants upfront)
   useEffect(() => {
@@ -268,16 +317,19 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   };
 
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !user?.uid || sending) {
+    if (!messageText.trim() || !user?.uid) {
       return;
     }
 
     const textToSend = messageText.trim();
     setMessageText("");
-    setSending(true);
+    // Don't set setSending(true) to allow multiple messages to queue
 
     try {
-      // Create optimistic message
+      // Check current network status
+      const online = await isOnline();
+
+      // Create optimistic message with pending status if offline
       const tempId = `temp_${Date.now()}`;
       const optimisticMessage: Message = {
         id: tempId,
@@ -286,6 +338,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         text: textToSend,
         timestamp: new Date().toISOString(),
         status: "sending",
+        localStatus: online ? undefined : "pending", // Only set pending if offline
         ai: {
           translated_text: "",
           detected_language: "",
@@ -298,6 +351,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
       // Add to UI immediately
       setMessages((prev) => [...prev, optimisticMessage]);
+
+      // Show syncing toast if offline
 
       // Send to Firestore
       const result = await sendMessage(chatId, textToSend, user.uid);
@@ -319,9 +374,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     } catch (error) {
       console.error("❌ Error sending message:", error);
       setMessageText(textToSend); // Restore text for retry
-    } finally {
-      setSending(false);
     }
+    // Remove finally block - no need to set setSending(false)
   };
 
   const renderMessageItem = ({
@@ -397,6 +451,19 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           <Appbar.Action icon="information" onPress={handleOpenGroupInfo} />
         )}
       </Appbar.Header>
+
+      {/* Offline Banner - Show right below header */}
+      {!isNetworkOnline && (
+        <View style={styles.offlineBanner}>
+          <MaterialCommunityIcons
+            name="wifi-off"
+            size={16}
+            color="#FFF"
+            style={{ marginRight: 8 }}
+          />
+          <Text style={styles.offlineBannerText}>No connection</Text>
+        </View>
+      )}
 
       {/* Messages List */}
       {loading ? (
@@ -562,5 +629,18 @@ const styles = StyleSheet.create({
   sendButton: {
     margin: 0,
     padding: 0,
+  },
+  offlineBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colorPalette.error,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  offlineBannerText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

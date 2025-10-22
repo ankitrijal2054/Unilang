@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { Message } from "../types";
 import { COLLECTIONS } from "../utils/constants";
+import { isOnline } from "../utils/networkUtils";
 
 /**
  * Send a message to a chat
@@ -23,8 +24,16 @@ export const sendMessage = async (
   chatId: string,
   text: string,
   senderId: string
-): Promise<{ success: boolean; messageId?: string; error?: any }> => {
+): Promise<{
+  success: boolean;
+  messageId?: string;
+  error?: any;
+  isOnline?: boolean;
+}> => {
   try {
+    // Check if device is online
+    const online = await isOnline();
+
     const messageData = {
       chatId,
       senderId,
@@ -43,8 +52,8 @@ export const sendMessage = async (
       messageData
     );
 
-    console.log("✅ Message sent:", docRef.id);
-    return { success: true, messageId: docRef.id };
+    console.log(`✅ Message sent:`, docRef.id, `[Online: ${online}]`);
+    return { success: true, messageId: docRef.id, isOnline: online };
   } catch (error) {
     console.error("❌ Error sending message:", error);
     return { success: false, error };

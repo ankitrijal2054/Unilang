@@ -10,6 +10,15 @@ import * as firestoreLib from "firebase/firestore";
 
 jest.mock("firebase/firestore");
 
+// Mock networkUtils to prevent react-native-community/netinfo errors in Jest
+jest.mock("../../utils/networkUtils", () => ({
+  isOnline: jest.fn().mockResolvedValue(true),
+  subscribeToNetworkStatus: jest.fn((callback) => {
+    callback(true);
+    return () => {};
+  }),
+}));
+
 describe("messageService", () => {
   beforeEach(() => {
     jest.clearAllMocks();

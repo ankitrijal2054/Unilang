@@ -28,9 +28,15 @@ import {
 import { updateChatLastMessage } from "../../services/chatService";
 import { subscribeToUserPresence } from "../../services/userService";
 import { subscribeToNetworkStatus, isOnline } from "../../utils/networkUtils";
+import {
+  setTyping,
+  subscribeToTypingStatus,
+  clearTyping,
+} from "../../services/typingService";
 import { useMessageStore } from "../../store/messageStore";
 import { Message, User, Chat } from "../../types";
 import { MessageBubble } from "../../components/MessageBubble";
+import { TypingIndicator } from "../../components/TypingIndicator";
 import { formatMessageDate, formatRelativeTime } from "../../utils/formatters";
 import { db } from "../../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -62,9 +68,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [chat, setChat] = useState<Chat | null>(null);
   const [senderNames, setSenderNames] = useState<{ [key: string]: string }>({});
   const [isNetworkOnline, setIsNetworkOnline] = useState(true);
+  const [typingUsers, setTypingUsers] = useState<
+    Array<{ userId: string; userName: string }>
+  >([]);
 
   const flatListRef = useRef<SectionList>(null);
   const optimisticMessagesRef = useRef<Set<string>>(new Set());
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef = useRef(false);
 
   // Group messages by date
   const groupedMessages: MessageGroup[] = React.useMemo(() => {
@@ -203,6 +214,25 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       unsubscribeNetwork();
     };
   }, []);
+
+  // Subscribe to typing indicators for this chat
+  useEffect(() => {
+    if (!chatId) {
+      return;
+    }
+
+    const unsubscribeTyping = subscribeToTypingStatus(chatId, (typingUsers) => {
+      setTypingUsers(typingUsers);
+    });
+
+    return () => {
+      // Clear typing status when unmounting
+      clearTyping(chatId).catch((err) =>
+        console.error("Error clearing typing on unmount:", err)
+      );
+      unsubscribeTyping();
+    };
+  }, [chatId]);
 
   // Fetch sender names for group chat (all participants upfront)
   useEffect(() => {
@@ -378,6 +408,33 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     // Remove finally block - no need to set setSending(false)
   };
 
+  const handleTextInputChange = (text: string) => {
+    setMessageText(text);
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // If user is typing and we haven't marked them as typing yet
+    if (text.trim().length > 0 && !isTypingRef.current) {
+      isTypingRef.current = true;
+      setTyping(chatId, true).catch((err) =>
+        console.error("Error setting typing status:", err)
+      );
+    }
+
+    // Set timeout to mark user as stopped typing
+    typingTimeoutRef.current = setTimeout(() => {
+      if (isTypingRef.current) {
+        isTypingRef.current = false;
+        setTyping(chatId, false).catch((err) =>
+          console.error("Error clearing typing status:", err)
+        );
+      }
+    }, 2000); // Stop typing after 2 seconds of inactivity
+  };
+
   const renderMessageItem = ({
     item,
   }: {
@@ -494,13 +551,16 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         />
       )}
 
+      {/* Typing Indicator - Show between messages and input */}
+      <TypingIndicator typingUsers={typingUsers} />
+
       {/* Message Input */}
       <View style={styles.inputContainer}>
         <TextInput
           placeholder="Type a message..."
           placeholderTextColor={colorPalette.neutral[400]}
           value={messageText}
-          onChangeText={setMessageText}
+          onChangeText={handleTextInputChange}
           mode="outlined"
           multiline
           style={styles.input}

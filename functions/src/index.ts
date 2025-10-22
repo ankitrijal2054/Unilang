@@ -147,6 +147,56 @@ export const sendNotificationOnNewMessage = onDocumentCreated(
 );
 
 /**
+ * Cloud Function triggered on new message creation
+ * Updates the parent chat document with lastMessage info
+ * This ensures all participants see the message in their chat list immediately
+ */
+export const updateChatOnNewMessage = onDocumentCreated(
+  {
+    document: "messages/{messageId}",
+    maxInstances: 10,
+  },
+  async (event) => {
+    try {
+      const messageId = event.params.messageId;
+      const messageData = event.data?.data();
+
+      if (!messageData) {
+        logger.warn("Message data not found for ID:", messageId);
+        return;
+      }
+
+      const { chatId, text, timestamp, type } = messageData;
+
+      // Don't update chat for system messages
+      if (type === "system") {
+        logger.log("Skipping chat update for system message:", messageId);
+        return;
+      }
+
+      logger.log("Updating chat document for message:", messageId, {
+        chatId,
+      });
+
+      // Update the chat document
+      await db
+        .collection("chats")
+        .doc(chatId)
+        .update({
+          lastMessage: text,
+          lastMessageTime: timestamp || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+      logger.log("✅ Chat document updated:", chatId);
+    } catch (error) {
+      logger.error("Error updating chat document:", error);
+      // Don't throw - we don't want to fail the message send
+    }
+  }
+);
+
+/**
  * Helper function to calculate badge count for a user
  * (Can be called from client when needed)
  */

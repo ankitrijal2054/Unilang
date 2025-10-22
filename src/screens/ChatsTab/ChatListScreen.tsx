@@ -15,6 +15,7 @@ import { BlurView } from "expo-blur";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
 import { subscribeToUserChats } from "../../services/chatService";
+import { subscribeToNetworkStatus } from "../../utils/networkUtils";
 import { Chat } from "../../types";
 import { ChatListItem } from "../../components/ChatListItem";
 import { useChatDisplayName } from "../../utils/useChatDisplayName";
@@ -52,6 +53,7 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
+  const [isNetworkOnline, setIsNetworkOnline] = useState(true);
 
   // Subscribe to real-time chat updates
   useEffect(() => {
@@ -80,6 +82,17 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
     setRefreshing(true);
     // Real-time listener will handle refresh
   };
+
+  // Subscribe to network status changes
+  useEffect(() => {
+    const unsubscribeNetwork = subscribeToNetworkStatus((isConnected) => {
+      setIsNetworkOnline(isConnected);
+    });
+
+    return () => {
+      unsubscribeNetwork();
+    };
+  }, []);
 
   const handleChatPress = (chat: Chat, chatName: string) => {
     if (chat.isDeleted) {
@@ -162,6 +175,19 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
           </BlurView>
         </LinearGradient>
       </View>
+
+      {/* Offline Banner - Show right below header */}
+      {!isNetworkOnline && (
+        <View style={styles.offlineBanner}>
+          <MaterialCommunityIcons
+            name="wifi-off"
+            size={16}
+            color="#FFF"
+            style={{ marginRight: 8 }}
+          />
+          <Text style={styles.offlineBannerText}>No connection</Text>
+        </View>
+      )}
 
       {/* Loading state */}
       {loading ? (
@@ -288,5 +314,18 @@ const styles = StyleSheet.create({
   emptyButtonLabel: {
     fontSize: 14,
     fontWeight: "700",
+  },
+  offlineBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colorPalette.error,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  offlineBannerText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

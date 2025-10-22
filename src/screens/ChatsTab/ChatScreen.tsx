@@ -406,19 +406,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       style={styles.container}
       keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
     >
-      {/* Offline Banner - Show at top */}
-      {!isNetworkOnline && (
-        <View style={styles.offlineBanner}>
-          <MaterialCommunityIcons
-            name="wifi-off"
-            size={16}
-            color="#FFF"
-            style={{ marginRight: 8 }}
-          />
-          <Text style={styles.offlineBannerText}>No connection</Text>
-        </View>
-      )}
-
       {/* Header */}
       <Appbar.Header>
         <Appbar.BackAction onPress={() => navigation.popToTop()} />
@@ -444,6 +431,19 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           <Appbar.Action icon="information" onPress={handleOpenGroupInfo} />
         )}
       </Appbar.Header>
+
+      {/* Offline Banner - Show right below header */}
+      {!isNetworkOnline && (
+        <View style={styles.offlineBanner}>
+          <MaterialCommunityIcons
+            name="wifi-off"
+            size={16}
+            color="#FFF"
+            style={{ marginRight: 8 }}
+          />
+          <Text style={styles.offlineBannerText}>No connection</Text>
+        </View>
+      )}
 
       {/* Messages List */}
       {loading ? (
@@ -629,11 +629,6 @@ const styles = StyleSheet.create({
     backgroundColor: colorPalette.error,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
   },
   offlineBannerText: {
     color: "#FFF",

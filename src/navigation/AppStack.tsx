@@ -84,6 +84,13 @@ const ContactsStack = () => (
         title: "Chat",
       }}
     />
+    <Stack.Screen
+      name="GroupInfo"
+      component={GroupInfoScreen}
+      options={{
+        title: "Group Info",
+      }}
+    />
   </Stack.Navigator>
 );
 
@@ -106,6 +113,7 @@ const ProfileStack = () => (
 
 /**
  * AppStack - Bottom tab navigator with Chats, Contacts, and Profile tabs
+ * Clicking on a tab always resets to the root screen of that tab
  */
 export const AppStack = () => (
   <Tab.Navigator
@@ -128,11 +136,11 @@ export const AppStack = () => (
         );
       },
       tabBarActiveTintColor: colorPalette.primary,
-      tabBarInactiveTintColor: colorPalette.gray,
+      tabBarInactiveTintColor: colorPalette.neutral[400],
       tabBarStyle: {
-        backgroundColor: colorPalette.white,
+        backgroundColor: colorPalette.background,
         borderTopWidth: 1,
-        borderTopColor: colorPalette.border,
+        borderTopColor: colorPalette.neutral[200],
         paddingBottom: 8,
         height: 70,
       },
@@ -141,6 +149,22 @@ export const AppStack = () => (
         fontWeight: "600",
         marginBottom: 6,
         marginTop: 2,
+      },
+    })}
+    screenListeners={({ navigation, route }) => ({
+      tabPress: (e) => {
+        // Reset the stack to the root screen when tab is pressed
+        const navState = navigation.getState();
+        // If there's more than one screen in the stack, navigate to root
+        if (navState.index > 0) {
+          if (route.name === "ChatsTab") {
+            navigation.navigate("ChatsTab", { screen: "ChatList" });
+          } else if (route.name === "ContactsTab") {
+            navigation.navigate("ContactsTab", { screen: "Contacts" });
+          } else if (route.name === "ProfileTab") {
+            navigation.navigate("ProfileTab", { screen: "ProfileMain" });
+          }
+        }
       },
     })}
   >

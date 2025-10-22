@@ -7,26 +7,175 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import {setGlobalOptions} from "firebase-functions";
-import {onRequest} from "firebase-functions/https";
+import { setGlobalOptions } from "firebase-functions";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as logger from "firebase-functions/logger";
+import * as admin from "firebase-admin";
+
+// Initialize Firebase Admin SDK
+admin.initializeApp();
+const db = admin.firestore();
+const messaging = admin.messaging();
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
+// For cost control, set the maximum number of containers
 setGlobalOptions({ maxInstances: 10 });
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+/**
+ * Cloud Function triggered on new message creation
+ * Sends push notification to all recipients (non-senders) in the chat
+ */
+export const sendNotificationOnNewMessage = onDocumentCreated(
+  "messages/{messageId}",
+  async (event) => {
+    try {
+      const messageId = event.params.messageId;
+      const messageData = event.data?.data();
+
+      if (!messageData) {
+        logger.warn("Message data not found for ID:", messageId);
+        return;
+      }
+
+      const { chatId, senderId, text, type } = messageData;
+
+      // Don't send notifications for system messages
+      if (type === "system") {
+        logger.log("Skipping notification for system message:", messageId);
+        return;
+      }
+
+      logger.log("Processing notification for message:", messageId, {
+        chatId,
+        senderId,
+      });
+
+      // Fetch the chat document to get all participants
+      const chatDoc = await db.collection("chats").doc(chatId).get();
+      if (!chatDoc.exists) {
+        logger.warn("Chat document not found:", chatId);
+        return;
+      }
+
+      const chatData = chatDoc.data();
+      const participants: string[] = chatData?.participants || [];
+      const chatName = chatData?.name || "Chat";
+      const chatType = chatData?.type || "direct";
+
+      logger.log("Chat participants:", participants, "Sender:", senderId);
+
+      // Get recipient list (exclude sender)
+      const recipients = participants.filter((uid) => uid !== senderId);
+
+      if (recipients.length === 0) {
+        logger.log("No recipients to notify");
+        return;
+      }
+
+      // Fetch sender user info
+      const senderDoc = await db.collection("users").doc(senderId).get();
+      const senderName =
+        senderDoc.data()?.name || senderDoc.data()?.email || "User";
+
+      // Fetch recipient user documents with FCM tokens
+      const recipientPromises = recipients.map((uid) =>
+        db.collection("users").doc(uid).get()
+      );
+      const recipientDocs = await Promise.all(recipientPromises);
+
+      // Collect valid FCM tokens
+      const fcmTokens: string[] = [];
+      recipientDocs.forEach((doc) => {
+        if (doc.exists && doc.data()?.fcmToken) {
+          fcmTokens.push(doc.data()!.fcmToken);
+        }
+      });
+
+      if (fcmTokens.length === 0) {
+        logger.log("No FCM tokens found for recipients");
+        return;
+      }
+
+      logger.log("Found FCM tokens:", fcmTokens.length);
+
+      // Prepare notification payload
+      const notificationTitle =
+        chatType === "direct" ? senderName : `${senderName} in ${chatName}`;
+      const notificationBody = text.substring(0, 100); // Truncate to 100 chars
+
+      const message = {
+        notification: {
+          title: notificationTitle,
+          body: notificationBody,
+        },
+        data: {
+          chatId: chatId,
+          messageId: messageId,
+          senderName: senderName,
+          senderId: senderId,
+          chatType: chatType,
+          timestamp: new Date().toISOString(),
+        },
+      };
+
+      // Send to all recipients
+      logger.log("Sending notification to", fcmTokens.length, "devices");
+      const response = await messaging.sendMulticast({
+        ...message,
+        tokens: fcmTokens,
+      } as any);
+
+      logger.log("Notification sent successfully", {
+        successCount: response.successCount,
+        failureCount: response.failureCount,
+      });
+
+      // Log failed tokens for cleanup (optional)
+      if (response.failureCount > 0) {
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            logger.warn("Failed to send to token:", fcmTokens[idx], resp.error);
+          }
+        });
+      }
+    } catch (error) {
+      logger.error("Error sending notification:", error);
+      throw error;
+    }
+  }
+);
+
+/**
+ * Helper function to calculate badge count for a user
+ * (Can be called from client when needed)
+ */
+export const calculateUnreadCount = async (userId: string): Promise<number> => {
+  try {
+    // Get all chats for this user
+    const chatsSnapshot = await db
+      .collection("chats")
+      .where("participants", "array-contains", userId)
+      .get();
+
+    let totalUnread = 0;
+
+    // For each chat, count unread messages
+    for (const chatDoc of chatsSnapshot.docs) {
+      const messagesSnapshot = await db
+        .collection("messages")
+        .where("chatId", "==", chatDoc.id)
+        .where("status", "!=", "read")
+        .where("senderId", "!=", userId)
+        .get();
+
+      totalUnread += messagesSnapshot.size;
+    }
+
+    return totalUnread;
+  } catch (error) {
+    logger.error("Error calculating unread count:", error);
+    return 0;
+  }
+};

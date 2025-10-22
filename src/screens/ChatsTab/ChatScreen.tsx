@@ -10,6 +10,9 @@ import {
   Text as RNText,
 } from "react-native";
 import { Appbar, TextInput, IconButton, Text } from "react-native-paper";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
 import {
   subscribeToMessages,
@@ -24,6 +27,7 @@ import { formatMessageDate, formatRelativeTime } from "../../utils/formatters";
 import { db } from "../../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { COLLECTIONS } from "../../utils/constants";
+import { colorPalette } from "../../utils/theme";
 
 interface ChatScreenProps {
   navigation: any;
@@ -69,6 +73,16 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       title: date,
       data: msgs,
     }));
+  }, [messages]);
+
+  // Get the ID of the last non-system message for status display
+  const lastMessageId = React.useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].type !== "system") {
+        return messages[i].id;
+      }
+    }
+    return null;
   }, [messages]);
 
   // Fetch chat data and setup presence listener for direct chats
@@ -310,7 +324,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     }
   };
 
-  const renderMessageItem = ({ item }: { item: Message }) => {
+  const renderMessageItem = ({
+    item,
+  }: {
+    item: Message;
+    index: number;
+    section: MessageGroup;
+  }) => {
     // System messages should not show sender name
     const isSystemMessage = item.type === "system";
     const isOwnMessage = item.senderId === user?.uid;
@@ -320,6 +340,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         ? senderNames[item.senderId] || "Unknown User"
         : undefined;
 
+    // Show status only for the absolute last non-system message
+    const isLatestMessage = !isSystemMessage && item.id === lastMessageId;
+
     return (
       <MessageBubble
         message={item}
@@ -328,6 +351,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           !isSystemMessage && chatType === "group" && !isOwnMessage
         }
         senderName={senderName}
+        isLatestFromUser={isLatestMessage}
       />
     );
   };
@@ -346,7 +370,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
     >
       {/* Header */}
       <Appbar.Header>
@@ -407,22 +431,37 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       <View style={styles.inputContainer}>
         <TextInput
           placeholder="Type a message..."
+          placeholderTextColor={colorPalette.neutral[400]}
           value={messageText}
           onChangeText={setMessageText}
-          mode="flat"
+          mode="outlined"
           multiline
           style={styles.input}
           editable={!sending}
-          dense
+          outlineColor={colorPalette.neutral[200]}
+          activeOutlineColor={colorPalette.primary}
+          outlineStyle={{ borderRadius: 12 }}
         />
-        <IconButton
-          icon="send"
-          size={20}
-          onPress={handleSendMessage}
-          disabled={!messageText.trim() || sending}
-          loading={sending}
-          style={styles.sendButton}
-        />
+        <View style={styles.sendButtonWrapper}>
+          <IconButton
+            icon={() => (
+              <MaterialCommunityIcons
+                name="send"
+                size={26}
+                color={
+                  messageText.trim() && !sending
+                    ? colorPalette.primary
+                    : colorPalette.neutral[400]
+                }
+              />
+            )}
+            onPress={handleSendMessage}
+            disabled={!messageText.trim() || sending}
+            loading={sending}
+            size={48}
+            style={styles.sendButton}
+          />
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -431,7 +470,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colorPalette.background,
   },
   headerContent: {
     flex: 1,
@@ -444,8 +483,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
   },
   presenceIndicator: {
     width: 8,
@@ -454,7 +493,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 12,
-    color: "#999",
+    color: colorPalette.neutral[600],
     marginTop: 2,
   },
   loadingContainer: {
@@ -464,7 +503,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: "#666",
+    color: colorPalette.neutral[600],
     fontSize: 14,
   },
   emptyContainer: {
@@ -475,14 +514,14 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
     marginBottom: 8,
     textAlign: "center",
   },
   emptySubtitle: {
     fontSize: 14,
-    color: "#666",
+    color: colorPalette.neutral[600],
     textAlign: "center",
     lineHeight: 20,
   },
@@ -495,24 +534,33 @@ const styles = StyleSheet.create({
   },
   dateSeparatorText: {
     fontSize: 12,
-    color: "#999",
+    color: colorPalette.neutral[500],
     fontWeight: "600",
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-    backgroundColor: "#f9f9f9",
+    paddingHorizontal: 12,
+    paddingVertical: 0,
+    paddingBottom: 8,
+    backgroundColor: colorPalette.background,
+    gap: 4,
   },
   input: {
     flex: 1,
-    marginHorizontal: 8,
     maxHeight: 100,
+    backgroundColor: "rgba(248, 250, 252, 0.8)",
+    borderRadius: 12,
+    fontSize: 16,
+  },
+  sendButtonWrapper: {
+    justifyContent: "center",
+    alignItems: "center",
+    height: 56,
+    width: 56,
   },
   sendButton: {
     margin: 0,
+    padding: 0,
   },
 });

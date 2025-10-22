@@ -6,6 +6,8 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
+  SafeAreaView,
 } from "react-native";
 import {
   Appbar,
@@ -17,25 +19,18 @@ import {
   Portal,
   RadioButton,
 } from "react-native-paper";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
 import { updateUserProfile } from "../../services/userService";
 import { signOutUser } from "../../services/authService";
 import { SUPPORTED_LANGUAGES } from "../../utils/constants";
+import { colorPalette } from "../../utils/theme";
 
 interface ProfileScreenProps {
   navigation: any;
 }
-
-// Icon helper component
-const IconText = ({ name }: { name: string }) => {
-  const icons: { [key: string]: string } = {
-    person: "👤",
-    email: "📧",
-    globe: "🌐",
-    checkmark: "✓",
-  };
-  return <Text style={styles.iconText}>{icons[name] || "◉"}</Text>;
-};
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { user, logout } = useAuthStore();
@@ -52,14 +47,36 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   if (!user) {
     return (
-      <View style={styles.container}>
-        <Appbar.Header>
-          <Appbar.Content title="Profile" />
-        </Appbar.Header>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <LinearGradient
+            colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
+            locations={[0, 1]}
+            style={styles.headerGradient}
+          >
+            <BlurView intensity={50} tint="light" style={styles.headerBlur}>
+              <View style={styles.headerContent}>
+                <View style={styles.headerLeft}>
+                  <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <MaterialCommunityIcons
+                      name="arrow-left"
+                      size={28}
+                      color={colorPalette.neutral[900]}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.headerCenter}>
+                  <Text style={styles.headerTitle}>Profile</Text>
+                </View>
+                <View style={styles.headerRight} />
+              </View>
+            </BlurView>
+          </LinearGradient>
+        </View>
         <View style={styles.emptyContainer}>
           <Text>No user data available</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -161,235 +178,278 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <Appbar.Header>
-        <Appbar.Content title="Profile" />
-      </Appbar.Header>
-
-      <ScrollView style={styles.content}>
-        {/* Avatar Section */}
-        <View style={styles.avatarSection}>
-          <View style={styles.avatarContainer}>
-            <Text style={styles.avatarEmoji}>👤</Text>
-          </View>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        <View style={styles.header}>
+          <LinearGradient
+            colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
+            locations={[0, 1]}
+            style={styles.headerGradient}
+          >
+            <BlurView intensity={50} tint="light" style={styles.headerBlur}>
+              <View style={styles.headerContent}>
+                <View style={styles.headerLeft}>
+                  <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <MaterialCommunityIcons
+                      name="arrow-left"
+                      size={28}
+                      color={colorPalette.neutral[900]}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.headerCenter}>
+                  <Text style={styles.headerTitle}>Profile</Text>
+                </View>
+                <View style={styles.headerRight} />
+              </View>
+            </BlurView>
+          </LinearGradient>
         </View>
 
-        {/* User Info Section */}
-        <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Account Information</Text>
-          <Divider />
-
-          {/* Email - Read Only */}
-          <View style={styles.infoRow}>
-            <View style={styles.infoLabel}>
-              <IconText name="email" />
-              <Text style={styles.infoLabelText}>Email</Text>
+        <ScrollView style={styles.content}>
+          {/* Avatar Section */}
+          <View style={styles.avatarSection}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.circularAvatar}>
+                <Text style={styles.avatarEmoji}>👤</Text>
+              </View>
             </View>
-            <Text style={styles.infoValue}>{user.email}</Text>
           </View>
 
-          <Divider style={styles.infoDivider} />
+          {/* User Info Section */}
+          <View style={styles.infoSection}>
+            <Text style={styles.sectionTitle}>Account Information</Text>
+            <Divider />
 
-          {/* Display Name - Editable */}
-          {!editingName ? (
-            <>
-              <View style={styles.infoRow}>
-                <View style={styles.infoLabel}>
-                  <IconText name="person" />
-                  <Text style={styles.infoLabelText}>Display Name</Text>
+            {/* Email - Read Only */}
+            <View style={styles.infoRow}>
+              <View style={styles.infoLabel}>
+                <MaterialCommunityIcons
+                  name="email"
+                  size={20}
+                  color={colorPalette.primary}
+                />
+                <Text style={styles.infoLabelText}>Email</Text>
+              </View>
+              <Text style={styles.infoValue}>{user.email}</Text>
+            </View>
+
+            <Divider style={styles.infoDivider} />
+
+            {/* Display Name - Editable */}
+            {!editingName ? (
+              <>
+                <View style={styles.infoRow}>
+                  <View style={styles.infoLabel}>
+                    <MaterialCommunityIcons
+                      name="account"
+                      size={20}
+                      color={colorPalette.primary}
+                    />
+                    <Text style={styles.infoLabelText}>Display Name</Text>
+                  </View>
+                  <View style={styles.nameValueContainer}>
+                    <Text style={styles.infoValue}>{user.name}</Text>
+                    <Button
+                      compact
+                      onPress={() => {
+                        setNewName(user.name);
+                        setEditingName(true);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </View>
                 </View>
-                <View style={styles.nameValueContainer}>
-                  <Text style={styles.infoValue}>{user.name}</Text>
+              </>
+            ) : (
+              <>
+                <View style={styles.editNameContainer}>
+                  <MaterialCommunityIcons
+                    name="account"
+                    size={20}
+                    color={colorPalette.primary}
+                  />
+                  <TextInput
+                    style={styles.nameInput}
+                    placeholder="Enter your name"
+                    value={newName}
+                    onChangeText={setNewName}
+                    mode="flat"
+                    dense
+                    editable={!isSavingName}
+                  />
+                </View>
+                <View style={styles.editButtonsContainer}>
                   <Button
+                    mode="outlined"
+                    onPress={handleCancelNameEdit}
+                    disabled={isSavingName}
                     compact
-                    onPress={() => {
-                      setNewName(user.name);
-                      setEditingName(true);
-                    }}
                   >
-                    Edit
+                    Cancel
+                  </Button>
+                  <Button
+                    mode="contained"
+                    onPress={handleSaveName}
+                    loading={isSavingName}
+                    disabled={isSavingName}
+                    compact
+                  >
+                    Save
                   </Button>
                 </View>
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={styles.editNameContainer}>
-                <IconText name="person" />
-                <TextInput
-                  style={styles.nameInput}
-                  placeholder="Enter your name"
-                  value={newName}
-                  onChangeText={setNewName}
-                  mode="flat"
-                  dense
-                  editable={!isSavingName}
+              </>
+            )}
+
+            <Divider style={styles.infoDivider} />
+
+            {/* Preferred Language */}
+            <View style={styles.infoRow}>
+              <View style={styles.infoLabel}>
+                <MaterialCommunityIcons
+                  name="translate"
+                  size={20}
+                  color={colorPalette.primary}
                 />
+                <Text style={styles.infoLabelText}>Language</Text>
               </View>
-              <View style={styles.editButtonsContainer}>
-                <Button
-                  mode="outlined"
-                  onPress={handleCancelNameEdit}
-                  disabled={isSavingName}
-                  compact
-                >
-                  Cancel
-                </Button>
-                <Button
-                  mode="contained"
-                  onPress={handleSaveName}
-                  loading={isSavingName}
-                  disabled={isSavingName}
-                  compact
-                >
-                  Save
+              <View style={styles.nameValueContainer}>
+                <Text style={styles.infoValue}>{currentLanguageName}</Text>
+                <Button compact onPress={() => setShowLanguageDialog(true)}>
+                  Change
                 </Button>
               </View>
-            </>
-          )}
-
-          <Divider style={styles.infoDivider} />
-
-          {/* Preferred Language */}
-          <View style={styles.infoRow}>
-            <View style={styles.infoLabel}>
-              <IconText name="globe" />
-              <Text style={styles.infoLabelText}>Language</Text>
             </View>
-            <View style={styles.nameValueContainer}>
-              <Text style={styles.infoValue}>{currentLanguageName}</Text>
-              <Button compact onPress={() => setShowLanguageDialog(true)}>
-                Change
-              </Button>
-            </View>
-          </View>
 
-          <Divider style={styles.infoDivider} />
+            <Divider style={styles.infoDivider} />
 
-          {/* Status - Read Only */}
-          <View style={styles.infoRow}>
-            <View style={styles.infoLabel}>
+            {/* Status - Read Only */}
+            <View style={styles.infoRow}>
+              <View style={styles.infoLabel}>
+                <Text
+                  style={[
+                    styles.statusIndicator,
+                    {
+                      color:
+                        user.status === "online"
+                          ? colorPalette.success
+                          : colorPalette.neutral[500],
+                    },
+                  ]}
+                >
+                  ●
+                </Text>
+                <Text style={styles.infoLabelText}>Status</Text>
+              </View>
               <Text
                 style={[
-                  styles.statusIndicator,
+                  styles.infoValue,
                   {
-                    color: user.status === "online" ? "#4CAF50" : "#999",
+                    color:
+                      user.status === "online"
+                        ? colorPalette.success
+                        : colorPalette.neutral[500],
                   },
                 ]}
               >
-                ●
+                {user.status === "online" ? "Online" : "Offline"}
               </Text>
-              <Text style={styles.infoLabelText}>Status</Text>
             </View>
-            <Text
-              style={[
-                styles.infoValue,
-                {
-                  color: user.status === "online" ? "#4CAF50" : "#999",
-                },
-              ]}
-            >
-              {user.status === "online" ? "Online" : "Offline"}
-            </Text>
           </View>
-        </View>
 
-        {/* Sign Out Button */}
-        <View style={styles.actionSection}>
-          <Button
-            mode="contained"
-            onPress={handleLogout}
-            loading={isUpdating}
-            disabled={isUpdating}
-            buttonColor="#FF6B6B"
-            style={styles.logoutButton}
-          >
-            Sign Out
-          </Button>
-        </View>
-      </ScrollView>
-
-      {/* Language Selection Dialog */}
-      <Portal>
-        <Dialog
-          visible={showLanguageDialog}
-          onDismiss={() => {
-            setSelectedLanguage(user.preferred_language);
-            setShowLanguageDialog(false);
-          }}
-        >
-          <Dialog.Title>Select Language</Dialog.Title>
-          <Dialog.Content>
-            <RadioButton.Group
-              value={selectedLanguage}
-              onValueChange={setSelectedLanguage}
-            >
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <View key={lang.code} style={styles.languageOption}>
-                  <RadioButton.Item
-                    label={lang.name}
-                    value={lang.code}
-                    style={styles.radioButton}
-                  />
-                </View>
-              ))}
-            </RadioButton.Group>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button
-              onPress={() => {
-                setSelectedLanguage(user.preferred_language);
-                setShowLanguageDialog(false);
-              }}
-            >
-              Cancel
-            </Button>
+          {/* Sign Out Button */}
+          <View style={styles.actionSection}>
             <Button
               mode="contained"
-              onPress={handleSaveLanguage}
-              loading={isSavingLanguage}
-              disabled={
-                isSavingLanguage || selectedLanguage === user.preferred_language
-              }
+              onPress={handleLogout}
+              loading={isUpdating}
+              disabled={isUpdating}
+              buttonColor={colorPalette.error}
+              style={styles.logoutButton}
             >
-              Save
+              Sign Out
             </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-    </KeyboardAvoidingView>
+          </View>
+        </ScrollView>
+
+        {/* Language Selection Dialog */}
+        <Portal>
+          <Dialog
+            visible={showLanguageDialog}
+            onDismiss={() => {
+              setSelectedLanguage(user.preferred_language);
+              setShowLanguageDialog(false);
+            }}
+          >
+            <Dialog.Title>Select Language</Dialog.Title>
+            <Dialog.Content>
+              <RadioButton.Group
+                value={selectedLanguage}
+                onValueChange={setSelectedLanguage}
+              >
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <View key={lang.code} style={styles.languageOption}>
+                    <RadioButton.Item
+                      label={lang.name}
+                      value={lang.code}
+                      style={styles.radioButton}
+                    />
+                  </View>
+                ))}
+              </RadioButton.Group>
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button
+                onPress={() => {
+                  setSelectedLanguage(user.preferred_language);
+                  setShowLanguageDialog(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleSaveLanguage}
+                loading={isSavingLanguage}
+                disabled={
+                  isSavingLanguage ||
+                  selectedLanguage === user.preferred_language
+                }
+              >
+                Save
+              </Button>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colorPalette.background,
   },
   content: {
     flex: 1,
   },
   avatarSection: {
     alignItems: "center",
-    paddingVertical: 32,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    backgroundColor: "#f9f9f9",
+    borderBottomColor: colorPalette.neutral[200],
+    backgroundColor: colorPalette.background,
   },
   avatarContainer: {
     alignItems: "center",
   },
   avatarEmoji: {
-    fontSize: 80,
-  },
-  iconText: {
-    fontSize: 18,
-    marginRight: 12,
-    width: 24,
-    textAlign: "center",
+    fontSize: 48,
   },
   statusIndicator: {
     fontSize: 14,
@@ -403,8 +463,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
     marginBottom: 12,
   },
   infoRow: {
@@ -417,15 +477,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    gap: 12,
   },
   infoLabelText: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#666",
+    fontWeight: "600",
+    color: colorPalette.neutral[700],
   },
   infoValue: {
     fontSize: 14,
-    color: "#333",
+    color: colorPalette.neutral[900],
     fontWeight: "500",
   },
   nameValueContainer: {
@@ -445,7 +506,7 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     flex: 1,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: colorPalette.surface,
   },
   editButtonsContainer: {
     flexDirection: "row",
@@ -465,13 +526,72 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 24,
     borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
+    borderTopColor: colorPalette.neutral[200],
   },
   logoutButton: {
     paddingVertical: 8,
   },
   emptyContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  header: {
+    height: 70,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: colorPalette.neutral[100],
+    shadowColor: colorPalette.neutral[900],
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  headerGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  headerBlur: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  headerLeft: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerRight: {
+    width: 44,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
+  },
+  circularAvatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colorPalette.neutral[100],
     justifyContent: "center",
     alignItems: "center",
   },

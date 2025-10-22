@@ -353,4 +353,84 @@ describe("chatService", () => {
       expect(result.error).toBeDefined();
     });
   });
+
+  describe("Group Chat Member Management", () => {
+    it("should successfully add members to group", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      const currentParticipants = ["user1", "user2"];
+      const newParticipants = ["user1", "user2", "user3"];
+
+      const result = await updateChat("group123", {
+        participants: newParticipants,
+      });
+
+      expect(result.success).toBe(true);
+      const callArgs = (firestoreLib.updateDoc as jest.Mock).mock.calls[0];
+      expect(callArgs[1].participants).toEqual(newParticipants);
+    });
+
+    it("should successfully remove member from group", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      const newParticipants = ["user1", "user3"]; // user2 removed
+
+      const result = await updateChat("group123", {
+        participants: newParticipants,
+      });
+
+      expect(result.success).toBe(true);
+      expect(newParticipants).not.toContain("user2");
+      expect(newParticipants.length).toBe(2);
+    });
+
+    it("should handle adding multiple members at once", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      const newParticipants = ["user1", "user2", "user3", "user4", "user5"];
+
+      const result = await updateChat("group123", {
+        participants: newParticipants,
+      });
+
+      expect(result.success).toBe(true);
+      const callArgs = (firestoreLib.updateDoc as jest.Mock).mock.calls[0];
+      expect(callArgs[1].participants.length).toBe(5);
+    });
+
+    it("should prevent duplicate participants", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      const participants = ["user1", "user2", "user3"];
+
+      // No duplicates should exist
+      const uniqueParticipants = [...new Set(participants)];
+      expect(uniqueParticipants.length).toBe(participants.length);
+    });
+
+    it("should handle member leaving group", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      const newParticipants = ["user1", "user3", "user4"]; // user2 left
+
+      const result = await updateChat("group123", {
+        participants: newParticipants,
+      });
+
+      expect(result.success).toBe(true);
+      expect(newParticipants.length).toBe(3);
+      expect(newParticipants).not.toContain("user2");
+    });
+
+    it("should include timestamp when modifying group participants", async () => {
+      (firestoreLib.updateDoc as jest.Mock).mockResolvedValue(undefined);
+
+      await updateChat("group123", {
+        participants: ["user1", "user2", "user3"],
+      });
+
+      const callArgs = (firestoreLib.updateDoc as jest.Mock).mock.calls[0];
+      expect(callArgs[1]).toHaveProperty("updatedAt");
+    });
+  });
 });

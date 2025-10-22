@@ -2,6 +2,9 @@ import {
   sendMessage,
   subscribeToMessages,
   updateMessageStatus,
+  createSystemMessage,
+  calculateUnreadCount,
+  subscribeToUnreadCount,
 } from "../messageService";
 import * as firestoreLib from "firebase/firestore";
 
@@ -148,6 +151,276 @@ describe("messageService", () => {
         const callArgs = (firestoreLib.updateDoc as jest.Mock).mock.calls[0];
         expect(callArgs[1]).toEqual(expect.objectContaining({ status }));
       }
+    });
+  });
+
+  describe("createSystemMessage", () => {
+    it("should successfully create a system message", async () => {
+      const mockDocRef = { id: "sysmsg123" };
+      (firestoreLib.addDoc as jest.Mock).mockResolvedValue(mockDocRef);
+
+      const result = await createSystemMessage(
+        "chat123",
+        "User John joined the group"
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.messageId).toBe("sysmsg123");
+      expect(firestoreLib.addDoc).toHaveBeenCalled();
+    });
+
+    it("should create system message with correct structure", async () => {
+      const mockDocRef = { id: "sysmsg123" };
+      (firestoreLib.addDoc as jest.Mock).mockResolvedValue(mockDocRef);
+
+      await createSystemMessage("chat123", "User left the group");
+
+      const callArgs = (firestoreLib.addDoc as jest.Mock).mock.calls[0];
+      const messageData = callArgs[1];
+
+      expect(messageData).toEqual(
+        expect.objectContaining({
+          chatId: "chat123",
+          senderId: "system",
+          text: "User left the group",
+          type: "system",
+          status: "read",
+          ai: expect.any(Object),
+        })
+      );
+    });
+
+    it("should have correct AI structure for system messages", async () => {
+      const mockDocRef = { id: "sysmsg123" };
+      (firestoreLib.addDoc as jest.Mock).mockResolvedValue(mockDocRef);
+
+      await createSystemMessage("chat123", "Admin added user");
+
+      const callArgs = (firestoreLib.addDoc as jest.Mock).mock.calls[0];
+      const messageData = callArgs[1];
+
+      expect(messageData.ai).toEqual({
+        translated_text: "",
+        detected_language: "",
+        summary: "",
+      });
+    });
+
+    it("should have timestamp in system message", async () => {
+      const mockDocRef = { id: "sysmsg123" };
+      (firestoreLib.addDoc as jest.Mock).mockResolvedValue(mockDocRef);
+
+      await createSystemMessage("chat123", "System message");
+
+      const callArgs = (firestoreLib.addDoc as jest.Mock).mock.calls[0];
+      const messageData = callArgs[1];
+
+      expect(messageData).toHaveProperty("timestamp");
+    });
+
+    it("should handle creation errors", async () => {
+      (firestoreLib.addDoc as jest.Mock).mockRejectedValue(
+        new Error("Firestore error")
+      );
+
+      const result = await createSystemMessage("chat123", "User joined");
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+
+    it("should support different system message types", async () => {
+      const mockDocRef = { id: "sysmsg123" };
+      (firestoreLib.addDoc as jest.Mock).mockResolvedValue(mockDocRef);
+
+      const messages = [
+        "User John joined the group",
+        "Admin removed user Jane",
+        "User Mike left the group",
+        "Group name changed to New Group",
+      ];
+
+      for (const msg of messages) {
+        jest.clearAllMocks();
+        (firestoreLib.addDoc as jest.Mock).mockResolvedValue(mockDocRef);
+        const result = await createSystemMessage("chat123", msg);
+        expect(result.success).toBe(true);
+      }
+    });
+  });
+
+  describe("calculateUnreadCount", () => {
+    it("should calculate unread count from multiple chats", async () => {
+      const userId = "user123";
+
+      // Mock chats query
+      const mockChatsSnapshot = {
+        docs: [{ id: "chat1" }, { id: "chat2" }],
+      };
+
+      // Mock messages with docs that have data() method
+      const mockMessagesChat1 = {
+        docs: [
+          { data: () => ({ senderId: "user456" }) },
+          { data: () => ({ senderId: "user789" }) },
+          { data: () => ({ senderId: "user456" }) },
+        ],
+      };
+
+      const mockMessagesChat2 = {
+        docs: [
+          { data: () => ({ senderId: "user999" }) },
+          { data: () => ({ senderId: "user888" }) },
+        ],
+      };
+
+      (firestoreLib.getDocs as jest.Mock)
+        .mockResolvedValueOnce(mockChatsSnapshot)
+        .mockResolvedValueOnce(mockMessagesChat1) // 3 unread in chat1
+        .mockResolvedValueOnce(mockMessagesChat2); // 2 unread in chat2
+
+      const result = await calculateUnreadCount(userId);
+
+      expect(result.success).toBe(true);
+      expect(result.count).toBe(5); // 3 + 2
+    });
+
+    it("should return 0 when no unread messages", async () => {
+      const userId = "user123";
+
+      const mockChatsSnapshot = {
+        docs: [{ id: "chat1" }],
+      };
+
+      const mockMessagesChat1 = {
+        docs: [],
+      };
+
+      (firestoreLib.getDocs as jest.Mock)
+        .mockResolvedValueOnce(mockChatsSnapshot)
+        .mockResolvedValueOnce(mockMessagesChat1); // No unread
+
+      const result = await calculateUnreadCount(userId);
+
+      expect(result.success).toBe(true);
+      expect(result.count).toBe(0);
+    });
+
+    it("should handle errors gracefully", async () => {
+      const userId = "user123";
+
+      (firestoreLib.getDocs as jest.Mock).mockRejectedValue(
+        new Error("Database error")
+      );
+
+      const result = await calculateUnreadCount(userId);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+
+    it("should exclude messages from the user themselves", async () => {
+      const userId = "user123";
+
+      const mockChatsSnapshot = {
+        docs: [{ id: "chat1" }],
+      };
+
+      const mockMessagesChat1 = {
+        docs: [
+          { data: () => ({ senderId: "user123" }) }, // Should be filtered out
+          { data: () => ({ senderId: "user456" }) }, // Should be counted
+        ],
+      };
+
+      (firestoreLib.getDocs as jest.Mock)
+        .mockResolvedValueOnce(mockChatsSnapshot)
+        .mockResolvedValueOnce(mockMessagesChat1);
+
+      const result = await calculateUnreadCount(userId);
+
+      // Only 1 message should be counted (user456's message, not user123's)
+      expect(result.success).toBe(true);
+      expect(result.count).toBe(1);
+    });
+  });
+
+  describe("subscribeToUnreadCount", () => {
+    it("should setup listener for unread count changes", () => {
+      const userId = "user123";
+      const callback = jest.fn();
+
+      (firestoreLib.onSnapshot as jest.Mock).mockReturnValue(() => {});
+
+      subscribeToUnreadCount(userId, callback);
+
+      expect(firestoreLib.onSnapshot).toHaveBeenCalled();
+    });
+
+    it("should call callback with unread count", async () => {
+      const userId = "user123";
+      const callback = jest.fn();
+
+      let snapshotCallback: ((snapshot: any) => void) | undefined;
+      (firestoreLib.onSnapshot as jest.Mock).mockImplementation((query, cb) => {
+        snapshotCallback = cb;
+        return () => {};
+      });
+
+      const mockChatsSnapshot = {
+        docs: [{ id: "chat1" }],
+      };
+
+      const mockMessagesSnapshot = {
+        docs: [
+          { data: () => ({ senderId: "user456", status: "sent" }) },
+          { data: () => ({ senderId: "user789", status: "sent" }) },
+          { data: () => ({ senderId: "user456", status: "delivered" }) },
+          { data: () => ({ senderId: "user999", status: "sent" }) },
+          { data: () => ({ senderId: "user888", status: "sent" }) },
+        ],
+      };
+
+      (firestoreLib.getDocs as jest.Mock)
+        .mockResolvedValueOnce(mockChatsSnapshot)
+        .mockResolvedValueOnce(mockMessagesSnapshot); // 5 unread from others
+
+      subscribeToUnreadCount(userId, callback);
+
+      // Trigger the snapshot
+      await snapshotCallback?.({});
+
+      // Wait for async callback
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(callback).toHaveBeenCalledWith(5);
+    });
+
+    it("should return unsubscribe function", () => {
+      const userId = "user123";
+      const callback = jest.fn();
+      const mockUnsubscribe = jest.fn();
+
+      (firestoreLib.onSnapshot as jest.Mock).mockReturnValue(mockUnsubscribe);
+
+      const unsubscribe = subscribeToUnreadCount(userId, callback);
+
+      expect(typeof unsubscribe).toBe("function");
+    });
+
+    it("should handle subscription errors", () => {
+      const userId = "user123";
+      const callback = jest.fn();
+
+      (firestoreLib.onSnapshot as jest.Mock).mockImplementation(() => {
+        throw new Error("Subscription error");
+      });
+
+      const unsubscribe = subscribeToUnreadCount(userId, callback);
+
+      // Should return a no-op function instead of throwing
+      expect(typeof unsubscribe).toBe("function");
+      expect(() => unsubscribe()).not.toThrow();
     });
   });
 });

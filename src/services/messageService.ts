@@ -199,3 +199,87 @@ export const createSystemMessage = async (
     return { success: false, error };
   }
 };
+
+/**
+ * Calculate total unread message count across all user's chats
+ */
+export const calculateUnreadCount = async (
+  userId: string
+): Promise<{ success: boolean; count?: number; error?: any }> => {
+  try {
+    // Get all chats for this user
+    const chatsQuery = query(
+      collection(db, COLLECTIONS.CHATS),
+      where("participants", "array-contains", userId)
+    );
+    const chatsSnapshot = await getDocs(chatsQuery);
+
+    let totalUnread = 0;
+
+    // For each chat, count unread messages
+    for (const chatDoc of chatsSnapshot.docs) {
+      // Query messages for this chat (avoid composite index requirement)
+      // Filter status client-side instead
+      const messagesQuery = query(
+        collection(db, COLLECTIONS.MESSAGES),
+        where("chatId", "==", chatDoc.id)
+      );
+
+      const messagesSnapshot = await getDocs(messagesQuery);
+
+      // Filter for unread messages from other users (client-side)
+      const unreadFromOthers = messagesSnapshot.docs.filter((doc) => {
+        const data = doc.data();
+        return data.status !== "read" && data.senderId !== userId;
+      });
+
+      totalUnread += unreadFromOthers.length;
+    }
+
+    console.log("✅ Unread count calculated:", totalUnread);
+    return { success: true, count: totalUnread };
+  } catch (error) {
+    console.error("❌ Error calculating unread count:", error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Subscribe to unread message count changes for a user
+ */
+export const subscribeToUnreadCount = (
+  userId: string,
+  callback: (count: number) => void
+): Unsubscribe => {
+  try {
+    // Get all chats for this user
+    const chatsQuery = query(
+      collection(db, COLLECTIONS.CHATS),
+      where("participants", "array-contains", userId)
+    );
+
+    // Subscribe to messages collection and update count when messages change
+    const unsubscribe = onSnapshot(
+      query(
+        collection(db, COLLECTIONS.MESSAGES),
+        where("status", "!=", "read")
+      ),
+      async (snapshot) => {
+        try {
+          // Recalculate unread count
+          const result = await calculateUnreadCount(userId);
+          if (result.success && result.count !== undefined) {
+            callback(result.count);
+          }
+        } catch (error) {
+          console.error("❌ Error in unread count subscription:", error);
+        }
+      }
+    );
+
+    return unsubscribe;
+  } catch (error) {
+    console.error("❌ Error subscribing to unread count:", error);
+    return () => {};
+  }
+};

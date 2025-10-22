@@ -6,9 +6,13 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
+  SafeAreaView,
 } from "react-native";
 import { Appbar, Text, Button, TextInput, Divider } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useAuthStore } from "../../store/authStore";
 import { updateChat } from "../../services/chatService";
 import { getAllUsers } from "../../services/userService";
@@ -17,6 +21,7 @@ import { db } from "../../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { COLLECTIONS } from "../../utils/constants";
 import { createSystemMessage } from "../../services/messageService";
+import { colorPalette } from "../../utils/theme";
 
 interface GroupInfoScreenProps {
   navigation: any;
@@ -336,38 +341,64 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
         </View>
         {isCurrentUserAdmin && !isCurrentUser && (
           <Button
-            icon="minus"
             mode="text"
-            textColor="#d32f2f"
+            textColor={colorPalette.error}
             onPress={() => handleRemoveMember(item.uid, item.name)}
             disabled={updating}
             compact
-          />
+          >
+            Remove
+          </Button>
         )}
       </View>
     );
   };
 
   return (
-    <View style={styles.container}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title="Group Info" />
-      </Appbar.Header>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <LinearGradient
+          colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
+          locations={[0, 1]}
+          style={styles.headerGradient}
+        >
+          <BlurView intensity={50} tint="light" style={styles.headerBlur}>
+            <View style={styles.headerContent}>
+              <View style={styles.headerLeft}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                  <MaterialCommunityIcons
+                    name="arrow-left"
+                    size={28}
+                    color={colorPalette.neutral[900]}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.headerCenter}>
+                <Text style={styles.headerTitle}>Group Info</Text>
+              </View>
+              <View style={styles.headerRight} />
+            </View>
+          </BlurView>
+        </LinearGradient>
+      </View>
 
       <ScrollView style={styles.content}>
         {/* Group Name Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Group Name</Text>
+          <Text style={styles.sectionTitleHeader}>Group Name</Text>
           {editingName ? (
             <View style={styles.editContainer}>
               <TextInput
                 placeholder="Group name"
+                placeholderTextColor={colorPalette.neutral[400]}
                 value={newName}
                 onChangeText={setNewName}
                 mode="outlined"
                 style={styles.input}
                 editable={!updating}
+                outlineColor={colorPalette.neutral[200]}
+                activeOutlineColor={colorPalette.primary}
+                outlineStyle={{ borderRadius: 12 }}
               />
               <View style={styles.editButtons}>
                 <Button
@@ -397,6 +428,7 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
               {isAdmin && (
                 <Button
                   compact
+                  mode="text"
                   onPress={() => setEditingName(true)}
                   disabled={updating}
                 >
@@ -407,16 +439,18 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
           )}
         </View>
 
-        <Divider />
+        <Divider style={styles.divider} />
 
         {/* Members Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Members ({members.length})</Text>
+            <Text style={styles.sectionTitleHeader}>
+              Members ({members.length})
+            </Text>
             {isAdmin && (
               <Button
                 compact
-                icon="plus"
+                mode="text"
                 onPress={handleAddMembers}
                 disabled={updating}
               >
@@ -442,7 +476,6 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
             <View style={styles.actionContainer}>
               <Button
                 mode="outlined"
-                icon="trash-can-outline"
                 onPress={handleDeleteGroup}
                 disabled={updating}
                 labelStyle={styles.deleteButtonLabel}
@@ -490,26 +523,34 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
                 renderItem={({ item }) => {
                   const isSelected = selectedNewMembers.has(item.uid);
                   return (
-                    <View
-                      style={[
-                        styles.memberSelectItem,
-                        isSelected && styles.memberSelectItemSelected,
-                      ]}
+                    <TouchableOpacity
+                      style={styles.memberSelectItem}
+                      onPress={() => toggleNewMemberSelection(item.uid)}
+                      activeOpacity={0.7}
                     >
-                      <Text
-                        style={styles.memberSelectName}
+                      <View style={styles.memberSelectInfo}>
+                        <Text style={styles.memberSelectName}>{item.name}</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.checkboxContainer}
                         onPress={() => toggleNewMemberSelection(item.uid)}
                       >
-                        {item.name}
-                      </Text>
-                      <Button
-                        compact
-                        onPress={() => toggleNewMemberSelection(item.uid)}
-                        disabled={updating}
-                      >
-                        {isSelected ? "✓ Added" : "Add"}
-                      </Button>
-                    </View>
+                        <View
+                          style={[
+                            styles.checkbox,
+                            isSelected && styles.checkboxChecked,
+                          ]}
+                        >
+                          {isSelected && (
+                            <MaterialCommunityIcons
+                              name="check"
+                              size={16}
+                              color={colorPalette.background}
+                            />
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    </TouchableOpacity>
                   );
                 }}
                 keyExtractor={(item) => item.uid}
@@ -536,19 +577,70 @@ export const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({
           </View>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colorPalette.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  header: {
+    height: 70,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: colorPalette.neutral[100],
+    shadowColor: colorPalette.neutral[900],
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  headerGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  headerBlur: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  headerLeft: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerRight: {
+    width: 44,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
   },
   content: {
     flex: 1,
@@ -565,15 +657,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
+    marginBottom: 12,
   },
   groupName: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#333",
+    fontSize: 14,
+    fontWeight: "600",
+    color: colorPalette.neutral[700],
+    marginVertical: 4,
   },
   displayContainer: {
     flexDirection: "row",
@@ -584,7 +677,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   input: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "rgba(248, 250, 252, 0.8)",
+    borderRadius: 12,
+    fontSize: 16,
   },
   editButtons: {
     flexDirection: "row",
@@ -600,7 +695,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: colorPalette.neutral[100],
   },
   memberInfo: {
     flex: 1,
@@ -608,22 +703,22 @@ const styles = StyleSheet.create({
   },
   memberName: {
     fontSize: 14,
-    color: "#333",
-    fontWeight: "500",
+    color: colorPalette.neutral[900],
+    fontWeight: "600",
   },
   adminBadge: {
     fontSize: 11,
-    color: "#2196F3",
-    fontWeight: "600",
+    color: colorPalette.primary,
+    fontWeight: "700",
   },
   actionContainer: {
     gap: 8,
   },
   deleteButtonLabel: {
-    color: "#d32f2f",
+    color: colorPalette.error,
   },
   leaveButtonLabel: {
-    color: "#d32f2f",
+    color: colorPalette.error,
   },
   modalOverlay: {
     position: "absolute",
@@ -637,8 +732,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   modal: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: colorPalette.background,
+    borderRadius: 12,
     width: "80%",
     maxHeight: "70%",
     padding: 20,
@@ -653,12 +748,12 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
   },
   modalEmptyText: {
     fontSize: 16,
-    color: "#666",
+    color: colorPalette.neutral[600],
     textAlign: "center",
     marginTop: 20,
   },
@@ -676,19 +771,47 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
-  memberSelectItemSelected: {
-    backgroundColor: "#e0f2f7",
-    borderBottomColor: "#2196F3",
+  memberSelectInfo: {
+    flex: 1,
   },
   memberSelectName: {
     fontSize: 16,
-    color: "#333",
-    flex: 1,
+    color: colorPalette.neutral[900],
+    fontWeight: "600",
+  },
+  checkboxContainer: {
+    width: 30,
+    height: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  checkboxChecked: {
+    backgroundColor: colorPalette.primary,
+    borderColor: colorPalette.primary,
   },
   modalFooter: {
     flexDirection: "row",
     justifyContent: "space-around",
     width: "100%",
     marginTop: 15,
+  },
+  divider: {
+    marginVertical: 0,
+  },
+  sectionTitleHeader: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
+    marginBottom: 12,
   },
 });

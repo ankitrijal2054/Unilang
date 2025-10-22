@@ -5,13 +5,20 @@ import {
   FlatList,
   RefreshControl,
   ActivityIndicator,
+  TouchableOpacity,
+  SafeAreaView,
 } from "react-native";
-import { Appbar, Button, Text } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Button, Text } from "react-native-paper";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
 import { subscribeToUserChats } from "../../services/chatService";
 import { Chat } from "../../types";
 import { ChatListItem } from "../../components/ChatListItem";
 import { useChatDisplayName } from "../../utils/useChatDisplayName";
+import { colorPalette } from "../../utils/theme";
 
 interface ChatListScreenProps {
   navigation: any;
@@ -44,6 +51,7 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
   const [chats, setChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const insets = useSafeAreaInsets();
 
   // Subscribe to real-time chat updates
   useEffect(() => {
@@ -113,6 +121,7 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
         mode="contained"
         onPress={handleNewChat}
         style={styles.emptyButton}
+        labelStyle={styles.emptyButtonLabel}
       >
         Start Chatting
       </Button>
@@ -120,49 +129,129 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
-      <Appbar.Header>
-        <Appbar.Content title="Unilang" subtitle="Messages" />
-        <Appbar.Action icon="plus" onPress={handleNewChat} />
-        <Appbar.Action icon="account-group" onPress={handleNewGroup} />
-      </Appbar.Header>
+      <View style={styles.header}>
+        <LinearGradient
+          colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
+          locations={[0, 1]}
+          style={styles.headerGradient}
+        >
+          <BlurView intensity={50} tint="light" style={styles.headerBlur}>
+            <View style={styles.headerContent}>
+              <View style={styles.headerLeft}>
+                <Text style={styles.headerTitle}>Messages</Text>
+              </View>
+              <View style={styles.headerRight}>
+                <TouchableOpacity onPress={handleNewChat}>
+                  <MaterialCommunityIcons
+                    name="plus"
+                    size={28}
+                    color={colorPalette.neutral[900]}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleNewGroup}>
+                  <MaterialCommunityIcons
+                    name="account-group"
+                    size={28}
+                    color={colorPalette.neutral[900]}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </BlurView>
+        </LinearGradient>
+      </View>
 
       {/* Loading state */}
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#2196F3" />
+          <ActivityIndicator size="large" color={colorPalette.primary} />
           <Text style={styles.loadingText}>Loading chats...</Text>
         </View>
       ) : chats.length === 0 ? (
         renderEmpty()
       ) : (
-        /* Chat List */
         <FlatList
           data={chats}
           renderItem={renderChatItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(chat) => chat.id}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#2196F3"
+              tintColor={colorPalette.primary}
             />
           }
-          scrollEnabled={true}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={20}
-          windowSize={10}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colorPalette.background,
+  },
+  header: {
+    height: 70,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: colorPalette.neutral[100],
+    shadowColor: colorPalette.neutral[900],
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  headerGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  headerBlur: {
+    flex: 1,
+    justifyContent: "center",
+    backgroundColor: `rgba(243, 244, 246, 0.6)`,
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  headerLeft: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerRight: {
+    width: 100,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: 16,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: colorPalette.neutral[600],
   },
   centerContainer: {
     flex: 1,
@@ -171,31 +260,33 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: "#666",
+    color: colorPalette.neutral[600],
     fontSize: 14,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 32,
   },
   emptyTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 20,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
     marginBottom: 8,
-    textAlign: "center",
   },
   emptySubtitle: {
     fontSize: 14,
-    color: "#666",
-    marginBottom: 24,
+    color: colorPalette.neutral[600],
     textAlign: "center",
-    lineHeight: 20,
+    marginBottom: 24,
   },
   emptyButton: {
-    marginTop: 12,
-    paddingVertical: 8,
+    borderRadius: 12,
+    paddingVertical: 6,
+  },
+  emptyButtonLabel: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

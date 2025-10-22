@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { colorPalette } from "../utils/theme";
 
 interface StatusIndicatorProps {
   status: "sending" | "sent" | "delivered" | "read";
@@ -26,24 +27,30 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
           <MaterialCommunityIcons
             name="clock-outline"
             size={size}
-            color="#999"
+            color={colorPalette.neutral[400]}
           />
         );
       case "sent":
-        return <MaterialCommunityIcons name="check" size={size} color="#999" />;
+        return (
+          <MaterialCommunityIcons
+            name="check"
+            size={size}
+            color={colorPalette.neutral[400]}
+          />
+        );
       case "delivered":
         return (
           <View style={styles.doubleCheckContainer}>
             <MaterialCommunityIcons
               name="check"
               size={size}
-              color="#999"
+              color={colorPalette.neutral[400]}
               style={styles.checkIcon}
             />
             <MaterialCommunityIcons
               name="check"
               size={size}
-              color="#999"
+              color={colorPalette.neutral[400]}
               style={styles.checkIcon}
             />
           </View>
@@ -54,13 +61,13 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
             <MaterialCommunityIcons
               name="check"
               size={size}
-              color="#2196F3"
+              color={colorPalette.primary}
               style={styles.checkIcon}
             />
             <MaterialCommunityIcons
               name="check"
               size={size}
-              color="#2196F3"
+              color={colorPalette.primary}
               style={styles.checkIcon}
             />
           </View>

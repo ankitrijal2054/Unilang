@@ -7,6 +7,8 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
+  SafeAreaView,
 } from "react-native";
 import {
   Appbar,
@@ -16,10 +18,14 @@ import {
   Text,
   Snackbar,
 } from "react-native-paper";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
 import { getAllUsers } from "../../services/userService";
 import { createGroupChat } from "../../services/chatService";
 import { User } from "../../types";
+import { colorPalette } from "../../utils/theme";
 
 interface NewGroupScreenProps {
   navigation: any;
@@ -128,37 +134,74 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
     const isSelected = selectedUserIds.has(item.uid);
 
     return (
-      <View style={styles.userItem}>
-        <Checkbox
-          status={isSelected ? "checked" : "unchecked"}
+      <TouchableOpacity
+        style={styles.userItem}
+        onPress={() => toggleUserSelection(item.uid)}
+        activeOpacity={0.7}
+      >
+        <TouchableOpacity
+          style={styles.checkboxContainer}
           onPress={() => toggleUserSelection(item.uid)}
-        />
+        >
+          <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
+            {isSelected && (
+              <MaterialCommunityIcons
+                name="check"
+                size={16}
+                color={colorPalette.background}
+              />
+            )}
+          </View>
+        </TouchableOpacity>
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{item.name}</Text>
           <Text style={styles.userEmail}>{item.email}</Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={colorPalette.primary} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (step === "select_participants") {
     return (
-      <View style={styles.container}>
-        <Appbar.Header>
-          <Appbar.BackAction onPress={() => navigation.goBack()} />
-          <Appbar.Content
-            title="New Group"
-            subtitle={`${selectedUserIds.size} selected`}
-          />
-        </Appbar.Header>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <LinearGradient
+            colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
+            locations={[0, 1]}
+            style={styles.headerGradient}
+          >
+            <BlurView intensity={50} tint="light" style={styles.headerBlur}>
+              <View style={styles.headerContent}>
+                <View style={styles.headerLeft}>
+                  <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <MaterialCommunityIcons
+                      name="arrow-left"
+                      size={28}
+                      color={colorPalette.neutral[900]}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.headerCenter}>
+                  <Text style={styles.headerTitle}>New Group</Text>
+                  <Text style={styles.headerSubtitle}>
+                    {selectedUserIds.size} selected
+                  </Text>
+                </View>
+                <View style={styles.headerRight} />
+              </View>
+            </BlurView>
+          </LinearGradient>
+        </View>
 
         <FlatList
           data={allUsers}
@@ -191,83 +234,164 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
         >
           {errorMessage}
         </Snackbar>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => setStep("select_participants")} />
-        <Appbar.Content title="Group Name" />
-      </Appbar.Header>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        <View style={styles.header}>
+          <LinearGradient
+            colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
+            locations={[0, 1]}
+            style={styles.headerGradient}
+          >
+            <BlurView intensity={50} tint="light" style={styles.headerBlur}>
+              <View style={styles.headerContent}>
+                <View style={styles.headerLeft}>
+                  <TouchableOpacity
+                    onPress={() => setStep("select_participants")}
+                  >
+                    <MaterialCommunityIcons
+                      name="arrow-left"
+                      size={28}
+                      color={colorPalette.neutral[900]}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.headerCenter}>
+                  <Text style={styles.headerTitle}>Group Name</Text>
+                </View>
+                <View style={styles.headerRight} />
+              </View>
+            </BlurView>
+          </LinearGradient>
+        </View>
 
-      <View style={styles.contentContainer}>
-        <View style={styles.formContainer}>
-          <Text style={styles.label}>Group Name</Text>
-          <TextInput
-            placeholder="Enter group name"
-            value={groupName}
-            onChangeText={setGroupName}
-            mode="outlined"
-            style={styles.input}
-            editable={!creating}
-            autoFocus
-          />
+        <View style={styles.contentContainer}>
+          <View style={styles.formContainer}>
+            <Text style={styles.label}>Group Name</Text>
+            <TextInput
+              placeholder="Enter group name"
+              value={groupName}
+              onChangeText={setGroupName}
+              mode="outlined"
+              style={styles.input}
+              editable={!creating}
+              autoFocus
+            />
 
-          <View style={styles.summaryContainer}>
-            <Text style={styles.summaryLabel}>
-              Members ({selectedUserIds.size + 1}):
-            </Text>
-            <Text style={styles.summaryText}>{user?.name} (You)</Text>
-            {Array.from(selectedUserIds).map((userId) => {
-              const member = allUsers.find((u) => u.uid === userId);
-              return (
-                <Text key={userId} style={styles.summaryText}>
-                  {member?.name}
-                </Text>
-              );
-            })}
+            <View style={styles.summaryContainer}>
+              <Text style={styles.summaryLabel}>
+                Members ({selectedUserIds.size + 1}):
+              </Text>
+              <Text style={styles.summaryText}>{user?.name} (You)</Text>
+              {Array.from(selectedUserIds).map((userId) => {
+                const member = allUsers.find((u) => u.uid === userId);
+                return (
+                  <Text key={userId} style={styles.summaryText}>
+                    {member?.name}
+                  </Text>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.footer}>
+            <Button
+              mode="outlined"
+              onPress={() => setStep("select_participants")}
+              disabled={creating}
+              style={[styles.button, styles.backButton]}
+            >
+              Back
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleCreateGroup}
+              loading={creating}
+              disabled={!groupName.trim() || creating}
+              style={[styles.button, styles.createButton]}
+            >
+              Create Group
+            </Button>
           </View>
         </View>
-
-        <View style={styles.footer}>
-          <Button
-            mode="outlined"
-            onPress={() => setStep("select_participants")}
-            disabled={creating}
-            style={[styles.button, styles.backButton]}
-          >
-            Back
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleCreateGroup}
-            loading={creating}
-            disabled={!groupName.trim() || creating}
-            style={[styles.button, styles.createButton]}
-          >
-            Create Group
-          </Button>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colorPalette.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colorPalette.background,
+  },
+  header: {
+    height: 70,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: colorPalette.neutral[100],
+    shadowColor: colorPalette.neutral[900],
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  headerGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  headerBlur: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  headerLeft: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: colorPalette.neutral[700],
+    marginTop: 4,
+  },
+  headerRight: {
+    width: 44,
   },
   contentContainer: {
     flex: 1,
@@ -280,29 +404,30 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "rgba(248, 250, 252, 0.8)",
+    borderRadius: 12,
+    fontSize: 16,
   },
   summaryContainer: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 8,
+    backgroundColor: colorPalette.neutral[50],
+    borderRadius: 12,
+    padding: 16,
   },
   summaryLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#666",
+    fontSize: 14,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
     marginBottom: 8,
   },
   summaryText: {
-    fontSize: 13,
-    color: "#333",
-    marginVertical: 2,
+    fontSize: 14,
+    color: colorPalette.neutral[700],
+    marginBottom: 4,
   },
   listContent: {
     paddingVertical: 8,
@@ -313,7 +438,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: colorPalette.neutral[100],
+    backgroundColor: colorPalette.background,
   },
   userInfo: {
     marginLeft: 12,
@@ -321,12 +447,12 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#333",
+    fontWeight: "600",
+    color: colorPalette.neutral[900],
   },
   userEmail: {
     fontSize: 12,
-    color: "#999",
+    color: colorPalette.neutral[600],
     marginTop: 2,
   },
   emptyContainer: {
@@ -336,8 +462,8 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   emptyText: {
-    fontSize: 14,
-    color: "#999",
+    fontSize: 16,
+    color: colorPalette.neutral[600],
   },
   footer: {
     flexDirection: "row",
@@ -353,5 +479,26 @@ const styles = StyleSheet.create({
   },
   createButton: {
     flex: 1.2,
+  },
+  checkboxContainer: {
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colorPalette.neutral[400],
+    backgroundColor: colorPalette.background,
+  },
+  checkbox: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colorPalette.neutral[400],
+  },
+  checkboxChecked: {
+    backgroundColor: colorPalette.primary,
+    borderColor: colorPalette.primary,
   },
 });

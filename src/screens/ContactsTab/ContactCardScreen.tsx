@@ -1,7 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View, ScrollView, Alert } from "react-native";
-import { Appbar, Button, Text, Avatar, Card, ActivityIndicator } from "react-native-paper";
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  Alert,
+  SafeAreaView,
+  TouchableOpacity,
+} from "react-native";
+import {
+  Appbar,
+  Button,
+  Text,
+  Avatar,
+  Card,
+  ActivityIndicator,
+} from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useAuthStore } from "../../store/authStore";
 import {
   subscribeToUserPresence,
@@ -9,6 +25,8 @@ import {
 } from "../../services/userService";
 import { createDirectChat } from "../../services/chatService";
 import { User } from "../../types";
+import { colorPalette } from "../../utils/theme";
+import { formatLastSeen } from "../../utils/formatters";
 
 interface ContactCardScreenProps {
   navigation: any;
@@ -105,41 +123,105 @@ export const ContactCardScreen: React.FC<ContactCardScreenProps> = ({
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Appbar.Header>
-          <Appbar.BackAction onPress={() => navigation.popToTop()} />
-          <Appbar.Content title="Contact" />
-        </Appbar.Header>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2196F3" />
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <LinearGradient
+            colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
+            locations={[0, 1]}
+            style={styles.headerGradient}
+          >
+            <BlurView intensity={50} tint="light" style={styles.headerBlur}>
+              <View style={styles.headerContent}>
+                <View style={styles.headerLeft}>
+                  <TouchableOpacity onPress={() => navigation.popToTop()}>
+                    <MaterialCommunityIcons
+                      name="arrow-left"
+                      size={28}
+                      color={colorPalette.neutral[900]}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.headerCenter}>
+                  <Text style={styles.headerTitle}>Contact</Text>
+                </View>
+                <View style={styles.headerRight} />
+              </View>
+            </BlurView>
+          </LinearGradient>
         </View>
-      </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colorPalette.primary} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!user) {
     return (
-      <View style={styles.container}>
-        <Appbar.Header>
-          <Appbar.BackAction onPress={() => navigation.popToTop()} />
-          <Appbar.Content title="Contact" />
-        </Appbar.Header>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <LinearGradient
+            colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
+            locations={[0, 1]}
+            style={styles.headerGradient}
+          >
+            <BlurView intensity={50} tint="light" style={styles.headerBlur}>
+              <View style={styles.headerContent}>
+                <View style={styles.headerLeft}>
+                  <TouchableOpacity onPress={() => navigation.popToTop()}>
+                    <MaterialCommunityIcons
+                      name="arrow-left"
+                      size={28}
+                      color={colorPalette.neutral[900]}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.headerCenter}>
+                  <Text style={styles.headerTitle}>Contact</Text>
+                </View>
+                <View style={styles.headerRight} />
+              </View>
+            </BlurView>
+          </LinearGradient>
+        </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Contact not found</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   const isOnline = user.status === "online";
-  const languageName = LANGUAGE_NAMES[user.preferred_language] || user.preferred_language;
+  const languageName =
+    LANGUAGE_NAMES[user.preferred_language] || user.preferred_language;
 
   return (
-    <View style={styles.container}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.popToTop()} />
-        <Appbar.Content title="Contact" />
-      </Appbar.Header>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <LinearGradient
+          colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
+          locations={[0, 1]}
+          style={styles.headerGradient}
+        >
+          <BlurView intensity={50} tint="light" style={styles.headerBlur}>
+            <View style={styles.headerContent}>
+              <View style={styles.headerLeft}>
+                <TouchableOpacity onPress={() => navigation.popToTop()}>
+                  <MaterialCommunityIcons
+                    name="arrow-left"
+                    size={28}
+                    color={colorPalette.neutral[900]}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.headerCenter}>
+                <Text style={styles.headerTitle}>Contact</Text>
+              </View>
+              <View style={styles.headerRight} />
+            </View>
+          </BlurView>
+        </LinearGradient>
+      </View>
 
       <ScrollView style={styles.content}>
         {/* Contact Card */}
@@ -147,7 +229,10 @@ export const ContactCardScreen: React.FC<ContactCardScreenProps> = ({
           <View style={styles.cardContent}>
             {/* Avatar */}
             <View style={styles.avatarSection}>
-              <Avatar.Text size={80} label={user.name.charAt(0).toUpperCase()} />
+              <Avatar.Text
+                size={80}
+                label={user.name.charAt(0).toUpperCase()}
+              />
               {isOnline && <View style={styles.onlineIndicator} />}
             </View>
 
@@ -161,14 +246,22 @@ export const ContactCardScreen: React.FC<ContactCardScreenProps> = ({
                 isOnline ? styles.onlineStatus : styles.offlineStatus,
               ]}
             >
-              {isOnline ? "Active now" : `Last seen ${user.lastSeen || "recently"}`}
+              {isOnline
+                ? "Active now"
+                : `Last seen ${formatLastSeen(
+                    user.lastSeen || new Date().toISOString()
+                  )}`}
             </Text>
 
             {/* Info Items */}
             <View style={styles.infoSection}>
               {/* Email */}
               <View style={styles.infoItem}>
-                <MaterialCommunityIcons name="email" size={20} color="#2196F3" />
+                <MaterialCommunityIcons
+                  name="email"
+                  size={20}
+                  color={colorPalette.primary}
+                />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Email</Text>
                   <Text style={styles.infoValue}>{user.email}</Text>
@@ -177,7 +270,11 @@ export const ContactCardScreen: React.FC<ContactCardScreenProps> = ({
 
               {/* Language */}
               <View style={styles.infoItem}>
-                <MaterialCommunityIcons name="translate" size={20} color="#2196F3" />
+                <MaterialCommunityIcons
+                  name="translate"
+                  size={20}
+                  color={colorPalette.primary}
+                />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Language</Text>
                   <Text style={styles.infoValue}>{languageName}</Text>
@@ -189,11 +286,18 @@ export const ContactCardScreen: React.FC<ContactCardScreenProps> = ({
                 <MaterialCommunityIcons
                   name={isOnline ? "check-circle" : "clock-outline"}
                   size={20}
-                  color={isOnline ? "#4CAF50" : "#999"}
+                  color={
+                    isOnline ? colorPalette.success : colorPalette.neutral[500]
+                  }
                 />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Status</Text>
-                  <Text style={[styles.infoValue, isOnline ? styles.onlineText : styles.offlineText]}>
+                  <Text
+                    style={[
+                      styles.infoValue,
+                      isOnline ? styles.onlineText : styles.offlineText,
+                    ]}
+                  >
                     {isOnline ? "Online" : "Offline"}
                   </Text>
                 </View>
@@ -216,14 +320,14 @@ export const ContactCardScreen: React.FC<ContactCardScreenProps> = ({
           </Button>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colorPalette.background,
   },
   loadingContainer: {
     flex: 1,
@@ -237,15 +341,16 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: "#666",
+    color: colorPalette.neutral[600],
   },
   content: {
-    flex: 1,
-    padding: 16,
+    paddingTop: 16,
+    backgroundColor: colorPalette.background,
   },
   contactCard: {
-    marginBottom: 24,
-    elevation: 4,
+    margin: 16,
+    backgroundColor: colorPalette.background,
+    borderColor: colorPalette.neutral[200],
   },
   cardContent: {
     padding: 24,
@@ -262,14 +367,14 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#4CAF50",
+    backgroundColor: colorPalette.success,
     borderWidth: 3,
-    borderColor: "#fff",
+    borderColor: colorPalette.background,
   },
   name: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
     marginBottom: 8,
     textAlign: "center",
   },
@@ -279,11 +384,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   onlineStatus: {
-    color: "#4CAF50",
+    color: colorPalette.success,
     fontWeight: "600",
   },
   offlineStatus: {
-    color: "#999",
+    color: colorPalette.neutral[500],
   },
   infoSection: {
     width: "100%",
@@ -291,7 +396,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: "#eee",
+    borderTopColor: colorPalette.neutral[200],
   },
   infoItem: {
     flexDirection: "row",
@@ -303,20 +408,20 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 12,
-    color: "#999",
-    fontWeight: "600",
+    color: colorPalette.neutral[500],
+    fontWeight: "700",
     marginBottom: 4,
   },
   infoValue: {
     fontSize: 14,
-    color: "#333",
-    fontWeight: "500",
+    color: colorPalette.neutral[900],
+    fontWeight: "600",
   },
   onlineText: {
-    color: "#4CAF50",
+    color: colorPalette.success,
   },
   offlineText: {
-    color: "#999",
+    color: colorPalette.neutral[500],
   },
   buttonSection: {
     paddingHorizontal: 16,
@@ -324,5 +429,56 @@ const styles = StyleSheet.create({
   },
   button: {
     paddingVertical: 8,
+  },
+  header: {
+    height: 70,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: colorPalette.neutral[100],
+    shadowColor: colorPalette.neutral[900],
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  headerGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  headerBlur: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  headerLeft: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
+  },
+  headerRight: {
+    width: 44,
   },
 });

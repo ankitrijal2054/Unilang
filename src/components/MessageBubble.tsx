@@ -1,10 +1,12 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { Text, Avatar } from "react-native-paper";
 import { Message } from "../types";
 import { formatTime } from "../utils/formatters";
 import { StatusIndicator } from "./StatusIndicator";
 import { ReadReceiptBadge } from "./ReadReceiptBadge";
+import { ImageMessage } from "./ImageMessage";
+import { ImageZoomModal } from "./ImageZoomModal";
 import { colorPalette } from "../utils/theme";
 
 interface MessageBubbleProps {
@@ -29,6 +31,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
     isLatestFromUser = false,
     chatType,
   }) => {
+    const [zoomModalVisible, setZoomModalVisible] = useState(false);
+
     const bubbleStyle = useMemo(
       () => [
         styles.bubble,
@@ -54,84 +58,165 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       );
     }
 
+    // Check if this is an image message
+    const isImageMessage = message.messageType === "image" && message.imageUrl;
+
     // For own messages, show bubble with status below if latest
     if (isOwnMessage) {
       // Check if message is pending (offline)
       const isPending = (message as any).localStatus === "pending";
 
       return (
-        <View style={[styles.container, styles.ownContainer]}>
-          <View style={[bubbleStyle, isPending && styles.pendingBubble]}>
-            <Text style={[textStyle, isPending && styles.pendingText]}>
-              {message.text}
-            </Text>
-
-            <View style={styles.footer}>
-              <Text
-                style={[
-                  styles.ownTimestamp,
-                  isPending && styles.pendingTimestamp,
-                ]}
-              >
-                {formatTime(message.timestamp)}
-              </Text>
-            </View>
-          </View>
-          {/* Read receipt or status indicator below bubble for latest message only */}
-          {isLatestFromUser && (
-            <View style={styles.statusContainer}>
-              {message.readBy && message.readBy.length > 0 ? (
-                <ReadReceiptBadge readBy={message.readBy} chatType={chatType} />
+        <>
+          <View style={[styles.container, styles.ownContainer]}>
+            <View style={[bubbleStyle, isPending && styles.pendingBubble]}>
+              {isImageMessage ? (
+                <ImageMessage
+                  imageUrl={message.imageUrl!}
+                  imageWidth={message.imageWidth}
+                  imageHeight={message.imageHeight}
+                  caption={message.text}
+                  onPress={() => setZoomModalVisible(true)}
+                  isOwnMessage={true}
+                />
               ) : (
-                <StatusIndicator status={message.status} size={14} />
+                <Text style={[textStyle, isPending && styles.pendingText]}>
+                  {message.text}
+                </Text>
               )}
+
+              <View style={styles.footer}>
+                <Text
+                  style={[
+                    styles.ownTimestamp,
+                    isPending && styles.pendingTimestamp,
+                  ]}
+                >
+                  {formatTime(message.timestamp)}
+                </Text>
+              </View>
             </View>
+            {/* Read receipt or status indicator below bubble for latest message only */}
+            {isLatestFromUser && (
+              <View style={styles.statusContainer}>
+                {message.readBy && message.readBy.length > 0 ? (
+                  <ReadReceiptBadge
+                    readBy={message.readBy}
+                    chatType={chatType}
+                  />
+                ) : (
+                  <StatusIndicator status={message.status} size={14} />
+                )}
+              </View>
+            )}
+          </View>
+
+          {/* Image zoom modal */}
+          {isImageMessage && (
+            <ImageZoomModal
+              visible={zoomModalVisible}
+              imageUrl={message.imageUrl!}
+              imageWidth={message.imageWidth}
+              imageHeight={message.imageHeight}
+              caption={message.text}
+              onClose={() => setZoomModalVisible(false)}
+            />
           )}
-        </View>
+        </>
       );
     }
 
     // For group messages from others, show name above and avatar on left
     if (showSenderName && senderName) {
       return (
-        <View style={styles.otherMessageContainer}>
-          {/* Avatar on the left */}
-          <Avatar.Text
-            size={32}
-            label={senderName.charAt(0).toUpperCase()}
-            style={styles.avatar}
-          />
+        <>
+          <View style={styles.otherMessageContainer}>
+            {/* Avatar on the left */}
+            <Avatar.Text
+              size={32}
+              label={senderName.charAt(0).toUpperCase()}
+              style={styles.avatar}
+            />
 
-          {/* Message bubble and name on the right */}
-          <View style={styles.messageColumn}>
-            <Text style={styles.senderName}>{senderName}</Text>
-            <View style={bubbleStyle}>
-              <Text style={textStyle}>{message.text}</Text>
+            {/* Message bubble and name on the right */}
+            <View style={styles.messageColumn}>
+              <Text style={styles.senderName}>{senderName}</Text>
+              <View style={bubbleStyle}>
+                {isImageMessage ? (
+                  <ImageMessage
+                    imageUrl={message.imageUrl!}
+                    imageWidth={message.imageWidth}
+                    imageHeight={message.imageHeight}
+                    caption={message.text}
+                    onPress={() => setZoomModalVisible(true)}
+                    isOwnMessage={false}
+                  />
+                ) : (
+                  <Text style={textStyle}>{message.text}</Text>
+                )}
 
-              <View style={styles.footer}>
-                <Text style={styles.otherTimestamp}>
-                  {formatTime(message.timestamp)}
-                </Text>
+                <View style={styles.footer}>
+                  <Text style={styles.otherTimestamp}>
+                    {formatTime(message.timestamp)}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
-        </View>
+
+          {/* Image zoom modal */}
+          {isImageMessage && (
+            <ImageZoomModal
+              visible={zoomModalVisible}
+              imageUrl={message.imageUrl!}
+              imageWidth={message.imageWidth}
+              imageHeight={message.imageHeight}
+              caption={message.text}
+              onClose={() => setZoomModalVisible(false)}
+            />
+          )}
+        </>
       );
     }
 
     // For direct chat messages from others
     return (
-      <View style={[styles.container, styles.otherContainer]}>
-        <View style={bubbleStyle}>
-          <Text style={textStyle}>{message.text}</Text>
+      <>
+        <View style={[styles.container, styles.otherContainer]}>
+          <View style={bubbleStyle}>
+            {isImageMessage ? (
+              <ImageMessage
+                imageUrl={message.imageUrl!}
+                imageWidth={message.imageWidth}
+                imageHeight={message.imageHeight}
+                caption={message.text}
+                onPress={() => setZoomModalVisible(true)}
+                isOwnMessage={false}
+              />
+            ) : (
+              <Text style={textStyle}>{message.text}</Text>
+            )}
 
-          <View style={styles.footer}>
-            <Text style={styles.otherTimestamp}>
-              {formatTime(message.timestamp)}
-            </Text>
+            <View style={styles.footer}>
+              <Text style={styles.otherTimestamp}>
+                {formatTime(message.timestamp)}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
+
+        {/* Image zoom modal */}
+        {isImageMessage && (
+          <ImageZoomModal
+            visible={zoomModalVisible}
+            imageUrl={message.imageUrl!}
+            imageWidth={message.imageWidth}
+            imageHeight={message.imageHeight}
+            caption={message.text}
+            onClose={() => setZoomModalVisible(false)}
+          />
+        )}
+      </>
     );
   },
   (prevProps, nextProps) => {
@@ -140,6 +225,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       prevProps.message.text === nextProps.message.text &&
       prevProps.message.status === nextProps.message.status &&
       prevProps.message.type === nextProps.message.type &&
+      prevProps.message.messageType === nextProps.message.messageType &&
+      prevProps.message.imageUrl === nextProps.message.imageUrl &&
       JSON.stringify(prevProps.message.readBy) ===
         JSON.stringify(nextProps.message.readBy) &&
       prevProps.isOwnMessage === nextProps.isOwnMessage &&

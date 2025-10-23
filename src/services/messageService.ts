@@ -17,6 +17,7 @@ import {
 import { Message } from "../types";
 import { COLLECTIONS } from "../utils/constants";
 import { isOnline } from "../utils/networkUtils";
+import { uploadMessageImage } from "./storageService";
 
 /**
  * Send a message to a chat
@@ -41,6 +42,7 @@ export const sendMessage = async (
       text,
       timestamp: serverTimestamp(),
       status: "sent" as const,
+      messageType: "text" as const,
       ai: {
         translated_text: "",
         detected_language: "",
@@ -57,6 +59,74 @@ export const sendMessage = async (
     return { success: true, messageId: docRef.id, isOnline: online };
   } catch (error) {
     console.error("❌ Error sending message:", error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Send an image message to a chat
+ */
+export const sendImageMessage = async (
+  chatId: string,
+  imageUri: string,
+  senderId: string,
+  caption?: string
+): Promise<{
+  success: boolean;
+  messageId?: string;
+  error?: any;
+  isOnline?: boolean;
+}> => {
+  try {
+    // Check if device is online
+    const online = await isOnline();
+
+    // Create a temporary message document to get the messageId
+    const tempMessageData = {
+      chatId,
+      senderId,
+      text: caption || "📷 Image",
+      timestamp: serverTimestamp(),
+      status: "sending" as const,
+      messageType: "image" as const,
+      ai: {
+        translated_text: "",
+        detected_language: "",
+        summary: "",
+      },
+    };
+
+    const docRef = await addDoc(
+      collection(db, COLLECTIONS.MESSAGES),
+      tempMessageData
+    );
+
+    console.log(`⏳ Uploading image for message:`, docRef.id);
+
+    // Upload image to Storage
+    const { url, width, height } = await uploadMessageImage(
+      imageUri,
+      chatId,
+      docRef.id
+    );
+
+    // Update message with image URL and dimensions
+    await updateDoc(doc(db, COLLECTIONS.MESSAGES, docRef.id), {
+      imageUrl: url,
+      imageWidth: width,
+      imageHeight: height,
+      status: "sent",
+    });
+
+    console.log(
+      `✅ Image message sent:`,
+      docRef.id,
+      `[Online: ${online}]`,
+      `[${width}x${height}]`
+    );
+    return { success: true, messageId: docRef.id, isOnline: online };
+  } catch (error) {
+    console.error("❌ Error sending image message:", error);
     return { success: false, error };
   }
 };
@@ -90,7 +160,12 @@ export const subscribeToMessages = (
             new Date().toISOString(),
           status: data.status,
           type: data.type || "user", // Map type field (default to "user")
+          messageType: data.messageType || "text", // Content type (text or image)
           readBy: data.readBy || [], // Include readBy array for read receipts
+          // Image-specific fields
+          imageUrl: data.imageUrl,
+          imageWidth: data.imageWidth,
+          imageHeight: data.imageHeight,
           ai: data.ai || {
             translated_text: "",
             detected_language: "",

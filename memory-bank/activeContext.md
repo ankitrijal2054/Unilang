@@ -2,16 +2,136 @@
 
 ## Current Phase
 
-**Phase: Phase 2 Day 3 COMPLETE ✅ → Ready for Day 4 🚀**
+**Phase: Phase 2 Day 4 IN PROGRESS (Task 5.1 & 5.2 COMPLETE) ✅**
 
 - ✅ Phase 1-5: Core MVP (Foundation, Auth, Messaging, Presence, Notifications)
 - ✅ Phase 6: UI Overhaul (Complete - All 10 screens modernized)
 - ✅ Phase 2 Day 1 COMPLETE: Storage Setup, Pending Indicators, Offline UX
 - ✅ Phase 2 Day 2 COMPLETE: Typing Indicators, Comprehensive Unit Tests
-- ✅ **Phase 2 Day 3 COMPLETE:** Read Receipts with "Seen" & Avatar Display
-- ⏭️ **Phase 2 Day 4: Ready to start** (Pagination & Profile Avatars)
+- ✅ Phase 2 Day 3 COMPLETE: Read Receipts with "Seen" & Avatar Display
+- ⏳ **Phase 2 Day 4 IN PROGRESS:** Image Messaging COMPLETE ✅, Pagination & Delete Chat remaining
 
-**Time Checkpoint:** 34 hours total (24h MVP + 3h Day 1 + 2.5h Day 2 + 3h Day 3 implementation + 1.5h bug fixes/polish = 34h used), ~14 hours Phase 2 remaining
+**Time Checkpoint:** 37 hours total (24h MVP + 3h Day 1 + 2.5h Day 2 + 3h Day 3 + 3.5h Day 4 image messaging + 1h bug fixes = 37h used), ~11 hours Phase 2 remaining
+
+---
+
+## Phase 2 Day 4 Partial (Session 10 - Oct 23, 2025)
+
+### What Was Accomplished
+
+**✅ Task 5.1 & 5.2: Image Messaging (3.5h)**
+
+**Backend & Schema (1h):**
+
+- Extended `Message` type with `messageType: "text" | "image"` field
+- Added image fields: `imageUrl`, `imageWidth`, `imageHeight` (all optional)
+- Created `sendImageMessage()` in messageService.ts:
+  - Creates temp message with "sending" status
+  - Uploads to Storage at `/messages/{chatId}/{messageId}.jpg`
+  - Updates message with URL and dimensions
+  - Shows proper status transitions
+- Already had `uploadMessageImage()` in storageService (compresses to 800px width)
+
+**Image Compression (1h debugging):**
+
+- ISSUE: `react-native-image-resizer` doesn't work with Expo Go
+- SOLUTION: Switched to `expo-image-manipulator` (Expo-compatible)
+- Compresses images to max 800px width, maintains aspect ratio
+- Quality: 0.85 (85% JPEG compression)
+- Uses React Native's `Image.getSize()` for dimensions (not web Image API)
+
+**UI Components (1.5h):**
+
+- Created `ImageMessage.tsx` component (165 lines):
+  - Smart sizing: 65% screen width, max 400px height
+  - Maintains aspect ratio
+  - Loading spinner + error handling
+  - Optional caption support
+  - Tap-to-zoom indicator (🔍)
+- Created `ImageZoomModal.tsx` component (171 lines):
+  - Full-screen dark overlay
+  - Image fits to screen (up to 80% height)
+  - Close button (top-right)
+  - Caption display (bottom)
+  - "Tap anywhere to close" hint
+- Updated `MessageBubble.tsx`:
+  - Detects `messageType === "image"`
+  - Renders `ImageMessage` component
+  - Opens zoom modal on tap
+  - Works for own messages, group messages, direct messages
+- Updated `ChatScreen.tsx`:
+  - Added 📎 attachment button next to input
+  - Image picker with permissions handling
+  - 100x100px thumbnail preview with ❌ remove button
+  - Progress indicator during upload ("Uploading...")
+  - Caption support (optional text with image)
+  - Send button switches between text/image handlers
+
+**Bug Fixes (1h):**
+
+- Fixed theme import: `theme` → `colorPalette`
+- Fixed image dimensions: Web `Image` constructor → React Native `Image.getSize()`
+- Fixed compression: `react-native-image-resizer` → `expo-image-manipulator`
+- Updated Jest mocks for new libraries
+- All 115 tests still passing ✅
+
+### Files Created (2 total)
+
+1. ✅ `src/components/ImageMessage.tsx` (165 lines) - Inline image display
+2. ✅ `src/components/ImageZoomModal.tsx` (171 lines) - Fullscreen image viewer
+
+### Files Updated (6 total)
+
+1. ✅ `src/types/Message.ts` - Added image fields
+2. ✅ `src/services/messageService.ts` - Added sendImageMessage(), updated subscribeToMessages()
+3. ✅ `src/services/storageService.ts` - Switched to expo-image-manipulator, fixed Image.getSize()
+4. ✅ `src/components/MessageBubble.tsx` - Renders images, zoom modal
+5. ✅ `src/screens/ChatsTab/ChatScreen.tsx` - Added picker, preview, handlers
+6. ✅ `jest.config.js` + `jest.setup.js` - Updated mocks for image libraries
+
+### Dependencies Installed
+
+- ✅ `expo-image-picker` - Image selection from library
+- ✅ `expo-image-manipulator` - Image compression (Expo-compatible)
+- ❌ Removed: `react-native-image-resizer` (not Expo Go compatible)
+
+---
+
+## Key Features Implemented (Phase 2 Day 4)
+
+### Image Messaging
+
+✅ **Backend Infrastructure:**
+
+- `messageType: "text" | "image"` field in Message schema
+- `sendImageMessage()` creates temp doc → uploads → updates with URL
+- Firebase Storage paths: `/messages/{chatId}/{messageId}.jpg`
+- Image compression to 800px max width, 85% quality
+- Maintains aspect ratio, max 10MB file size
+
+✅ **UI Components:**
+
+- `ImageMessage.tsx`: Inline display (65% screen width, max 400px height)
+- `ImageZoomModal.tsx`: Fullscreen viewer with dark overlay
+- 📎 Attachment button in chat input
+- 100x100px thumbnail preview with remove button
+- "Uploading..." progress indicator
+- Optional caption support
+
+✅ **User Flow:**
+
+- Tap 📎 → Select image → See preview → Add caption → Send
+- Image compresses & uploads to Storage
+- Appears inline in message bubble
+- Tap image → Opens fullscreen zoom modal
+- Works in direct chats & group chats
+
+✅ **Technical Details:**
+
+- Uses `expo-image-manipulator` (Expo Go compatible)
+- Uses React Native `Image.getSize()` for dimensions
+- Proper error handling & loading states
+- All 115 tests passing ✅
 
 ---
 
@@ -209,6 +329,6 @@
 
 ---
 
-**Last Updated:** October 23, 2025 (Session 9, Phase 2 Day 3 Complete)
-**Next Update:** After Day 4 completion or when proceeding to new tasks
-**Status:** Phase 2 Day 3 COMPLETE, Ready for Day 4 implementation ✅
+**Last Updated:** October 23, 2025 (Session 10, Phase 2 Day 4 Partial - Image Messaging Complete)
+**Next Update:** After implementing pagination & delete chat or moving to next phase
+**Status:** Phase 2 Day 4 50% COMPLETE (Image Messaging ✅, Pagination & Delete Chat ⏳)

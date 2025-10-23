@@ -8,6 +8,9 @@ import {
   ActivityIndicator,
   SectionList,
   Text as RNText,
+  Image,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
 import {
   Appbar,
@@ -16,6 +19,7 @@ import {
   Text,
   Snackbar,
 } from "react-native-paper";
+import * as ImagePicker from "expo-image-picker";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -23,6 +27,7 @@ import { useAuthStore } from "../../store/authStore";
 import {
   subscribeToMessages,
   sendMessage,
+  sendImageMessage,
   markMessagesAsRead,
 } from "../../services/messageService";
 import { updateChatLastMessage } from "../../services/chatService";
@@ -71,6 +76,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [typingUsers, setTypingUsers] = useState<
     Array<{ userId: string; userName: string }>
   >([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const flatListRef = useRef<SectionList>(null);
   const optimisticMessagesRef = useRef<Set<string>>(new Set());
@@ -435,6 +442,84 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     }, 2000); // Stop typing after 2 seconds of inactivity
   };
 
+  const handlePickImage = async () => {
+    try {
+      // Request permissions
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission required",
+          "We need access to your photos to send images."
+        );
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: "images" as any,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image. Please try again.");
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+  };
+
+  const handleSendImageMessage = async () => {
+    if (!selectedImage || !user?.uid) {
+      return;
+    }
+
+    const caption = messageText.trim();
+    const imageUri = selectedImage;
+
+    // Clear inputs
+    setMessageText("");
+    setSelectedImage(null);
+    setUploadingImage(true);
+
+    try {
+      const result = await sendImageMessage(
+        chatId,
+        imageUri,
+        user.uid,
+        caption
+      );
+
+      if (result.success) {
+        console.log("✅ Image message sent:", result.messageId);
+
+        // Update chat's last message
+        await updateChatLastMessage(chatId, "📷 Image").catch((err) => {
+          console.error("Error updating chat last message:", err);
+        });
+      } else {
+        console.error("❌ Failed to send image:", result.error);
+        Alert.alert("Error", "Failed to send image. Please try again.");
+        setSelectedImage(imageUri); // Restore image for retry
+        setMessageText(caption); // Restore caption
+      }
+    } catch (error) {
+      console.error("❌ Error sending image:", error);
+      Alert.alert("Error", "Failed to send image. Please try again.");
+      setSelectedImage(imageUri); // Restore image for retry
+      setMessageText(caption); // Restore caption
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const renderMessageItem = ({
     item,
   }: {
@@ -555,21 +640,65 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       {/* Typing Indicator - Show between messages and input */}
       <TypingIndicator typingUsers={typingUsers} />
 
+      {/* Image Preview (if selected) */}
+      {selectedImage && (
+        <View style={styles.imagePreviewContainer}>
+          <View style={styles.imagePreviewWrapper}>
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.imagePreview}
+            />
+            <TouchableOpacity
+              style={styles.removeImageButton}
+              onPress={handleRemoveImage}
+            >
+              <MaterialCommunityIcons
+                name="close-circle"
+                size={24}
+                color="#fff"
+              />
+            </TouchableOpacity>
+          </View>
+          {uploadingImage && (
+            <View style={styles.uploadingOverlay}>
+              <ActivityIndicator size="large" color={colorPalette.primary} />
+              <Text style={styles.uploadingText}>Uploading...</Text>
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Message Input */}
       <View style={styles.inputContainer}>
+        {/* Attachment Button */}
+        <IconButton
+          icon={() => (
+            <MaterialCommunityIcons
+              name="paperclip"
+              size={26}
+              color={colorPalette.neutral[600]}
+            />
+          )}
+          onPress={handlePickImage}
+          disabled={sending || uploadingImage}
+          size={48}
+          style={styles.attachButton}
+        />
+
         <TextInput
-          placeholder="Type a message..."
+          placeholder={selectedImage ? "Add a caption..." : "Type a message..."}
           placeholderTextColor={colorPalette.neutral[400]}
           value={messageText}
           onChangeText={handleTextInputChange}
           mode="outlined"
           multiline
           style={styles.input}
-          editable={!sending}
+          editable={!sending && !uploadingImage}
           outlineColor={colorPalette.neutral[200]}
           activeOutlineColor={colorPalette.primary}
           outlineStyle={{ borderRadius: 12 }}
         />
+
         <View style={styles.sendButtonWrapper}>
           <IconButton
             icon={() => (
@@ -577,15 +706,21 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 name="send"
                 size={26}
                 color={
-                  messageText.trim() && !sending
+                  (messageText.trim() || selectedImage) &&
+                  !sending &&
+                  !uploadingImage
                     ? colorPalette.primary
                     : colorPalette.neutral[400]
                 }
               />
             )}
-            onPress={handleSendMessage}
-            disabled={!messageText.trim() || sending}
-            loading={sending}
+            onPress={selectedImage ? handleSendImageMessage : handleSendMessage}
+            disabled={
+              (!messageText.trim() && !selectedImage) ||
+              sending ||
+              uploadingImage
+            }
+            loading={sending || uploadingImage}
             size={48}
             style={styles.sendButton}
           />
@@ -674,6 +809,10 @@ const styles = StyleSheet.create({
     backgroundColor: colorPalette.background,
     gap: 4,
   },
+  attachButton: {
+    margin: 0,
+    padding: 0,
+  },
   input: {
     flex: 1,
     maxHeight: 100,
@@ -690,6 +829,46 @@ const styles = StyleSheet.create({
   sendButton: {
     margin: 0,
     padding: 0,
+  },
+  imagePreviewContainer: {
+    padding: 12,
+    backgroundColor: colorPalette.background,
+  },
+  imagePreviewWrapper: {
+    position: "relative",
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  imagePreview: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    borderRadius: 12,
+  },
+  uploadingOverlay: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    width: 100,
+    height: 100,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  uploadingText: {
+    marginTop: 8,
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
   },
   offlineBanner: {
     flexDirection: "row",

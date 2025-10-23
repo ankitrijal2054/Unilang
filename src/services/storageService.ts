@@ -1,6 +1,7 @@
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { Image } from "react-native";
 import { app } from "./firebase";
-import ImageResizer from "react-native-image-resizer";
+import * as ImageManipulator from "expo-image-manipulator";
 
 const storage = getStorage(app);
 
@@ -9,25 +10,25 @@ const storage = getStorage(app);
  * @param uri - Image URI from device
  * @param width - Target width in pixels
  * @param height - Target height in pixels
- * @param quality - JPEG quality (0-100)
+ * @param quality - JPEG quality (0-1 for Expo)
  * @returns Compressed image URI
  */
 export const compressImage = async (
   uri: string,
   width: number,
   height: number,
-  quality: number = 85
+  quality: number = 0.85
 ): Promise<string> => {
   try {
-    const compressedUri = await ImageResizer.createResizedImage(
+    const result = await ImageManipulator.manipulateAsync(
       uri,
-      width,
-      height,
-      "JPEG",
-      quality,
-      0
+      [{ resize: { width, height } }],
+      {
+        compress: quality,
+        format: ImageManipulator.SaveFormat.JPEG,
+      }
     );
-    return compressedUri.uri;
+    return result.uri;
   } catch (error) {
     console.error("Image compression failed:", error);
     throw new Error("Failed to compress image");
@@ -46,7 +47,7 @@ export const uploadProfilePicture = async (
 ): Promise<string> => {
   try {
     // Compress image to 200x200px
-    const compressedUri = await compressImage(imageUri, 200, 200, 85);
+    const compressedUri = await compressImage(imageUri, 200, 200, 0.85);
 
     // Convert URI to blob
     const blob = await urlToBlob(compressedUri);
@@ -89,7 +90,12 @@ export const uploadMessageImage = async (
     );
 
     // Compress image to max 800px width
-    const compressedUri = await compressImage(imageUri, 800, targetHeight, 85);
+    const compressedUri = await compressImage(
+      imageUri,
+      800,
+      targetHeight,
+      0.85
+    );
 
     // Convert URI to blob
     const blob = await urlToBlob(compressedUri);
@@ -141,7 +147,7 @@ const urlToBlob = async (uri: string): Promise<Blob> => {
 };
 
 /**
- * Get image dimensions
+ * Get image dimensions using React Native's Image.getSize
  * @param uri - Image URI
  * @returns Object with width and height
  */
@@ -149,23 +155,16 @@ const getImageDimensions = async (
   uri: string
 ): Promise<{ width: number; height: number }> => {
   return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.onload = function () {
-      const img = new Image();
-      img.onload = () => {
-        resolve({ width: img.width, height: img.height });
-      };
-      img.onerror = () => {
+    Image.getSize(
+      uri,
+      (width, height) => {
+        resolve({ width, height });
+      },
+      (error) => {
+        console.error("Failed to get image dimensions:", error);
         reject(new Error("Failed to get image dimensions"));
-      };
-      img.src = URL.createObjectURL(xhr.response);
-    };
-    xhr.onerror = function () {
-      reject(new Error("Failed to fetch image"));
-    };
-    xhr.responseType = "blob";
-    xhr.open("GET", uri, true);
-    xhr.send(null);
+      }
+    );
   });
 };
 

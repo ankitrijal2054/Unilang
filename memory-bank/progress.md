@@ -2,18 +2,18 @@
 
 ## Phase Checkpoint Summary
 
-| Phase                    | Status      | Time   | Features                            | Tests |
-| ------------------------ | ----------- | ------ | ----------------------------------- | ----- |
-| **1: Foundation**        | ✅ Complete | 0-4h   | Auth, Firestore, Cloud Functions    | 13    |
-| **2: UI Shell**          | ✅ Complete | 4-8h   | Navigation, Screens, Paper UI       | 0     |
-| **3: Core Messaging**    | ✅ Complete | 8-12h  | Send, Receive, Real-time Sync       | 19    |
-| **4: Groups & Presence** | ✅ Complete | 12-18h | Group chats, Status, Last Seen      | 29    |
-| **5: Notifications**     | ✅ Complete | 18-24h | FCM, Push, Badge Count, Deep Link   | 42    |
-| **6: UI Overhaul**       | ✅ Complete | 24-27h | Modern Design, Frosted Glass, Icons | 103   |
-| **Phase 2 Day 1**        | ✅ Complete | 27-29h | Pending Indicator, Offline UX       | 103   |
-| **Phase 2 Day 2**        | ✅ Complete | 29-31h | Typing Indicators, Unit Tests       | 115   |
-| **Phase 2 Day 3**        | ✅ Complete | 31-34h | Read Receipts, "Seen" & Avatars     | 115   |
-| **Phase 2 Day 4**        | ⏳ Next     | 34-38h | Message Pagination, Profile Avatars | TBD   |
+| Phase                    | Status         | Time   | Features                            | Tests |
+| ------------------------ | -------------- | ------ | ----------------------------------- | ----- |
+| **1: Foundation**        | ✅ Complete    | 0-4h   | Auth, Firestore, Cloud Functions    | 13    |
+| **2: UI Shell**          | ✅ Complete    | 4-8h   | Navigation, Screens, Paper UI       | 0     |
+| **3: Core Messaging**    | ✅ Complete    | 8-12h  | Send, Receive, Real-time Sync       | 19    |
+| **4: Groups & Presence** | ✅ Complete    | 12-18h | Group chats, Status, Last Seen      | 29    |
+| **5: Notifications**     | ✅ Complete    | 18-24h | FCM, Push, Badge Count, Deep Link   | 42    |
+| **6: UI Overhaul**       | ✅ Complete    | 24-27h | Modern Design, Frosted Glass, Icons | 103   |
+| **Phase 2 Day 1**        | ✅ Complete    | 27-29h | Pending Indicator, Offline UX       | 103   |
+| **Phase 2 Day 2**        | ✅ Complete    | 29-31h | Typing Indicators, Unit Tests       | 115   |
+| **Phase 2 Day 3**        | ✅ Complete    | 31-34h | Read Receipts, "Seen" & Avatars     | 115   |
+| **Phase 2 Day 4**        | ⏳ In Progress | 34-38h | Image Messaging ✅, Pagination ⏳   | 115   |
 
 ---
 
@@ -23,7 +23,8 @@
 **Phase 2 Day 1:** 100% COMPLETE ✅  
 **Phase 2 Day 2:** 100% COMPLETE ✅  
 **Phase 2 Day 3:** 100% COMPLETE ✅  
-**Time Used:** 34 hours / 48 hour budget (71% used)  
+**Phase 2 Day 4:** 50% COMPLETE (Image Messaging ✅)  
+**Time Used:** 37 hours / 48 hour budget (77% used)  
 **Tests Passing:** 115/115 (100%) ✅
 
 ---
@@ -74,23 +75,36 @@
 ✅ **Cloud Function Fix** - updateChatOnNewMessage for real-time sync  
 ✅ **Bug Fixes** - Fixed Firebase deployment, invalid dates, readBy mapping
 
+### Phase 2 Day 4: Image Messaging (Partial)
+
+✅ **Message Schema Extended** - Added `messageType: "text" | "image"` + image fields  
+✅ **Image Upload Service** - `sendImageMessage()` with Firebase Storage  
+✅ **Image Compression** - expo-image-manipulator (800px max, 85% quality)  
+✅ **ImageMessage Component** - Inline display with smart sizing (65% screen width)  
+✅ **ImageZoomModal Component** - Fullscreen viewer with dark overlay  
+✅ **Attachment Button** - 📎 button in ChatScreen with image picker  
+✅ **Image Preview** - 100x100px thumbnail with remove button  
+✅ **Progress Indicator** - "Uploading..." spinner during upload  
+✅ **Caption Support** - Optional text with image messages  
+✅ **Tap to Zoom** - Opens fullscreen modal on image tap  
+✅ **Bug Fixes** - Fixed Expo Go compatibility, image dimensions, theme imports
+
 ---
 
 ## What's Left to Build (Phase 2 Day 4-5)
 
-### Day 4: Pagination & Profile Avatars (4h)
+### Day 4 Remaining: Pagination & Delete Chat (3h)
 
 ⏳ Message pagination (load 20 msgs, max 500 per chat)  
 ⏳ "Load Earlier" button & infinite scroll  
-⏳ Profile picture upload (ImagePicker)  
-⏳ Image compression (200x200 for avatars)
-
-### Day 5: Images & Delete Chat (3h)
-
-⏳ Image attachment message type  
-⏳ Image preview UI (📎 button, thumbnail zoom)  
 ⏳ Delete chat feature (long-press + modal)  
 ⏳ Cloud Function auto-purge
+
+### Day 5: Profile Avatars (Skipped for now)
+
+⏭ Profile picture upload (ImagePicker)  
+⏭ Image compression (200x200 for avatars)  
+⏭ Avatar display in chat list & messages
 
 ---
 
@@ -100,20 +114,21 @@ None currently! All features working as expected. ✅
 
 ---
 
-## Files Modified This Session (Phase 2 Day 3)
+## Files Modified This Session (Phase 2 Day 4 - Image Messaging)
 
-### New Files (1)
+### New Files (2)
 
-1. ✅ `src/components/ReadReceiptBadge.tsx` (132 lines) - Read receipt UI component
+1. ✅ `src/components/ImageMessage.tsx` (165 lines) - Inline image display component
+2. ✅ `src/components/ImageZoomModal.tsx` (171 lines) - Fullscreen image viewer
 
 ### Updated Files (6)
 
-1. ✅ `src/types/Message.ts` - Added `readBy` array field
-2. ✅ `src/services/messageService.ts` - Updated markMessagesAsRead + subscribeToMessages
-3. ✅ `src/components/MessageBubble.tsx` - Integrated ReadReceiptBadge
-4. ✅ `src/screens/ChatsTab/ChatScreen.tsx` - Pass chatType prop, fixed linter error
-5. ✅ `functions/src/index.ts` - Fixed v1/v2 mixing, added updateChatOnNewMessage
-6. ✅ `src/utils/formatters.ts` - Made formatChatTime more defensive
+1. ✅ `src/types/Message.ts` - Added `messageType` and image fields
+2. ✅ `src/services/messageService.ts` - Added sendImageMessage(), updated subscribeToMessages()
+3. ✅ `src/services/storageService.ts` - Switched to expo-image-manipulator, fixed Image.getSize()
+4. ✅ `src/components/MessageBubble.tsx` - Renders images, opens zoom modal
+5. ✅ `src/screens/ChatsTab/ChatScreen.tsx` - Added picker, preview, upload handlers
+6. ✅ `jest.config.js` + `jest.setup.js` - Updated mocks for image libraries
 
 ---
 
@@ -173,6 +188,6 @@ None currently! All features working as expected. ✅
 
 ---
 
-**Last Updated:** October 23, 2025 (Session 9, Phase 2 Day 3 Complete)  
-**Next Update:** After Phase 2 Day 4 or major milestone  
-**Status:** Phase 2 Day 3 COMPLETE, Ready for Day 4 ✅
+**Last Updated:** October 23, 2025 (Session 10, Phase 2 Day 4 Partial - Image Messaging Complete)  
+**Next Update:** After completing pagination & delete chat, or moving to next phase  
+**Status:** Phase 2 Day 4 50% COMPLETE (Image Messaging ✅, Pagination & Delete Chat ⏳)

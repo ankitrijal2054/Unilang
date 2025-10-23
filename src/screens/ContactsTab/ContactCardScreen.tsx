@@ -222,10 +222,14 @@ export const ContactCardScreen: React.FC<ContactCardScreenProps> = ({
           <View style={styles.cardContent}>
             {/* Avatar */}
             <View style={styles.avatarSection}>
-              <Avatar.Text
-                size={80}
-                label={user.name.charAt(0).toUpperCase()}
-              />
+              {user.avatarUrl ? (
+                <Avatar.Image size={80} source={{ uri: user.avatarUrl }} />
+              ) : (
+                <Avatar.Text
+                  size={80}
+                  label={user.name.charAt(0).toUpperCase()}
+                />
+              )}
               {isOnline && <View style={styles.onlineIndicator} />}
             </View>
 

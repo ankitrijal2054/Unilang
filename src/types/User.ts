@@ -6,5 +6,6 @@ export interface User {
   status: "online" | "offline";
   lastSeen: string;
   fcmToken?: string;
+  avatarUrl?: string; // Firebase Storage URL for profile picture
   createdAt: string;
 }

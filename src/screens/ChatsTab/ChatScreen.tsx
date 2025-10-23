@@ -74,6 +74,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [otherUser, setOtherUser] = useState<User | null>(null);
   const [chat, setChat] = useState<Chat | null>(null);
   const [senderNames, setSenderNames] = useState<{ [key: string]: string }>({});
+  const [senderAvatars, setSenderAvatars] = useState<{ [key: string]: string }>(
+    {}
+  );
   const [isNetworkOnline, setIsNetworkOnline] = useState(true);
   const [typingUsers, setTypingUsers] = useState<
     Array<{ userId: string; userName: string }>
@@ -299,6 +302,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 [participantId]: result.user!.name,
               };
             });
+
+            // Also store avatar URL if available
+            if (result.user.avatarUrl) {
+              setSenderAvatars((prev) => ({
+                ...prev,
+                [participantId]: result.user!.avatarUrl!,
+              }));
+            }
           } else {
             setSenderNames((prev) => ({
               ...prev,
@@ -307,7 +318,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           }
         } catch (error) {
           console.error(
-            `Error fetching sender name for ${participantId}:`,
+            `Error fetching sender info for ${participantId}:`,
             error
           );
           setSenderNames((prev) => ({
@@ -560,6 +571,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         ? senderNames[item.senderId] || "Unknown User"
         : undefined;
 
+    const senderAvatarUrl =
+      !isSystemMessage && chatType === "group" && !isOwnMessage
+        ? senderAvatars[item.senderId]
+        : undefined;
+
     // Show status only for the absolute last non-system message
     const isLatestMessage = !isSystemMessage && item.id === lastMessageId;
 
@@ -571,6 +587,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           !isSystemMessage && chatType === "group" && !isOwnMessage
         }
         senderName={senderName}
+        senderAvatarUrl={senderAvatarUrl}
         isLatestFromUser={isLatestMessage}
         chatType={chatType}
       />

@@ -112,6 +112,80 @@
 
 ---
 
-**Last Updated:** October 23, 2025 (Session 11 - Profile Picture Feature Complete)
-**Status:** Phase 2 Day 4 100% COMPLETE (Image Messaging ✅, Delete Chat ✅, Profile Pictures ✅)
-**Next:** Message Pagination (load 20 initially, "Load Earlier" button)
+---
+
+## Phase 3 Planning Complete (Session 12 - Oct 24, 2025)
+
+### AI Messaging Features - PRD & Tasklist Finalized ✅
+
+**Phase 3 Overview:**
+
+- AI-powered multilingual messaging using N8N workflow automation
+- Target: International Communicator persona
+- Timeline: 10-13 hours implementation
+- Tech Stack: N8N Cloud + OpenAI GPT-4o-mini
+
+**6 AI Features Planned:**
+
+1. ✅ Real-time translation (on-tap) with caching
+2. ✅ Auto language detection (assume sender's preferredLanguage)
+3. ✅ Cultural context & slang explanation (tooltip/modal)
+4. ✅ Formality adjustment (formal/neutral/casual tone)
+5. ✅ Translation toggle (show/hide persistent state)
+6. ✅ Smart replies (3 context-aware suggestions from last 8 messages)
+
+**Key Decisions Made:**
+
+- **Language Detection:** Assume sender's `preferredLanguage` (Phase 3), upgrade to API detection (Phase 4)
+- **Translation Caching:** Permanent in Firestore `message.translation` field, instant on reopen
+- **Retry Logic:** Fresh API call on retry (not just toggle)
+- **Formality:** Send adjusted text as-is (no auto-translation back)
+- **Smart Replies:** Generate in user's preferred language, match their tone
+- **Hide Translate Button:** If sender/receiver have same preferred language
+- **Group Chat:** Each user translates to their own preferred language (Phase 4 enhancement)
+- **Cost:** ~$20.30/month (N8N $20 + OpenAI $0.30 for 10 users)
+
+**Documents Created:**
+
+1. ✅ `ai-docs/PRD_Phase3.md` (Full specification - 15 sections, 1000+ lines)
+2. ✅ `ai-docs/Tasklist_Phase3.md` (Implementation guide - 5 phases, detailed steps)
+
+**Implementation Order:**
+
+1. Phase 3A: Translation Core (3-4h)
+2. Phase 3B: Smart Replies (2-3h)
+3. Phase 3C: Formality Adjustment (1.5-2h)
+4. Phase 3D: Cultural Context (1-1.5h)
+5. Phase 3E: Polish & Testing (2-3h)
+
+**Architecture:**
+
+- React Native → N8N Webhooks → OpenAI API → Firestore Cache
+- 3 N8N workflows: Translation, Tone Adjustment, Smart Replies
+- New service: `aiService.ts` for API calls
+- UI updates: MessageBubble (translate button), ChatScreen (tone menu + smart replies)
+
+**UI Integration:**
+
+- Translate button: Below timestamp on received messages (frosted blue)
+- Stacked view: Translated text + faded original + retry button
+- Slang tooltip: Yellow badge with info icon (modal if >2 lines)
+- Tone menu: ⚙️ button with 3 options (formal/neutral/casual)
+- Smart replies: 3 horizontal chips below typing indicator (auto-hide 10s)
+
+**Data Model Changes:**
+
+- Message type extended with `translation` and `translationVisible` fields
+- No changes to User type (uses existing `preferred_language`)
+
+**Next Steps:**
+
+1. Complete Phase 2 Day 5: Message Pagination (~2-3h remaining)
+2. Set up N8N Cloud + OpenAI API
+3. Begin Phase 3A: Translation Core implementation
+
+---
+
+**Last Updated:** October 24, 2025 (Session 12 - Phase 3 Planning Complete)
+**Status:** Phase 2 Day 4 100% COMPLETE, Phase 3 PRD & Tasklist FINALIZED ✅
+**Next:** Complete Message Pagination (Phase 2 Day 5) → Start Phase 3A (Translation Core)

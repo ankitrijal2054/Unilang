@@ -14,6 +14,7 @@ interface MessageBubbleProps {
   isOwnMessage: boolean;
   showSenderName?: boolean;
   senderName?: string;
+  senderAvatarUrl?: string; // Avatar URL of the message sender (for group chats)
   isLatestFromUser?: boolean;
   chatType: "direct" | "group";
 }
@@ -28,6 +29,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
     isOwnMessage,
     showSenderName,
     senderName,
+    senderAvatarUrl,
     isLatestFromUser = false,
     chatType,
   }) => {
@@ -131,12 +133,20 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       return (
         <>
           <View style={styles.otherMessageContainer}>
-            {/* Avatar on the left */}
-            <Avatar.Text
-              size={32}
-              label={senderName.charAt(0).toUpperCase()}
-              style={styles.avatar}
-            />
+            {/* Avatar on the left - show real avatar if available, else initials */}
+            {senderAvatarUrl ? (
+              <Avatar.Image
+                size={32}
+                source={{ uri: senderAvatarUrl }}
+                style={styles.avatar}
+              />
+            ) : (
+              <Avatar.Text
+                size={32}
+                label={senderName.charAt(0).toUpperCase()}
+                style={styles.avatar}
+              />
+            )}
 
             {/* Message bubble and name on the right */}
             <View style={styles.messageColumn}>
@@ -231,6 +241,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
         JSON.stringify(nextProps.message.readBy) &&
       prevProps.isOwnMessage === nextProps.isOwnMessage &&
       prevProps.senderName === nextProps.senderName &&
+      prevProps.senderAvatarUrl === nextProps.senderAvatarUrl &&
       prevProps.isLatestFromUser === nextProps.isLatestFromUser &&
       prevProps.chatType === nextProps.chatType
     );

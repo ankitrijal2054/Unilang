@@ -49,9 +49,17 @@ const UserItem: React.FC<UserItemProps> = ({
       disabled={isCurrentUser || loading}
       style={[styles.userItemContainer, isCurrentUser && styles.disabledItem]}
     >
-      {/* Avatar */}
+      {/* Avatar - show real avatar if available, else icon */}
       <View style={styles.avatarContainer}>
-        <Avatar.Icon size={48} icon="account" style={styles.avatar} />
+        {user.avatarUrl ? (
+          <Avatar.Image
+            size={48}
+            source={{ uri: user.avatarUrl }}
+            style={styles.avatar}
+          />
+        ) : (
+          <Avatar.Icon size={48} icon="account" style={styles.avatar} />
+        )}
         {isOnline && !isCurrentUser && <View style={styles.onlineIndicator} />}
       </View>
 

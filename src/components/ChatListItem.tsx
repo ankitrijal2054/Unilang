@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { Text, Badge } from "react-native-paper";
+import { Text, Badge, Avatar } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Chat } from "../types";
 import { formatChatTime, truncateText } from "../utils/formatters";
@@ -13,6 +13,7 @@ interface ChatListItemProps {
   onPress: () => void;
   unreadCount?: number;
   isOnline?: boolean;
+  otherUserAvatarUrl?: string; // Avatar URL of the other user (for direct chats)
 }
 
 /**
@@ -20,7 +21,13 @@ interface ChatListItemProps {
  * Displays a single chat in the chat list with modern minimalist design
  */
 export const ChatListItem: React.FC<ChatListItemProps> = React.memo(
-  ({ chat, onPress, unreadCount = 0, isOnline = false }) => {
+  ({
+    chat,
+    onPress,
+    unreadCount = 0,
+    isOnline = false,
+    otherUserAvatarUrl,
+  }) => {
     const { user } = useAuthStore();
     const chatName = useChatDisplayName(chat, user?.uid);
 
@@ -44,17 +51,31 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(
       >
         {/* Avatar / Icon */}
         <View style={styles.avatarContainer}>
-          <View style={[styles.avatar, chat.isDeleted && styles.deletedAvatar]}>
-            <MaterialCommunityIcons
-              name={isGroupChat ? "account-multiple" : "account"}
-              size={24}
-              color={
-                chat.isDeleted
-                  ? colorPalette.neutral[400]
-                  : colorPalette.primary
-              }
+          {/* Display real avatar for direct chats, fallback to icon */}
+          {!isGroupChat && otherUserAvatarUrl ? (
+            <Avatar.Image
+              size={56}
+              source={{ uri: otherUserAvatarUrl }}
+              style={[
+                styles.avatarImage,
+                chat.isDeleted && styles.deletedAvatar,
+              ]}
             />
-          </View>
+          ) : (
+            <View
+              style={[styles.avatar, chat.isDeleted && styles.deletedAvatar]}
+            >
+              <MaterialCommunityIcons
+                name={isGroupChat ? "account-multiple" : "account"}
+                size={24}
+                color={
+                  chat.isDeleted
+                    ? colorPalette.neutral[400]
+                    : colorPalette.primary
+                }
+              />
+            </View>
+          )}
 
           {/* Online indicator */}
           {isOnline && !isGroupChat && !chat.isDeleted && (
@@ -106,6 +127,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(
       prevProps.chat.lastMessageTime === nextProps.chat.lastMessageTime &&
       prevProps.unreadCount === nextProps.unreadCount &&
       prevProps.isOnline === nextProps.isOnline &&
+      prevProps.otherUserAvatarUrl === nextProps.otherUserAvatarUrl &&
       prevProps.onPress === nextProps.onPress
     );
   }
@@ -135,6 +157,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     opacity: 0.1,
+  },
+  avatarImage: {
+    borderRadius: 28,
   },
   deletedAvatar: {
     backgroundColor: colorPalette.neutral[400],

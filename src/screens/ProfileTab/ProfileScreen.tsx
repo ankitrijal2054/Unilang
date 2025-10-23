@@ -8,6 +8,7 @@ import {
   Platform,
   TouchableOpacity,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import {
   Appbar,
@@ -18,12 +19,15 @@ import {
   Dialog,
   Portal,
   RadioButton,
+  Avatar,
 } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
 import { updateUserProfile } from "../../services/userService";
 import { signOutUser } from "../../services/authService";
+import { uploadProfilePicture } from "../../services/storageService";
+import { AvatarPickerModal } from "../../components/AvatarPickerModal";
 import { SUPPORTED_LANGUAGES } from "../../utils/constants";
 import { colorPalette } from "../../utils/theme";
 
@@ -43,6 +47,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSavingName, setIsSavingName] = useState(false);
   const [isSavingLanguage, setIsSavingLanguage] = useState(false);
+
+  // Avatar picker states
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   if (!user) {
     return (
@@ -80,6 +88,42 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const currentLanguageName = SUPPORTED_LANGUAGES.find(
     (lang) => lang.code === selectedLanguage
   )?.name;
+
+  const handleAvatarSelected = async (imageUri: string) => {
+    if (!user?.uid) {
+      Alert.alert("Error", "User ID not found");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      console.log("📸 Starting avatar upload...");
+
+      // Upload to Firebase Storage
+      const avatarUrl = await uploadProfilePicture(imageUri, user.uid);
+      console.log("✅ Avatar uploaded:", avatarUrl);
+
+      // Update user profile in Firestore
+      const result = await updateUserProfile(user.uid, { avatarUrl });
+
+      if (result.success) {
+        // Update local auth store
+        useAuthStore.setState({ user: { ...user, avatarUrl } });
+        Alert.alert("Success", "Profile picture updated successfully");
+        console.log("✅ Avatar updated in profile");
+      } else {
+        Alert.alert("Error", "Failed to update profile. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      Alert.alert(
+        "Error",
+        "Failed to upload profile picture. Please try again."
+      );
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const handleSaveName = async () => {
     if (!newName.trim()) {
@@ -207,11 +251,47 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         <ScrollView style={styles.content}>
           {/* Avatar Section */}
           <View style={styles.avatarSection}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.circularAvatar}>
-                <Text style={styles.avatarEmoji}>👤</Text>
+            <TouchableOpacity
+              onPress={() => setShowAvatarPicker(true)}
+              disabled={isUploadingAvatar}
+              activeOpacity={0.7}
+            >
+              <View style={styles.avatarContainer}>
+                {isUploadingAvatar ? (
+                  <View style={styles.circularAvatar}>
+                    <ActivityIndicator
+                      size="large"
+                      color={colorPalette.primary}
+                    />
+                  </View>
+                ) : user?.avatarUrl ? (
+                  <Avatar.Image
+                    size={100}
+                    source={{ uri: user.avatarUrl }}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <View style={styles.circularAvatar}>
+                    <MaterialCommunityIcons
+                      name="account-circle"
+                      size={100}
+                      color={colorPalette.primary}
+                    />
+                  </View>
+                )}
+
+                {/* Camera Icon Overlay */}
+                {!isUploadingAvatar && (
+                  <View style={styles.cameraIconContainer}>
+                    <MaterialCommunityIcons
+                      name="camera-plus"
+                      size={24}
+                      color="#fff"
+                    />
+                  </View>
+                )}
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* User Info Section */}
@@ -420,6 +500,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             </Dialog.Actions>
           </Dialog>
         </Portal>
+
+        {/* Avatar Picker Modal */}
+        <AvatarPickerModal
+          visible={showAvatarPicker}
+          onClose={() => setShowAvatarPicker(false)}
+          onAvatarSelected={handleAvatarSelected}
+          isLoading={isUploadingAvatar}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -585,5 +673,23 @@ const styles = StyleSheet.create({
     backgroundColor: colorPalette.neutral[100],
     justifyContent: "center",
     alignItems: "center",
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  cameraIconContainer: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: colorPalette.primary,
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
   },
 });

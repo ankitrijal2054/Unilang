@@ -70,6 +70,7 @@ export const subscribeToUserPresence = (
           status: data.status,
           lastSeen: data.lastSeen,
           fcmToken: data.fcmToken,
+          avatarUrl: data.avatarUrl,
           createdAt: data.createdAt,
         };
         callback(user);
@@ -107,6 +108,7 @@ export const getAllUsers = async (): Promise<{
         status: data.status,
         lastSeen: data.lastSeen,
         fcmToken: data.fcmToken,
+        avatarUrl: data.avatarUrl,
         createdAt: data.createdAt,
       });
     });
@@ -162,6 +164,7 @@ export const getUserById = async (
         status: data.status,
         lastSeen: data.lastSeen,
         fcmToken: data.fcmToken,
+        avatarUrl: data.avatarUrl,
         createdAt: data.createdAt,
       };
       return { success: true, user };

@@ -4,6 +4,7 @@ import { Text, Avatar } from "react-native-paper";
 import { Message } from "../types";
 import { formatTime } from "../utils/formatters";
 import { StatusIndicator } from "./StatusIndicator";
+import { ReadReceiptBadge } from "./ReadReceiptBadge";
 import { colorPalette } from "../utils/theme";
 
 interface MessageBubbleProps {
@@ -12,6 +13,7 @@ interface MessageBubbleProps {
   showSenderName?: boolean;
   senderName?: string;
   isLatestFromUser?: boolean;
+  chatType: "direct" | "group";
 }
 
 /**
@@ -25,6 +27,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
     showSenderName,
     senderName,
     isLatestFromUser = false,
+    chatType,
   }) => {
     const bubbleStyle = useMemo(
       () => [
@@ -74,10 +77,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
               </Text>
             </View>
           </View>
-          {/* Status indicator below and outside bubble for latest message only */}
+          {/* Read receipt or status indicator below bubble for latest message only */}
           {isLatestFromUser && (
             <View style={styles.statusContainer}>
-              <StatusIndicator status={message.status} size={14} />
+              {message.readBy && message.readBy.length > 0 ? (
+                <ReadReceiptBadge readBy={message.readBy} chatType={chatType} />
+              ) : (
+                <StatusIndicator status={message.status} size={14} />
+              )}
             </View>
           )}
         </View>
@@ -133,9 +140,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       prevProps.message.text === nextProps.message.text &&
       prevProps.message.status === nextProps.message.status &&
       prevProps.message.type === nextProps.message.type &&
+      JSON.stringify(prevProps.message.readBy) ===
+        JSON.stringify(nextProps.message.readBy) &&
       prevProps.isOwnMessage === nextProps.isOwnMessage &&
       prevProps.senderName === nextProps.senderName &&
-      prevProps.isLatestFromUser === nextProps.isLatestFromUser
+      prevProps.isLatestFromUser === nextProps.isLatestFromUser &&
+      prevProps.chatType === nextProps.chatType
     );
   }
 );

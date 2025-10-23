@@ -16,7 +16,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
 import { subscribeToUserChats } from "../../services/chatService";
 import { subscribeToNetworkStatus } from "../../utils/networkUtils";
-import { useMessageStore } from "../../store/messageStore";
 import { Chat } from "../../types";
 import { ChatListItem } from "../../components/ChatListItem";
 import { useChatDisplayName } from "../../utils/useChatDisplayName";
@@ -35,19 +34,12 @@ const ChatItemWrapper: React.FC<{
   onPress: (chat: Chat, chatName: string) => void;
 }> = ({ chat, currentUserId, onPress }) => {
   const chatName = useChatDisplayName(chat, currentUserId);
-  const { getLastMessage } = useMessageStore();
 
-  // Get last cached message for this chat
-  const lastMessage = getLastMessage(chat.id);
-  const displayChat = {
-    ...chat,
-    lastMessage: lastMessage?.text || chat.lastMessage || "",
-    lastMessageTime: lastMessage?.timestamp || chat.lastMessageTime,
-  };
-
+  // Use chat document's lastMessage directly (updated via subscribeToUserChats)
+  // No need for message store here - that's only for the ChatScreen
   return (
     <ChatListItem
-      chat={displayChat}
+      chat={chat}
       onPress={() => onPress(chat, chatName)}
       unreadCount={0}
       isOnline={false}

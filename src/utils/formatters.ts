@@ -31,9 +31,20 @@ export const formatRelativeTime = (timestamp: string): string => {
 /**
  * Format timestamp for chat list (e.g., "2:30 PM", "Yesterday", "Oct 20")
  */
-export const formatChatTime = (timestamp: string): string => {
+export const formatChatTime = (
+  timestamp: string | undefined | null
+): string => {
   try {
+    if (!timestamp) {
+      return "";
+    }
+
     const date = new Date(timestamp);
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return "";
+    }
 
     if (isToday(date)) {
       return formatTime(timestamp);

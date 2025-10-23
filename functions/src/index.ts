@@ -7,7 +7,6 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import { setGlobalOptions } from "firebase-functions";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
@@ -20,15 +19,15 @@ const messaging = admin.messaging();
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
 
-// For cost control, set the maximum number of containers
-setGlobalOptions({ maxInstances: 10 });
-
 /**
  * Cloud Function triggered on new message creation
  * Sends push notification to all recipients (non-senders) in the chat
  */
 export const sendNotificationOnNewMessage = onDocumentCreated(
-  "messages/{messageId}",
+  {
+    document: "messages/{messageId}",
+    maxInstances: 10, // For cost control
+  },
   async (event) => {
     try {
       const messageId = event.params.messageId;
@@ -143,6 +142,66 @@ export const sendNotificationOnNewMessage = onDocumentCreated(
     } catch (error) {
       logger.error("Error sending notification:", error);
       throw error;
+    }
+  }
+);
+
+/**
+ * Cloud Function triggered on new message creation
+ * Updates the parent chat document with lastMessage info
+ * This ensures all participants see the message in their chat list immediately
+ */
+export const updateChatOnNewMessage = onDocumentCreated(
+  {
+    document: "messages/{messageId}",
+    maxInstances: 10,
+  },
+  async (event) => {
+    try {
+      const messageId = event.params.messageId;
+      const messageData = event.data?.data();
+
+      if (!messageData) {
+        logger.warn("Message data not found for ID:", messageId);
+        return;
+      }
+
+      const { chatId, text, timestamp, type } = messageData;
+
+      // Don't update chat for system messages
+      if (type === "system") {
+        logger.log("Skipping chat update for system message:", messageId);
+        return;
+      }
+
+      logger.log("Updating chat document for message:", messageId, {
+        chatId,
+      });
+
+      // Convert Firestore Timestamp to ISO string
+      let timestampISO: string;
+      if (timestamp && timestamp.toDate) {
+        // Firestore Timestamp object
+        timestampISO = timestamp.toDate().toISOString();
+      } else if (timestamp) {
+        // Already a string or Date
+        timestampISO = new Date(timestamp).toISOString();
+      } else {
+        // Fallback to current time
+        timestampISO = new Date().toISOString();
+      }
+
+      // Update the chat document
+      await db.collection("chats").doc(chatId).update({
+        lastMessage: text,
+        lastMessageTime: timestampISO,
+        updatedAt: new Date().toISOString(),
+      });
+
+      logger.log("✅ Chat document updated:", chatId);
+    } catch (error) {
+      logger.error("Error updating chat document:", error);
+      // Don't throw - we don't want to fail the message send
     }
   }
 );

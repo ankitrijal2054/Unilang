@@ -13,11 +13,13 @@ import {
   getDocs,
   writeBatch,
   arrayUnion,
+  getDoc,
 } from "firebase/firestore";
 import { Message } from "../types";
 import { COLLECTIONS } from "../utils/constants";
 import { isOnline } from "../utils/networkUtils";
 import { uploadMessageImage } from "./storageService";
+import { restoreChatForUser } from "./chatService";
 
 /**
  * Send a message to a chat
@@ -54,6 +56,24 @@ export const sendMessage = async (
       collection(db, COLLECTIONS.MESSAGES),
       messageData
     );
+
+    // Restore chat for any participants who deleted it
+    try {
+      const chatDoc = await getDoc(doc(db, COLLECTIONS.CHATS, chatId));
+      const chatData = chatDoc.data();
+      if (chatData?.deletedBy && chatData.deletedBy.length > 0) {
+        // Restore for all users who deleted it
+        for (const userId of chatData.deletedBy) {
+          await restoreChatForUser(chatId, userId);
+        }
+        console.log(
+          `✅ Chat restored for ${chatData.deletedBy.length} user(s)`
+        );
+      }
+    } catch (restoreError) {
+      console.error("⚠️ Error restoring chat:", restoreError);
+      // Don't fail the message send if restore fails
+    }
 
     console.log(`✅ Message sent:`, docRef.id, `[Online: ${online}]`);
     return { success: true, messageId: docRef.id, isOnline: online };
@@ -118,6 +138,24 @@ export const sendImageMessage = async (
       status: "sent",
     });
 
+    // Restore chat for any participants who deleted it
+    try {
+      const chatDoc = await getDoc(doc(db, COLLECTIONS.CHATS, chatId));
+      const chatData = chatDoc.data();
+      if (chatData?.deletedBy && chatData.deletedBy.length > 0) {
+        // Restore for all users who deleted it
+        for (const userId of chatData.deletedBy) {
+          await restoreChatForUser(chatId, userId);
+        }
+        console.log(
+          `✅ Chat restored for ${chatData.deletedBy.length} user(s)`
+        );
+      }
+    } catch (restoreError) {
+      console.error("⚠️ Error restoring chat:", restoreError);
+      // Don't fail the message send if restore fails
+    }
+
     console.log(
       `✅ Image message sent:`,
       docRef.id,
@@ -133,10 +171,12 @@ export const sendImageMessage = async (
 
 /**
  * Subscribe to real-time messages for a chat
+ * @param deletionTimestamp - If provided, only messages after this timestamp are returned
  */
 export const subscribeToMessages = (
   chatId: string,
-  callback: (messages: Message[]) => void
+  callback: (messages: Message[]) => void,
+  deletionTimestamp?: string
 ): Unsubscribe => {
   const messagesQuery = query(
     collection(db, COLLECTIONS.MESSAGES),
@@ -150,14 +190,20 @@ export const subscribeToMessages = (
       const messages: Message[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
+        const messageTimestamp =
+          data.timestamp?.toDate?.().toISOString() || new Date().toISOString();
+
+        // Filter out messages before deletion timestamp
+        if (deletionTimestamp && messageTimestamp <= deletionTimestamp) {
+          return; // Skip this message
+        }
+
         messages.push({
           id: doc.id,
           chatId: data.chatId,
           senderId: data.senderId,
           text: data.text,
-          timestamp:
-            data.timestamp?.toDate?.().toISOString() ||
-            new Date().toISOString(),
+          timestamp: messageTimestamp,
           status: data.status,
           type: data.type || "user", // Map type field (default to "user")
           messageType: data.messageType || "text", // Content type (text or image)

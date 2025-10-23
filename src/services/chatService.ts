@@ -10,6 +10,9 @@ import {
   getDocs,
   doc,
   updateDoc,
+  serverTimestamp,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 import { Chat } from "../types";
 import { COLLECTIONS } from "../utils/constants";
@@ -118,6 +121,13 @@ export const subscribeToUserChats = (
       const chats: Chat[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
+
+        // Filter out chats deleted by this user
+        const deletedBy = data.deletedBy || [];
+        if (deletedBy.includes(userId)) {
+          return; // Skip this chat
+        }
+
         chats.push({
           id: doc.id,
           type: data.type,
@@ -125,6 +135,8 @@ export const subscribeToUserChats = (
           participants: data.participants,
           adminId: data.adminId,
           isDeleted: data.isDeleted || false,
+          deletedBy: data.deletedBy,
+          deletionTimestamps: data.deletionTimestamps,
           lastMessage: data.lastMessage || "",
           lastMessageTime: data.lastMessageTime || new Date().toISOString(),
           updatedAt: data.updatedAt || new Date().toISOString(),
@@ -183,6 +195,52 @@ export const updateChatLastMessage = async (
     return { success: true };
   } catch (error) {
     console.error("❌ Error updating chat last message:", error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Delete chat for a specific user (soft delete)
+ * Adds user to deletedBy array and stores deletion timestamp
+ */
+export const deleteChat = async (
+  chatId: string,
+  userId: string
+): Promise<{ success: boolean; error?: any }> => {
+  try {
+    await updateDoc(doc(db, COLLECTIONS.CHATS, chatId), {
+      deletedBy: arrayUnion(userId),
+      [`deletionTimestamps.${userId}`]: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log(`✅ Chat deleted for user ${userId}:`, chatId);
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Error deleting chat:", error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Remove user from deletedBy array (restores chat for user)
+ * Called when a new message is sent to a previously deleted chat
+ */
+export const restoreChatForUser = async (
+  chatId: string,
+  userId: string
+): Promise<{ success: boolean; error?: any }> => {
+  try {
+    await updateDoc(doc(db, COLLECTIONS.CHATS, chatId), {
+      deletedBy: arrayRemove(userId),
+      // Note: We keep deletionTimestamps to filter old messages
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log(`✅ Chat restored for user ${userId}:`, chatId);
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Error restoring chat:", error);
     return { success: false, error };
   }
 };

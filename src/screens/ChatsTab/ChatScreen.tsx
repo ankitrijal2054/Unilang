@@ -125,7 +125,24 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         // Fetch chat data
         const chatDoc = await getDoc(doc(db, COLLECTIONS.CHATS, chatId));
         if (chatDoc.exists()) {
-          const chatData = chatDoc.data() as Chat;
+          const rawData = chatDoc.data();
+
+          // Convert deletionTimestamps from Firestore Timestamps to ISO strings
+          const deletionTimestamps: { [key: string]: string } = {};
+          if (rawData.deletionTimestamps) {
+            Object.keys(rawData.deletionTimestamps).forEach((userId) => {
+              const timestamp = rawData.deletionTimestamps[userId];
+              // Convert Firestore Timestamp to ISO string
+              deletionTimestamps[userId] =
+                timestamp?.toDate?.()?.toISOString() || timestamp;
+            });
+          }
+
+          const chatData: Chat = {
+            ...rawData,
+            deletionTimestamps,
+          } as Chat;
+
           setChat(chatData);
 
           // For direct chats, find and subscribe to the other user's presence
@@ -186,13 +203,20 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       setMessages(cachedMessages); // React state - updates UI
     }
 
+    // Get deletion timestamp for the current user (if chat was deleted)
+    const deletionTimestamp = chat?.deletionTimestamps?.[user.uid];
+
     // Subscribe to Firestore for real-time updates
-    const unsubscribe = subscribeToMessages(chatId, (updatedMessages) => {
-      setMessages(updatedMessages); // React state - updates UI
-      // Also update the persistent store
-      useMessageStore.getState().setMessages(chatId, updatedMessages);
-      setLoading(false);
-    });
+    const unsubscribe = subscribeToMessages(
+      chatId,
+      (updatedMessages) => {
+        setMessages(updatedMessages); // React state - updates UI
+        // Also update the persistent store
+        useMessageStore.getState().setMessages(chatId, updatedMessages);
+        setLoading(false);
+      },
+      deletionTimestamp // Pass deletion timestamp to filter old messages
+    );
 
     // Mark messages as read when opening chat
     markMessagesAsRead(chatId, user.uid).catch((err) => {
@@ -203,7 +227,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     return () => {
       unsubscribe();
     };
-  }, [chatId, user?.uid]);
+  }, [chatId, user?.uid, chat?.deletionTimestamps]);
 
   // Subscribe to network status changes
   useEffect(() => {

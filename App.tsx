@@ -7,6 +7,7 @@ import {
   requestNotificationPermissions,
 } from "./src/services/notificationService";
 import { lightTheme } from "./src/utils/theme";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Configure how notifications are handled when app is in foreground
 setupNotificationHandler();
@@ -16,8 +17,10 @@ requestNotificationPermissions();
 
 export default function App() {
   return (
-    <PaperProvider theme={lightTheme}>
-      <RootNavigator />
-    </PaperProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <PaperProvider theme={lightTheme}>
+        <RootNavigator />
+      </PaperProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -9,15 +9,16 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Text } from "react-native-paper";
+import { Button, Text, Snackbar } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
-import { subscribeToUserChats } from "../../services/chatService";
+import { subscribeToUserChats, deleteChat } from "../../services/chatService";
 import { subscribeToNetworkStatus } from "../../utils/networkUtils";
 import { Chat } from "../../types";
-import { ChatListItem } from "../../components/ChatListItem";
+import { SwipeableChatItem } from "../../components/SwipeableChatItem";
+import { DeleteChatModal } from "../../components/DeleteChatModal";
 import { useChatDisplayName } from "../../utils/useChatDisplayName";
 import { colorPalette } from "../../utils/theme";
 
@@ -32,17 +33,17 @@ const ChatItemWrapper: React.FC<{
   chat: Chat;
   currentUserId?: string;
   onPress: (chat: Chat, chatName: string) => void;
-}> = ({ chat, currentUserId, onPress }) => {
+  onDelete: (chat: Chat, chatName: string) => void;
+}> = ({ chat, currentUserId, onPress, onDelete }) => {
   const chatName = useChatDisplayName(chat, currentUserId);
 
   // Use chat document's lastMessage directly (updated via subscribeToUserChats)
   // No need for message store here - that's only for the ChatScreen
   return (
-    <ChatListItem
+    <SwipeableChatItem
       chat={chat}
       onPress={() => onPress(chat, chatName)}
-      unreadCount={0}
-      isOnline={false}
+      onDelete={() => onDelete(chat, chatName)}
     />
   );
 };
@@ -56,6 +57,13 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
   const [isNetworkOnline, setIsNetworkOnline] = useState(true);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState<{
+    chat: Chat;
+    name: string;
+  } | null>(null);
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   // Subscribe to real-time chat updates
   useEffect(() => {
@@ -118,11 +126,45 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
     });
   };
 
+  const handleDeleteChat = (chat: Chat, chatName: string) => {
+    setChatToDelete({ chat, name: chatName });
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!chatToDelete || !user?.uid) return;
+
+    setDeleteModalVisible(false);
+
+    try {
+      const result = await deleteChat(chatToDelete.chat.id, user.uid);
+      if (result.success) {
+        setSnackbarMessage(`"${chatToDelete.name}" deleted`);
+        setSnackbarVisible(true);
+      } else {
+        setSnackbarMessage("Failed to delete chat");
+        setSnackbarVisible(true);
+      }
+    } catch (error) {
+      console.error("Error deleting chat:", error);
+      setSnackbarMessage("Failed to delete chat");
+      setSnackbarVisible(true);
+    }
+
+    setChatToDelete(null);
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModalVisible(false);
+    setChatToDelete(null);
+  };
+
   const renderChatItem = ({ item }: { item: Chat }) => (
     <ChatItemWrapper
       chat={item}
       currentUserId={user?.uid}
       onPress={handleChatPress}
+      onDelete={handleDeleteChat}
     />
   );
 
@@ -213,6 +255,24 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
           }
         />
       )}
+
+      {/* Delete Chat Modal */}
+      <DeleteChatModal
+        visible={deleteModalVisible}
+        chatName={chatToDelete?.name || ""}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+
+      {/* Snackbar for feedback */}
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000}
+        style={styles.snackbar}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </SafeAreaView>
   );
 };
@@ -329,5 +389,11 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 14,
     fontWeight: "600",
+  },
+  snackbar: {
+    position: "absolute",
+    bottom: 16,
+    left: 16,
+    right: 16,
   },
 });

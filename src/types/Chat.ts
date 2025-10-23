@@ -4,7 +4,9 @@ export interface Chat {
   name?: string;
   participants: string[];
   adminId?: string;
-  isDeleted: boolean;
+  isDeleted: boolean; // Legacy field (deprecated)
+  deletedBy?: string[]; // Array of user IDs who deleted this chat
+  deletionTimestamps?: { [userId: string]: string }; // Timestamp when each user deleted
   lastMessage: string;
   lastMessageTime: string;
   updatedAt: string;

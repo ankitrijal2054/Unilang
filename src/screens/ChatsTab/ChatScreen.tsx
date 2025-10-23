@@ -18,6 +18,9 @@ import {
   IconButton,
   Text,
   Snackbar,
+  Modal,
+  Portal,
+  Button,
 } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
@@ -49,6 +52,11 @@ import { db } from "../../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { COLLECTIONS } from "../../utils/constants";
 import { colorPalette } from "../../utils/theme";
+import {
+  translateMessage,
+  cacheTranslation,
+  toggleTranslationVisibility,
+} from "../../services/aiService";
 
 interface ChatScreenProps {
   navigation: any;
@@ -83,6 +91,16 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   >([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Translation state (Phase 3)
+  const [translatingMessageId, setTranslatingMessageId] = useState<
+    string | null
+  >(null);
+  const [slangModalVisible, setSlangModalVisible] = useState(false);
+  const [slangExplanation, setSlangExplanation] = useState("");
+  const [senderLanguages, setSenderLanguages] = useState<{
+    [userId: string]: string;
+  }>({});
 
   const flatListRef = useRef<SectionList>(null);
   const optimisticMessagesRef = useRef<Set<string>>(new Set());
@@ -161,6 +179,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 (userData) => {
                   if (userData) {
                     setOtherUser(userData);
+
+                    // Cache preferred language for translation (Phase 3)
+                    if (userData.preferred_language) {
+                      setSenderLanguages((prev) => ({
+                        ...prev,
+                        [otherUserId]: userData.preferred_language,
+                      }));
+                    }
                   }
                 }
               );
@@ -308,6 +334,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               setSenderAvatars((prev) => ({
                 ...prev,
                 [participantId]: result.user!.avatarUrl!,
+              }));
+            }
+
+            // Cache preferred language for translation (Phase 3)
+            if (result.user?.preferred_language) {
+              setSenderLanguages((prev) => ({
+                ...prev,
+                [participantId]: result.user!.preferred_language,
               }));
             }
           } else {
@@ -511,6 +545,88 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     setSelectedImage(null);
   };
 
+  // ================== TRANSLATION HANDLERS (Phase 3) ==================
+
+  /**
+   * Handle translate button tap
+   * If translation exists, toggle visibility; otherwise fetch new translation
+   */
+  const handleTranslate = async (messageId: string) => {
+    try {
+      setTranslatingMessageId(messageId);
+
+      const message = messages.find((m) => m.id === messageId);
+      if (!message) return;
+
+      // Check if translation already exists
+      if (message.translation) {
+        // Just toggle visibility
+        const newVisibility = !message.translationVisible;
+        await toggleTranslationVisibility(messageId, newVisibility);
+        return;
+      }
+
+      // Get sender's preferred language
+      let sourceLang = senderLanguages[message.senderId];
+      if (!sourceLang) {
+        const senderData = await getUserById(message.senderId);
+        sourceLang = senderData.user?.preferred_language || "en";
+        setSenderLanguages((prev) => ({
+          ...prev,
+          [message.senderId]: sourceLang,
+        }));
+      }
+
+      // Get receiver's (current user's) preferred language
+      const targetLang = user?.preferred_language || "en";
+
+      // Skip translation if same language
+      if (sourceLang === targetLang) {
+        Alert.alert(
+          "Translation not needed",
+          "This message is already in your language."
+        );
+        return;
+      }
+
+      // Call N8N translation API
+      const result = await translateMessage(
+        message.text,
+        targetLang,
+        sourceLang
+      );
+
+      // Cache translation in Firestore
+      await cacheTranslation(messageId, result);
+    } catch (error: any) {
+      console.error("[ChatScreen] Translation error:", error);
+      Alert.alert(
+        "Translation Error",
+        error.message || "Could not translate message. Please try again."
+      );
+    } finally {
+      setTranslatingMessageId(null);
+    }
+  };
+
+  /**
+   * Handle retry translation (for failed translations)
+   */
+  const handleRetryTranslation = async (messageId: string) => {
+    // Same as handleTranslate, but forces a fresh API call
+    handleTranslate(messageId);
+  };
+
+  /**
+   * Handle slang info button tap
+   */
+  const handleSlangInfo = (explanation: string) => {
+    setSlangExplanation(explanation);
+    setSlangModalVisible(true);
+  };
+
+  // ================== END TRANSLATION HANDLERS ==================
+
   const handleSendImageMessage = async () => {
     if (!selectedImage || !user?.uid) {
       return;
@@ -579,6 +695,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     // Show status only for the absolute last non-system message
     const isLatestMessage = !isSystemMessage && item.id === lastMessageId;
 
+    // Get sender's preferred language (for translation button logic)
+    const senderPreferredLang = senderLanguages[item.senderId];
+    const receiverPreferredLang = user?.preferred_language;
+
     return (
       <MessageBubble
         message={item}
@@ -590,6 +710,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         senderAvatarUrl={senderAvatarUrl}
         isLatestFromUser={isLatestMessage}
         chatType={chatType}
+        // Translation props (Phase 3)
+        onTranslate={handleTranslate}
+        onRetryTranslation={handleRetryTranslation}
+        senderPreferredLang={senderPreferredLang}
+        receiverPreferredLang={receiverPreferredLang}
+        isTranslating={translatingMessageId === item.id}
+        onSlangInfo={handleSlangInfo}
       />
     );
   };
@@ -767,6 +894,25 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           />
         </View>
       </View>
+
+      {/* Slang Explanation Modal (Phase 3) */}
+      <Portal>
+        <Modal
+          visible={slangModalVisible}
+          onDismiss={() => setSlangModalVisible(false)}
+          contentContainerStyle={styles.slangModal}
+        >
+          <Text style={styles.slangModalTitle}>Cultural Context</Text>
+          <Text style={styles.slangModalText}>{slangExplanation}</Text>
+          <Button
+            mode="contained"
+            onPress={() => setSlangModalVisible(false)}
+            style={styles.slangModalButton}
+          >
+            Close
+          </Button>
+        </Modal>
+      </Portal>
     </KeyboardAvoidingView>
   );
 };
@@ -923,5 +1069,28 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 14,
     fontWeight: "600",
+  },
+  // ========== Slang Modal Styles (Phase 3) ==========
+  slangModal: {
+    backgroundColor: "white",
+    padding: 24,
+    margin: 20,
+    borderRadius: 16,
+    maxHeight: "80%",
+  },
+  slangModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
+    marginBottom: 16,
+  },
+  slangModalText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: colorPalette.neutral[700],
+    marginBottom: 20,
+  },
+  slangModalButton: {
+    marginTop: 8,
   },
 });

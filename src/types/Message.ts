@@ -13,7 +13,18 @@ export interface Message {
   imageUrl?: string; // Firebase Storage download URL
   imageWidth?: number; // Original width in pixels
   imageHeight?: number; // Original height in pixels
-  ai: {
+  // AI Translation fields (Phase 3)
+  translation?: {
+    text: string; // Translated message text
+    sourceLang: string; // Original language code (e.g., "es")
+    targetLang: string; // Target language code (e.g., "en")
+    timestamp: string; // When translation was generated
+    provider: string; // "openai-gpt4o-mini" or similar
+    slangExplanation?: string; // Cultural context explanation for slang/idioms
+  };
+  translationVisible?: boolean; // Whether translation is currently shown (toggle state)
+  // Legacy AI field (kept for backward compatibility)
+  ai?: {
     translated_text: string;
     detected_language: string;
     summary: string;

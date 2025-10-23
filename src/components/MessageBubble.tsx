@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
-import { View, StyleSheet } from "react-native";
-import { Text, Avatar } from "react-native-paper";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { Text, Avatar, ActivityIndicator } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Message } from "../types";
 import { formatTime } from "../utils/formatters";
 import { StatusIndicator } from "./StatusIndicator";
@@ -17,6 +18,13 @@ interface MessageBubbleProps {
   senderAvatarUrl?: string; // Avatar URL of the message sender (for group chats)
   isLatestFromUser?: boolean;
   chatType: "direct" | "group";
+  // Translation props (Phase 3)
+  onTranslate?: (messageId: string) => void;
+  onRetryTranslation?: (messageId: string) => void;
+  senderPreferredLang?: string;
+  receiverPreferredLang?: string;
+  isTranslating?: boolean;
+  onSlangInfo?: (explanation: string) => void;
 }
 
 /**
@@ -32,8 +40,27 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
     senderAvatarUrl,
     isLatestFromUser = false,
     chatType,
+    onTranslate,
+    onRetryTranslation,
+    senderPreferredLang,
+    receiverPreferredLang,
+    isTranslating = false,
+    onSlangInfo,
   }) => {
     const [zoomModalVisible, setZoomModalVisible] = useState(false);
+
+    // Determine if translate button should show
+    const showTranslateButton =
+      !isOwnMessage &&
+      onTranslate &&
+      senderPreferredLang &&
+      receiverPreferredLang &&
+      senderPreferredLang !== receiverPreferredLang &&
+      message.messageType !== "image"; // Only for text messages
+
+    // Check if translation is available and visible
+    const hasTranslation = message.translation;
+    const showTranslation = hasTranslation && message.translationVisible;
 
     const bubbleStyle = useMemo(
       () => [
@@ -50,6 +77,101 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       ],
       [isOwnMessage]
     );
+
+    // Helper to render message text (original or translated)
+    const renderMessageText = () => {
+      if (showTranslation) {
+        // Stacked view: translation on top, original below
+        return (
+          <View>
+            {/* Translated text */}
+            <Text style={textStyle}>{message.translation!.text}</Text>
+
+            {/* Divider */}
+            <View style={styles.translationDivider} />
+
+            {/* Original text (faded) */}
+            <View style={styles.originalTextContainer}>
+              <Text style={[textStyle, styles.originalText]}>
+                {message.text}
+              </Text>
+            </View>
+
+            {/* Retry button */}
+            {onRetryTranslation && (
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => onRetryTranslation(message.id)}
+              >
+                <MaterialCommunityIcons
+                  name="refresh"
+                  size={12}
+                  color={colorPalette.primary}
+                />
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        );
+      }
+
+      // Original text only
+      return <Text style={textStyle}>{message.text}</Text>;
+    };
+
+    // Helper to render translate button and slang tooltip
+    const renderTranslationControls = () => {
+      if (!showTranslateButton) return null;
+
+      return (
+        <View style={styles.translationControls}>
+          {/* Translate button */}
+          <TouchableOpacity
+            style={styles.translateButton}
+            onPress={() => onTranslate!(message.id)}
+            disabled={isTranslating}
+          >
+            {isTranslating ? (
+              <ActivityIndicator size={12} color={colorPalette.primary} />
+            ) : (
+              <MaterialCommunityIcons
+                name="translate"
+                size={14}
+                color={colorPalette.primary}
+              />
+            )}
+            <Text style={styles.translateButtonText}>
+              {isTranslating
+                ? "Translating..."
+                : hasTranslation
+                ? showTranslation
+                  ? "Hide"
+                  : "Show Translation"
+                : "Translate"}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Slang tooltip (if translation has cultural context) */}
+          {hasTranslation &&
+            message.translation!.slangExplanation &&
+            onSlangInfo && (
+              <TouchableOpacity
+                style={styles.slangTooltip}
+                onPress={() =>
+                  onSlangInfo(message.translation!.slangExplanation!)
+                }
+              >
+                <MaterialCommunityIcons
+                  name="information-outline"
+                  size={12}
+                  color={colorPalette.warning}
+                />
+                <Text style={styles.slangText}>Cultural context</Text>
+              </TouchableOpacity>
+            )}
+        </View>
+      );
+    };
 
     // System messages (join, leave, removed from group)
     if (message.type === "system") {
@@ -162,7 +284,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
                     isOwnMessage={false}
                   />
                 ) : (
-                  <Text style={textStyle}>{message.text}</Text>
+                  renderMessageText()
                 )}
 
                 <View style={styles.footer}>
@@ -170,6 +292,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
                     {formatTime(message.timestamp)}
                   </Text>
                 </View>
+
+                {/* Translation controls (button + slang tooltip) */}
+                {renderTranslationControls()}
               </View>
             </View>
           </View>
@@ -204,7 +329,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
                 isOwnMessage={false}
               />
             ) : (
-              <Text style={textStyle}>{message.text}</Text>
+              renderMessageText()
             )}
 
             <View style={styles.footer}>
@@ -212,6 +337,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
                 {formatTime(message.timestamp)}
               </Text>
             </View>
+
+            {/* Translation controls (button + slang tooltip) */}
+            {renderTranslationControls()}
           </View>
         </View>
 
@@ -239,11 +367,18 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       prevProps.message.imageUrl === nextProps.message.imageUrl &&
       JSON.stringify(prevProps.message.readBy) ===
         JSON.stringify(nextProps.message.readBy) &&
+      JSON.stringify(prevProps.message.translation) ===
+        JSON.stringify(nextProps.message.translation) &&
+      prevProps.message.translationVisible ===
+        nextProps.message.translationVisible &&
       prevProps.isOwnMessage === nextProps.isOwnMessage &&
       prevProps.senderName === nextProps.senderName &&
       prevProps.senderAvatarUrl === nextProps.senderAvatarUrl &&
       prevProps.isLatestFromUser === nextProps.isLatestFromUser &&
-      prevProps.chatType === nextProps.chatType
+      prevProps.chatType === nextProps.chatType &&
+      prevProps.isTranslating === nextProps.isTranslating &&
+      prevProps.senderPreferredLang === nextProps.senderPreferredLang &&
+      prevProps.receiverPreferredLang === nextProps.receiverPreferredLang
     );
   }
 );
@@ -358,5 +493,72 @@ const styles = StyleSheet.create({
   },
   pendingTimestamp: {
     color: colorPalette.neutral[600],
+  },
+  // ========== Translation Styles (Phase 3) ==========
+  translationControls: {
+    marginTop: 8,
+    gap: 6,
+  },
+  translateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "rgba(59, 130, 246, 0.1)", // Frosted blue
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.3)",
+    alignSelf: "flex-start",
+  },
+  translateButtonText: {
+    fontSize: 12,
+    color: colorPalette.primary,
+    fontWeight: "600",
+  },
+  translationDivider: {
+    height: 1,
+    backgroundColor: colorPalette.neutral[300],
+    marginVertical: 8,
+    opacity: 0.5,
+  },
+  originalTextContainer: {
+    opacity: 0.5,
+    marginTop: 4,
+  },
+  originalText: {
+    fontSize: 12,
+    fontStyle: "italic",
+  },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginTop: 6,
+    alignSelf: "flex-end",
+  },
+  retryText: {
+    fontSize: 11,
+    color: colorPalette.primary,
+    fontWeight: "600",
+  },
+  slangTooltip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: colorPalette.warning + "20", // Yellow tint
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colorPalette.warning + "40",
+    alignSelf: "flex-start",
+  },
+  slangText: {
+    fontSize: 11,
+    color: colorPalette.warning,
+    fontWeight: "600",
   },
 });

@@ -42,3 +42,18 @@ export const COLLECTIONS = {
   MESSAGES: "messages",
   TYPING_STATUS: "typingStatus",
 } as const;
+
+// N8N Webhook URLs for AI features (Phase 3)
+// TODO: Replace with your actual N8N instance URLs after setup
+export const N8N_WEBHOOKS = {
+  TRANSLATE: "https://ankit2054.app.n8n.cloud/webhook/translate",
+  ADJUST_TONE: "https://your-instance.app.n8n.cloud/webhook/adjust-tone",
+  SMART_REPLIES: "https://your-instance.app.n8n.cloud/webhook/smart-replies",
+} as const;
+
+// AI feature timeouts (milliseconds)
+export const AI_TIMEOUTS = {
+  TRANSLATION: 10000, // 10 seconds
+  TONE_ADJUSTMENT: 10000,
+  SMART_REPLIES: 10000,
+} as const;

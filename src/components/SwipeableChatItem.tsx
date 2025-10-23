@@ -16,12 +16,14 @@ interface SwipeableChatItemProps {
   chat: Chat;
   onPress: () => void;
   onDelete: () => void;
+  otherUserAvatarUrl?: string;
 }
 
 export const SwipeableChatItem: React.FC<SwipeableChatItemProps> = ({
   chat,
   onPress,
   onDelete,
+  otherUserAvatarUrl,
 }) => {
   const swipeableRef = useRef<Swipeable>(null);
 
@@ -68,7 +70,11 @@ export const SwipeableChatItem: React.FC<SwipeableChatItemProps> = ({
       rightThreshold={40}
     >
       <View style={styles.chatItemContainer}>
-        <ChatListItem chat={chat} onPress={onPress} />
+        <ChatListItem
+          chat={chat}
+          onPress={onPress}
+          otherUserAvatarUrl={otherUserAvatarUrl}
+        />
       </View>
     </Swipeable>
   );

@@ -14,6 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
 import { subscribeToUserChats, deleteChat } from "../../services/chatService";
+import { getUserById } from "../../services/userService";
 import { subscribeToNetworkStatus } from "../../utils/networkUtils";
 import { Chat } from "../../types";
 import { SwipeableChatItem } from "../../components/SwipeableChatItem";
@@ -35,12 +36,42 @@ const ChatItemWrapper: React.FC<{
   onDelete: (chat: Chat, chatName: string) => void;
 }> = ({ chat, currentUserId, onPress, onDelete }) => {
   const chatName = useChatDisplayName(chat, currentUserId);
+  const [otherUserAvatarUrl, setOtherUserAvatarUrl] = useState<string>();
+
+  // Fetch other user's avatar for direct chats
+  useEffect(() => {
+    if (
+      chat.type === "direct" &&
+      currentUserId &&
+      chat.participants.length > 0
+    ) {
+      const otherUserId = chat.participants.find(
+        (uid) => uid !== currentUserId
+      );
+
+      if (otherUserId) {
+        const fetchAvatar = async () => {
+          try {
+            const result = await getUserById(otherUserId);
+            if (result.success && result.user?.avatarUrl) {
+              setOtherUserAvatarUrl(result.user.avatarUrl);
+            }
+          } catch (error) {
+            console.error("Error fetching other user's avatar:", error);
+          }
+        };
+
+        fetchAvatar();
+      }
+    }
+  }, [chat, currentUserId]);
 
   // Use chat document's lastMessage directly (updated via subscribeToUserChats)
   // No need for message store here - that's only for the ChatScreen
   return (
     <SwipeableChatItem
       chat={chat}
+      otherUserAvatarUrl={otherUserAvatarUrl}
       onPress={() => onPress(chat, chatName)}
       onDelete={() => onDelete(chat, chatName)}
     />

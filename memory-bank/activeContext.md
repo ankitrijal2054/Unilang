@@ -2,333 +2,116 @@
 
 ## Current Phase
 
-**Phase: Phase 2 Day 4 IN PROGRESS (Task 5.1 & 5.2 COMPLETE) ✅**
+**Phase: Phase 2 Day 4 COMPLETE ✅**
 
 - ✅ Phase 1-5: Core MVP (Foundation, Auth, Messaging, Presence, Notifications)
 - ✅ Phase 6: UI Overhaul (Complete - All 10 screens modernized)
 - ✅ Phase 2 Day 1 COMPLETE: Storage Setup, Pending Indicators, Offline UX
 - ✅ Phase 2 Day 2 COMPLETE: Typing Indicators, Comprehensive Unit Tests
 - ✅ Phase 2 Day 3 COMPLETE: Read Receipts with "Seen" & Avatar Display
-- ⏳ **Phase 2 Day 4 IN PROGRESS:** Image Messaging COMPLETE ✅, Pagination & Delete Chat remaining
+- ✅ **Phase 2 Day 4 COMPLETE:** Image Messaging ✅, Delete Chat ✅, Profile Pictures ✅
+- ⏳ **Next:** Message Pagination (load 20, max 500)
 
-**Time Checkpoint:** 37 hours total (24h MVP + 3h Day 1 + 2.5h Day 2 + 3h Day 3 + 3.5h Day 4 image messaging + 1h bug fixes = 37h used), ~11 hours Phase 2 remaining
-
----
-
-## Phase 2 Day 4 Partial (Session 10 - Oct 23, 2025)
-
-### What Was Accomplished
-
-**✅ Task 5.1 & 5.2: Image Messaging (3.5h)**
-
-**Backend & Schema (1h):**
-
-- Extended `Message` type with `messageType: "text" | "image"` field
-- Added image fields: `imageUrl`, `imageWidth`, `imageHeight` (all optional)
-- Created `sendImageMessage()` in messageService.ts:
-  - Creates temp message with "sending" status
-  - Uploads to Storage at `/messages/{chatId}/{messageId}.jpg`
-  - Updates message with URL and dimensions
-  - Shows proper status transitions
-- Already had `uploadMessageImage()` in storageService (compresses to 800px width)
-
-**Image Compression (1h debugging):**
-
-- ISSUE: `react-native-image-resizer` doesn't work with Expo Go
-- SOLUTION: Switched to `expo-image-manipulator` (Expo-compatible)
-- Compresses images to max 800px width, maintains aspect ratio
-- Quality: 0.85 (85% JPEG compression)
-- Uses React Native's `Image.getSize()` for dimensions (not web Image API)
-
-**UI Components (1.5h):**
-
-- Created `ImageMessage.tsx` component (165 lines):
-  - Smart sizing: 65% screen width, max 400px height
-  - Maintains aspect ratio
-  - Loading spinner + error handling
-  - Optional caption support
-  - Tap-to-zoom indicator (🔍)
-- Created `ImageZoomModal.tsx` component (171 lines):
-  - Full-screen dark overlay
-  - Image fits to screen (up to 80% height)
-  - Close button (top-right)
-  - Caption display (bottom)
-  - "Tap anywhere to close" hint
-- Updated `MessageBubble.tsx`:
-  - Detects `messageType === "image"`
-  - Renders `ImageMessage` component
-  - Opens zoom modal on tap
-  - Works for own messages, group messages, direct messages
-- Updated `ChatScreen.tsx`:
-  - Added 📎 attachment button next to input
-  - Image picker with permissions handling
-  - 100x100px thumbnail preview with ❌ remove button
-  - Progress indicator during upload ("Uploading...")
-  - Caption support (optional text with image)
-  - Send button switches between text/image handlers
-
-**Bug Fixes (1h):**
-
-- Fixed theme import: `theme` → `colorPalette`
-- Fixed image dimensions: Web `Image` constructor → React Native `Image.getSize()`
-- Fixed compression: `react-native-image-resizer` → `expo-image-manipulator`
-- Updated Jest mocks for new libraries
-- All 115 tests still passing ✅
-
-### Files Created (2 total)
-
-1. ✅ `src/components/ImageMessage.tsx` (165 lines) - Inline image display
-2. ✅ `src/components/ImageZoomModal.tsx` (171 lines) - Fullscreen image viewer
-
-### Files Updated (6 total)
-
-1. ✅ `src/types/Message.ts` - Added image fields
-2. ✅ `src/services/messageService.ts` - Added sendImageMessage(), updated subscribeToMessages()
-3. ✅ `src/services/storageService.ts` - Switched to expo-image-manipulator, fixed Image.getSize()
-4. ✅ `src/components/MessageBubble.tsx` - Renders images, zoom modal
-5. ✅ `src/screens/ChatsTab/ChatScreen.tsx` - Added picker, preview, handlers
-6. ✅ `jest.config.js` + `jest.setup.js` - Updated mocks for image libraries
-
-### Dependencies Installed
-
-- ✅ `expo-image-picker` - Image selection from library
-- ✅ `expo-image-manipulator` - Image compression (Expo-compatible)
-- ❌ Removed: `react-native-image-resizer` (not Expo Go compatible)
+**Time Checkpoint:** ~41 hours total (24h MVP + 3h Day 1 + 2.5h Day 2 + 3h Day 3 + 3.5h Day 4 image messaging + 2.5h profile pictures + 2.5h other = 41h used), ~7 hours Phase 2 remaining
 
 ---
 
-## Key Features Implemented (Phase 2 Day 4)
+## Phase 2 Day 4 Complete (Session 11 - Oct 23, 2025)
 
-### Image Messaging
+### Profile Picture Feature - ALL 7 PHASES COMPLETE ✅
 
-✅ **Backend Infrastructure:**
+**Phase 1: Data Model (15 min)**
 
-- `messageType: "text" | "image"` field in Message schema
-- `sendImageMessage()` creates temp doc → uploads → updates with URL
-- Firebase Storage paths: `/messages/{chatId}/{messageId}.jpg`
-- Image compression to 800px max width, 85% quality
-- Maintains aspect ratio, max 10MB file size
-
-✅ **UI Components:**
-
-- `ImageMessage.tsx`: Inline display (65% screen width, max 400px height)
-- `ImageZoomModal.tsx`: Fullscreen viewer with dark overlay
-- 📎 Attachment button in chat input
-- 100x100px thumbnail preview with remove button
-- "Uploading..." progress indicator
-- Optional caption support
-
-✅ **User Flow:**
-
-- Tap 📎 → Select image → See preview → Add caption → Send
-- Image compresses & uploads to Storage
-- Appears inline in message bubble
-- Tap image → Opens fullscreen zoom modal
-- Works in direct chats & group chats
-
-✅ **Technical Details:**
-
-- Uses `expo-image-manipulator` (Expo Go compatible)
-- Uses React Native `Image.getSize()` for dimensions
-- Proper error handling & loading states
+- Added `avatarUrl?: string` field to User type
 - All 115 tests passing ✅
 
----
+**Phase 2: Backend Services (15 min)**
 
-## Phase 2 Day 3 Complete (Session 9 - Oct 23, 2025)
+- Updated `subscribeToUserPresence()`, `getAllUsers()`, `getUserById()` to include avatarUrl
+- Storage service ready with `uploadProfilePicture()` (compresses to 200x200px)
 
-### What Was Accomplished
+**Phase 3: Avatar Picker Modal (45 min)**
 
-**✅ Task 3.1: Message Schema Update (0.5h)**
+- Created `AvatarPickerModal.tsx` component (168 lines)
+- Two options: Take Photo (camera) or Choose from Library
+- Loading states, permission handling, error handling
+- Integrated with ProfileScreen
 
-- Updated `src/types/Message.ts` with `readBy?: string[]` field
-- Tracks which users have read each message
-- Optional field for backward compatibility
+**Phase 4: Profile Screen Integration (30 min)**
 
-**✅ Task 3.2: Message Service Updates (1h)**
+- Made avatar clickable with camera icon overlay
+- Shows real profile picture or placeholder icon
+- Handles upload to Firebase Storage
+- Updates user in Firestore and auth store
+- Success/error alerts
 
-- Updated `markMessagesAsRead()` to use Firebase `arrayUnion`
-- Adds current user to `readBy` array (excludes sender from own readBy)
-- Prevents duplicate entries automatically
-- Updated `subscribeToMessages()` to include `readBy` field in mapping
-- Fixed bug: readBy wasn't being sent to components
+**Phase 5: Chat List Display (30 min)**
 
-**✅ Task 3.3: Read Receipt UI Components (1.5h)**
+- Updated `ChatListItem` to accept and display `otherUserAvatarUrl`
+- Updated `ChatListScreen` → `ChatItemWrapper` to fetch other user's avatar
+- Passes avatar through `SwipeableChatItem` wrapper
+- Fallback to generic icon if no avatar
 
-- Created `src/components/ReadReceiptBadge.tsx` (132 lines)
-- **Direct chats:** Simple "Seen" text
-- **Group chats:** "Seen by" + user avatars (circular, 20px)
-  - Shows up to 3 avatars with overlap
-  - "+N" badge for additional readers
-  - Auto-fetches user data for avatars
-- Updated `MessageBubble.tsx` to integrate read receipts
-  - Shows ReadReceiptBadge when `readBy.length > 0`
-  - Otherwise shows StatusIndicator (double tick)
-  - Only on latest message from sender
-- Updated `ChatScreen.tsx` to pass `chatType` prop
+**Phase 6: Message Bubble Display (45 min)**
 
-**✅ Bug Fixes & Polish (1h)**
+- Updated `MessageBubble` to accept `senderAvatarUrl` prop
+- Updated `ChatScreen` to fetch and pass sender avatars for group chats
+- Shows `Avatar.Image` with fallback to `Avatar.Text` (initials)
+- Sender avatars display next to group messages
 
-- Fixed Firebase Functions deployment error (v1/v2 API mixing)
-- Added Cloud Function `updateChatOnNewMessage` to update chat documents
-- Fixed "Invalid Date" issue in chat list timestamps
-- Converted Firestore Timestamps to ISO strings properly
-- Made formatChatTime defensive against null/undefined
+**Phase 7: Contacts Screens (30 min)**
 
-**✅ Unit Tests: All Passing (0h)**
+- Updated `ContactsListScreen` → `UserItem` to show real avatars
+- Updated `ContactCardScreen` to display prominent avatar on profile
+- Maintains online indicator and status display
 
-- No new test files needed (existing tests cover new logic)
-- All 115 tests passing ✅
+**Bug Fix: Read Receipt Avatars (15 min)**
 
-### Files Created (2 total)
+- Fixed `ReadReceiptBadge.tsx` to show real profile pictures in "Seen by" section
+- Was showing text avatars (initials), now shows real images with fallback
 
-1. ✅ `src/components/ReadReceiptBadge.tsx` (132 lines) - Read receipt UI
-2. ✅ Cloud Function updated: `updateChatOnNewMessage` (server-side chat updates)
+**Files Created (1 total)**
 
-### Files Updated (6 total)
+1. ✅ `src/components/AvatarPickerModal.tsx` (168 lines) - Image picker modal
 
-1. ✅ `src/types/Message.ts` - Added `readBy` field
-2. ✅ `src/services/messageService.ts` - Updated markMessagesAsRead + subscribeToMessages
-3. ✅ `src/components/MessageBubble.tsx` - Integrated ReadReceiptBadge
-4. ✅ `src/screens/ChatsTab/ChatScreen.tsx` - Pass chatType prop, fixed linter error
-5. ✅ `functions/src/index.ts` - Fixed v1/v2 mixing, added updateChatOnNewMessage
-6. ✅ `src/utils/formatters.ts` - Made formatChatTime more defensive
+**Files Updated (10 total)**
 
----
+1. ✅ `src/types/User.ts` - Added `avatarUrl` field
+2. ✅ `src/services/userService.ts` - Include avatarUrl in all user queries
+3. ✅ `src/screens/ProfileTab/ProfileScreen.tsx` - Avatar upload & display
+4. ✅ `src/components/ChatListItem.tsx` - Display user avatars in chat list
+5. ✅ `src/screens/ChatsTab/ChatListScreen.tsx` - Fetch & pass other user avatar
+6. ✅ `src/components/SwipeableChatItem.tsx` - Pass through avatarUrl prop
+7. ✅ `src/components/MessageBubble.tsx` - Display sender avatars in groups
+8. ✅ `src/screens/ChatsTab/ChatScreen.tsx` - Fetch sender avatars
+9. ✅ `src/screens/ContactsTab/ContactsListScreen.tsx` - Show avatars in contacts
+10. ✅ `src/screens/ContactsTab/ContactCardScreen.tsx` - Display avatar on card
+11. ✅ `src/components/ReadReceiptBadge.tsx` - Show real avatars in "Seen by"
 
-## Phase 2 Day 2 Complete (Session 8 - Oct 22, 2025)
+**Firebase Storage Rules Updated**
 
-### What Was Accomplished
+- Lenient rules for testing: `allow write: if request.auth != null;`
+- Allows authenticated users to upload profile pictures
+- Can be tightened before production
 
-**✅ Task 2.1: Typing Status Service (1h)**
+**Technical Details**
 
-- Created `src/services/typingService.ts` (159 lines)
-- `setTyping(chatId, isTyping)` - Updates typing status with debounce
-- `subscribeToTypingStatus(chatId, callback)` - Real-time listener with filtering
-- `clearTyping(chatId)` - Cleanup on component unmount
-- Debounce: 500ms for typing start, 100ms for typing stop
-- TTL Auto-expiry: 5 seconds (via Firestore TTL policy)
-- User name fetched from Firestore (not auth.displayName) ✓
-- Filters: Excludes current user, expired statuses, inactive typings
+- Images compressed to 200x200px for profile pictures (85% JPEG quality)
+- Stored in Firebase Storage at: `/avatars/{userId}.jpg`
+- Cached for 24 hours
+- Optional field - old users without avatars still work
+- All displays have fallback logic (icons/initials if no URL)
 
-**✅ Task 2.2: Typing Indicator UI Component (1h)**
-
-- Created `src/components/TypingIndicator.tsx` (78 lines)
-- Smart grammar:
-  - 1 person: "User is typing"
-  - 2 people: "User A and User B are typing"
-  - 3+ people: "3 people are typing"
-- Animated ellipsis with smooth pulsing (opacity: 0.3 → 1.0)
-- Clean design: Light gray background bar between messages & input
-- Returns null when no one typing (no wasted space)
-
-**✅ Task 2.3: ChatScreen Integration (0.5h)**
-
-- Added typing subscription on chat load
-- Real-time listener with auto-cleanup on unmount
-- TextInput onChange handler with debounce detection
-- User typing detected automatically (500ms debounce)
-- Auto-stops after 3 seconds of inactivity
-- TypingIndicator component rendered between messages & input
-
-**✅ Unit Tests: 12 Comprehensive Tests (1h)**
-
-- Created `src/services/__tests__/typingService.test.ts` (269 lines)
-- `setTyping()` tests: Debounce, user name fetching, auth checking
-- `subscribeToTypingStatus()` tests: Filtering, sorting, error handling
-- `clearTyping()` tests: Deletion, auth checking
-- Fixed messageService test: Added networkUtils mock
-
-**✅ Bug Fixes: All Tests Passing (0.5h)**
-
-- Fixed messageService test suite (pre-existing react-native parse error)
-- Added proper mock for networkUtils in messageService.test.ts
-- All 115 tests now passing (100% pass rate)
-
-### Files Created (3 total)
-
-1. ✅ `src/services/typingService.ts` (159 lines) - Core typing service
-2. ✅ `src/components/TypingIndicator.tsx` (78 lines) - UI component
-3. ✅ `src/services/__tests__/typingService.test.ts` (269 lines) - 12 unit tests
-
-### Files Updated (3 total)
-
-1. ✅ `src/screens/ChatsTab/ChatScreen.tsx` - Typing subscription, detection, UI
-2. ✅ `src/utils/constants.ts` - Added TYPING_STATUS collection
-3. ✅ `src/services/__tests__/messageService.test.ts` - Added networkUtils mock
+**Avatar Display Throughout App**
+✅ Profile Settings (upload/change)
+✅ Chat List (direct chat avatars)
+✅ Messages (group message sender avatars)
+✅ Contacts (user discovery list)
+✅ Contact Profile Cards (prominent avatar)
+✅ Read Receipts (seen by section)
 
 ---
 
-## Key Features Implemented
-
-### Read Receipts with "Seen" Display
-
-✅ **Simple for Direct Chats:** Shows "Seen" below last message  
-✅ **Smart for Group Chats:** "Seen by" + user avatars  
-✅ **Avatar Display:** Circular avatars (20px) with overlap  
-✅ **Overflow Handling:** "+N" badge when more than 3 readers  
-✅ **Real-Time Sync:** Instant update when someone reads  
-✅ **Array-Based Tracking:** `readBy` array with Firebase arrayUnion  
-✅ **Server-Side Updates:** Cloud Function updates chat documents  
-✅ **Replaces Status Indicator:** Shows "Seen" instead of double tick
-
-### Real-Time Typing Indicators
-
-✅ **Live Typing Status:** See who's typing in real-time  
-✅ **Smart Display:** Grammar-aware text (is vs are typing)  
-✅ **Auto-Cleanup:** Statuses expire after 5 seconds automatically  
-✅ **Debounced Events:** 500ms debounce prevents excessive Firestore writes  
-✅ **User Names:** Fetched from Firestore user documents  
-✅ **Animated UI:** Smooth pulsing ellipsis animation  
-✅ **Self-Filtering:** Never shows own typing status  
-✅ **Clean Layout:** Integrates seamlessly with message UI
-
-### Technical Implementation
-
-✅ **Read Receipts:** `readBy: string[]` in Message schema, arrayUnion updates  
-✅ **Chat Updates:** Cloud Function `updateChatOnNewMessage` for real-time sync  
-✅ **Typing Status:** Firestore subcollection `typingStatus/{chatId}/users/{userId}`  
-✅ **TTL Auto-Expiry:** 5 seconds via Firestore policy  
-✅ **Real-Time Listeners:** onSnapshot for instant updates  
-✅ **Debounce Prevention:** State checking before writes  
-✅ **Offline Support:** Messages queue like typing updates  
-✅ **React Native Animated:** Smooth UI animations
-
----
-
-## Test Coverage Summary
-
-**Total Tests:** 115/115 passing ✅
-
-### Test Breakdown
-
-- User Service: 19 tests
-- Chat Service: 13 tests
-- Typing Service: 12 tests (Phase 2 Day 2)
-- Notification Service: 9 tests
-- Message Service: 19 tests
-- Auth Service: 13 tests
-- Auth Store: 8 tests
-
----
-
-## Status Summary
-
-**Phase 2 Day 3:** 100% COMPLETE ✅
-
-- Time Used: ~3 hours (including bug fixes)
-- Features: Read receipts with "Seen" & avatar display
-- Bug Fixes: Firebase Functions deployment, invalid date, readBy mapping
-- Tests: **115/115 passing**
-- Ready: YES, for Day 4
-
-**Next:** Day 4 Tasks
-
-- Task 4.1: Message pagination (load 20, max 500) (2h)
-- Task 4.2: Profile picture upload with ImagePicker (2h)
-
----
-
-**Last Updated:** October 23, 2025 (Session 10, Phase 2 Day 4 Partial - Image Messaging Complete)
-**Next Update:** After implementing pagination & delete chat or moving to next phase
-**Status:** Phase 2 Day 4 50% COMPLETE (Image Messaging ✅, Pagination & Delete Chat ⏳)
+**Last Updated:** October 23, 2025 (Session 11 - Profile Picture Feature Complete)
+**Status:** Phase 2 Day 4 100% COMPLETE (Image Messaging ✅, Delete Chat ✅, Profile Pictures ✅)
+**Next:** Message Pagination (load 20 initially, "Load Earlier" button)

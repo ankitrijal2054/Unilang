@@ -23,8 +23,8 @@
 **Phase 2 Day 1:** 100% COMPLETE ✅  
 **Phase 2 Day 2:** 100% COMPLETE ✅  
 **Phase 2 Day 3:** 100% COMPLETE ✅  
-**Phase 2 Day 4:** 50% COMPLETE (Image Messaging ✅)  
-**Time Used:** 37 hours / 48 hour budget (77% used)  
+**Phase 2 Day 4:** 100% COMPLETE ✅ (Image Messaging ✅, Delete Chat ✅, Profile Pictures ✅)  
+**Time Used:** 41 hours / 48 hour budget (85% used)  
 **Tests Passing:** 115/115 (100%) ✅
 
 ---
@@ -75,7 +75,7 @@
 ✅ **Cloud Function Fix** - updateChatOnNewMessage for real-time sync  
 ✅ **Bug Fixes** - Fixed Firebase deployment, invalid dates, readBy mapping
 
-### Phase 2 Day 4: Image Messaging (Partial)
+### Phase 2 Day 4: Image Messaging (Complete)
 
 ✅ **Message Schema Extended** - Added `messageType: "text" | "image"` + image fields  
 ✅ **Image Upload Service** - `sendImageMessage()` with Firebase Storage  
@@ -89,22 +89,39 @@
 ✅ **Tap to Zoom** - Opens fullscreen modal on image tap  
 ✅ **Bug Fixes** - Fixed Expo Go compatibility, image dimensions, theme imports
 
+### Phase 2 Day 4: Delete Chat (Complete)
+
+✅ **Swipe-to-Delete** - SwipeableChatItem with delete button animation  
+✅ **Confirmation Modal** - DeleteChatModal with clear warning  
+✅ **Soft Delete Logic** - Adds user to `deletedBy` array  
+✅ **Cloud Function Auto-Purge** - Deletes chat when all participants remove  
+✅ **Complete Chat Deletion** - Removes all messages when fully deleted
+
+### Phase 2 Day 4: Profile Pictures (COMPLETE) ✨
+
+✅ **User Type Update** - Added `avatarUrl?: string` field  
+✅ **Avatar Picker Modal** - Camera or gallery image selection  
+✅ **Profile Screen Upload** - Clickable avatar with upload capability  
+✅ **Image Compression** - 200x200px, 85% JPEG quality  
+✅ **Firebase Storage** - Stored at `/avatars/{userId}.jpg` (24h cache)  
+✅ **Chat List Display** - User avatars in direct chat list items  
+✅ **Message Bubble Display** - Sender avatars next to group messages  
+✅ **Contact List Display** - User avatars in contacts screen  
+✅ **Contact Card Display** - Prominent avatar on profile card  
+✅ **Read Receipt Avatars** - Real avatars in "Seen by" section  
+✅ **Fallback Logic** - Initials when no avatar (non-breaking)  
+✅ **All Services Updated** - userService queries include avatarUrl
+
 ---
 
-## What's Left to Build (Phase 2 Day 4-5)
+## What's Left to Build (Phase 2 Day 5)
 
-### Day 4 Remaining: Pagination & Delete Chat (3h)
+### Day 5: Message Pagination (2-3h)
 
-⏳ Message pagination (load 20 msgs, max 500 per chat)  
-⏳ "Load Earlier" button & infinite scroll  
-⏳ Delete chat feature (long-press + modal)  
-⏳ Cloud Function auto-purge
-
-### Day 5: Profile Avatars (Skipped for now)
-
-⏭ Profile picture upload (ImagePicker)  
-⏭ Image compression (200x200 for avatars)  
-⏭ Avatar display in chat list & messages
+⏳ Message pagination (load 20 msgs initially, "Load Earlier" button)  
+⏳ Infinite scroll support  
+⏳ Max 500 messages per chat limit  
+⏳ Cloud Function auto-purge after retention period
 
 ---
 
@@ -114,21 +131,31 @@ None currently! All features working as expected. ✅
 
 ---
 
-## Files Modified This Session (Phase 2 Day 4 - Image Messaging)
+## Files Modified This Session (Phase 2 Day 4 - Complete)
 
 ### New Files (2)
 
 1. ✅ `src/components/ImageMessage.tsx` (165 lines) - Inline image display component
 2. ✅ `src/components/ImageZoomModal.tsx` (171 lines) - Fullscreen image viewer
+3. ✅ `src/components/AvatarPickerModal.tsx` (168 lines) - Profile picture picker (NEW - Session 11)
 
-### Updated Files (6)
+### Updated Files (14)
 
-1. ✅ `src/types/Message.ts` - Added `messageType` and image fields
-2. ✅ `src/services/messageService.ts` - Added sendImageMessage(), updated subscribeToMessages()
-3. ✅ `src/services/storageService.ts` - Switched to expo-image-manipulator, fixed Image.getSize()
-4. ✅ `src/components/MessageBubble.tsx` - Renders images, opens zoom modal
-5. ✅ `src/screens/ChatsTab/ChatScreen.tsx` - Added picker, preview, upload handlers
-6. ✅ `jest.config.js` + `jest.setup.js` - Updated mocks for image libraries
+1. ✅ `src/types/User.ts` - Added `messageType` and image fields
+2. ✅ `src/types/Message.ts` - Added `messageType` and image fields (unchanged)
+3. ✅ `src/services/messageService.ts` - Added sendImageMessage(), updated subscribeToMessages()
+4. ✅ `src/services/storageService.ts` - Switched to expo-image-manipulator, fixed Image.getSize()
+5. ✅ `src/components/MessageBubble.tsx` - Renders images, opens zoom modal, sender avatars (Session 11)
+6. ✅ `src/screens/ChatsTab/ChatScreen.tsx` - Added picker, preview, upload handlers, sender avatar fetching (Session 11)
+7. ✅ `src/jest.config.js` + `jest.setup.js` - Updated mocks for image libraries
+8. ✅ `src/services/userService.ts` - Include avatarUrl in all user queries (Session 11)
+9. ✅ `src/screens/ProfileTab/ProfileScreen.tsx` - Avatar upload & display (Session 11)
+10. ✅ `src/components/ChatListItem.tsx` - Display real avatars (Session 11)
+11. ✅ `src/screens/ChatsTab/ChatListScreen.tsx` - Fetch & pass other user avatar (Session 11)
+12. ✅ `src/components/SwipeableChatItem.tsx` - Pass through avatarUrl prop (Session 11)
+13. ✅ `src/screens/ContactsTab/ContactsListScreen.tsx` - Show avatars in contacts (Session 11)
+14. ✅ `src/screens/ContactsTab/ContactCardScreen.tsx` - Display avatar on card (Session 11)
+15. ✅ `src/components/ReadReceiptBadge.tsx` - Show real avatars in "Seen by" (Session 11)
 
 ---
 
@@ -188,6 +215,6 @@ None currently! All features working as expected. ✅
 
 ---
 
-**Last Updated:** October 23, 2025 (Session 10, Phase 2 Day 4 Partial - Image Messaging Complete)  
-**Next Update:** After completing pagination & delete chat, or moving to next phase  
-**Status:** Phase 2 Day 4 50% COMPLETE (Image Messaging ✅, Pagination & Delete Chat ⏳)
+**Last Updated:** October 23, 2025 (Session 11, Phase 2 Day 4 Complete - Profile Pictures Feature Complete)  
+**Next Update:** After implementing message pagination or moving to next phase  
+**Status:** Phase 2 Day 4 100% COMPLETE (Image Messaging ✅, Delete Chat ✅, Profile Pictures ✅)

@@ -12,6 +12,7 @@ import {
   serverTimestamp,
   getDocs,
   writeBatch,
+  arrayUnion,
 } from "firebase/firestore";
 import { Message } from "../types";
 import { COLLECTIONS } from "../utils/constants";
@@ -89,6 +90,7 @@ export const subscribeToMessages = (
             new Date().toISOString(),
           status: data.status,
           type: data.type || "user", // Map type field (default to "user")
+          readBy: data.readBy || [], // Include readBy array for read receipts
           ai: data.ai || {
             translated_text: "",
             detected_language: "",
@@ -134,36 +136,42 @@ export const markMessagesAsRead = async (
   currentUserId: string
 ): Promise<{ success: boolean; error?: any }> => {
   try {
-    // For MVP: Just update status to "read" for all messages in chat
-    // Simple query without composite index requirement
+    // Get all messages for this chat
     const messagesQuery = query(
       collection(db, COLLECTIONS.MESSAGES),
       where("chatId", "==", chatId)
     );
 
-    // Get all messages for this chat
     const snapshot = await getDocs(messagesQuery);
 
     if (snapshot.empty) {
       return { success: true };
     }
 
-    // Batch update only messages that aren't already read
+    // Batch update messages to add currentUserId to readBy array
     const batch = writeBatch(db);
     let updateCount = 0;
 
     snapshot.forEach((doc) => {
       const data = doc.data();
-      // Only update if not already read
-      if (data.status !== "read") {
-        batch.update(doc.ref, { status: "read" });
-        updateCount++;
+      // Don't add sender to their own readBy, and skip if already in readBy
+      if (data.senderId !== currentUserId) {
+        const readBy = data.readBy || [];
+        if (!readBy.includes(currentUserId)) {
+          batch.update(doc.ref, {
+            status: "read",
+            readBy: arrayUnion(currentUserId),
+          });
+          updateCount++;
+        }
       }
     });
 
     if (updateCount > 0) {
       await batch.commit();
-      console.log(`✅ ${updateCount} messages marked as read`);
+      console.log(
+        `✅ ${updateCount} messages marked as read by ${currentUserId}`
+      );
     }
 
     return { success: true };

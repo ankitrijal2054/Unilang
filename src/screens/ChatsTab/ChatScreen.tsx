@@ -265,7 +265,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             setSenderNames((prev) => {
               return {
                 ...prev,
-                [participantId]: result.user.name,
+                [participantId]: result.user!.name,
               };
             });
           } else {
@@ -463,6 +463,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         }
         senderName={senderName}
         isLatestFromUser={isLatestMessage}
+        chatType={chatType}
       />
     );
   };

@@ -11,7 +11,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Text, Snackbar } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
 import { subscribeToUserChats, deleteChat } from "../../services/chatService";
@@ -194,29 +193,27 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
           locations={[0, 1]}
           style={styles.headerGradient}
         >
-          <BlurView intensity={50} tint="light" style={styles.headerBlur}>
-            <View style={styles.headerContent}>
-              <View style={styles.headerLeft}>
-                <Text style={styles.headerTitle}>Messages</Text>
-              </View>
-              <View style={styles.headerRight}>
-                <TouchableOpacity onPress={handleNewChat}>
-                  <MaterialCommunityIcons
-                    name="plus"
-                    size={28}
-                    color={colorPalette.neutral[900]}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleNewGroup}>
-                  <MaterialCommunityIcons
-                    name="account-group"
-                    size={28}
-                    color={colorPalette.neutral[900]}
-                  />
-                </TouchableOpacity>
-              </View>
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.headerTitle}>Messages</Text>
             </View>
-          </BlurView>
+            <View style={styles.headerRight}>
+              <TouchableOpacity onPress={handleNewChat}>
+                <MaterialCommunityIcons
+                  name="plus"
+                  size={28}
+                  color={colorPalette.neutral[900]}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleNewGroup}>
+                <MaterialCommunityIcons
+                  name="account-group"
+                  size={28}
+                  color={colorPalette.neutral[900]}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
         </LinearGradient>
       </View>
 
@@ -304,11 +301,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-  },
-  headerBlur: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: `rgba(243, 244, 246, 0.6)`,
   },
   headerContent: {
     flexDirection: "row",

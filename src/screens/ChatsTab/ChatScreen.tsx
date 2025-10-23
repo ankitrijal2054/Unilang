@@ -20,7 +20,6 @@ import {
   Snackbar,
 } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
@@ -31,7 +30,10 @@ import {
   markMessagesAsRead,
 } from "../../services/messageService";
 import { updateChatLastMessage } from "../../services/chatService";
-import { subscribeToUserPresence } from "../../services/userService";
+import {
+  subscribeToUserPresence,
+  getUserById,
+} from "../../services/userService";
 import { subscribeToNetworkStatus, isOnline } from "../../utils/networkUtils";
 import {
   setTyping,
@@ -272,8 +274,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     }
 
     const fetchAllSenderNames = async () => {
-      const { getUserById } = await import("../../services/userService");
-
       // Collect all unique sender IDs from messages + current participants
       // This ensures we fetch names even for users who left the group
       const senderIds = new Set<string>();

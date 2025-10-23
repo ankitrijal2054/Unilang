@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -8,11 +8,10 @@ import {
   Modal,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { TextInput, Button, Text, Snackbar } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import { signUp } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
 import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from "../../utils/constants";
@@ -113,117 +112,115 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
               <Text style={styles.tagline}>Chat freely, in any language</Text>
             </View>
 
-            {/* Form Card with Frosted Glass Effect */}
-            <BlurView intensity={90} style={styles.blurContainer}>
-              <View style={styles.formCard}>
-                <Text style={styles.formTitle}>Join Unilang</Text>
-                <Text style={styles.formSubtitle}>Create your account</Text>
+            {/* Form Card */}
+            <View style={styles.formCard}>
+              <Text style={styles.formTitle}>Join Unilang</Text>
+              <Text style={styles.formSubtitle}>Create your account</Text>
 
-                {/* Name Input */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Full Name</Text>
-                  <TextInput
-                    value={name}
-                    onChangeText={setName}
-                    mode="outlined"
-                    placeholder="John Doe"
-                    editable={!isLoading}
-                    style={styles.input}
-                    outlineColor="#E2E8F0"
-                    activeOutlineColor={colorPalette.primary}
-                  />
-                </View>
+              {/* Name Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Full Name</Text>
+                <TextInput
+                  value={name}
+                  onChangeText={setName}
+                  mode="outlined"
+                  placeholder="John Doe"
+                  editable={!isLoading}
+                  style={styles.input}
+                  outlineColor="#E2E8F0"
+                  activeOutlineColor={colorPalette.primary}
+                />
+              </View>
 
-                {/* Email Input */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Email</Text>
-                  <TextInput
-                    value={email}
-                    onChangeText={setEmail}
-                    mode="outlined"
-                    placeholder="you@example.com"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    editable={!isLoading}
-                    style={styles.input}
-                    outlineColor="#E2E8F0"
-                    activeOutlineColor={colorPalette.primary}
-                  />
-                </View>
+              {/* Email Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Email</Text>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  mode="outlined"
+                  placeholder="you@example.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  editable={!isLoading}
+                  style={styles.input}
+                  outlineColor="#E2E8F0"
+                  activeOutlineColor={colorPalette.primary}
+                />
+              </View>
 
-                {/* Password Input */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Password</Text>
-                  <TextInput
-                    value={password}
-                    onChangeText={setPassword}
-                    mode="outlined"
-                    placeholder="••••••••"
-                    secureTextEntry={!showPassword}
-                    right={
-                      <TextInput.Icon
-                        icon={showPassword ? "eye-off" : "eye"}
-                        onPress={() => setShowPassword(!showPassword)}
-                      />
-                    }
-                    editable={!isLoading}
-                    style={styles.input}
-                    outlineColor="#E2E8F0"
-                    activeOutlineColor={colorPalette.primary}
-                  />
-                </View>
+              {/* Password Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Password</Text>
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  mode="outlined"
+                  placeholder="••••••••"
+                  secureTextEntry={!showPassword}
+                  right={
+                    <TextInput.Icon
+                      icon={showPassword ? "eye-off" : "eye"}
+                      onPress={() => setShowPassword(!showPassword)}
+                    />
+                  }
+                  editable={!isLoading}
+                  style={styles.input}
+                  outlineColor="#E2E8F0"
+                  activeOutlineColor={colorPalette.primary}
+                />
+              </View>
 
-                {/* Confirm Password Input */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Confirm Password</Text>
-                  <TextInput
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    mode="outlined"
-                    placeholder="••••••••"
-                    secureTextEntry={!showConfirmPassword}
-                    right={
-                      <TextInput.Icon
-                        icon={showConfirmPassword ? "eye-off" : "eye"}
-                        onPress={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
-                      />
-                    }
-                    editable={!isLoading}
-                    style={styles.input}
-                    outlineColor="#E2E8F0"
-                    activeOutlineColor={colorPalette.primary}
-                  />
-                </View>
+              {/* Confirm Password Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Confirm Password</Text>
+                <TextInput
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  mode="outlined"
+                  placeholder="••••••••"
+                  secureTextEntry={!showConfirmPassword}
+                  right={
+                    <TextInput.Icon
+                      icon={showConfirmPassword ? "eye-off" : "eye"}
+                      onPress={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    />
+                  }
+                  editable={!isLoading}
+                  style={styles.input}
+                  outlineColor="#E2E8F0"
+                  activeOutlineColor={colorPalette.primary}
+                />
+              </View>
 
-                {/* Language Selector */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Preferred Language</Text>
-                  <Button
-                    mode="outlined"
-                    onPress={() => setLanguageMenuVisible(true)}
-                    disabled={isLoading}
-                    style={styles.languageButton}
-                    labelStyle={styles.languageButtonLabel}
-                  >
-                    {selectedLanguageLabel}
-                  </Button>
-                </View>
-
-                {/* Sign Up Button */}
+              {/* Language Selector */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Preferred Language</Text>
                 <Button
-                  mode="contained"
-                  onPress={handleSignUp}
-                  loading={isLoading}
+                  mode="outlined"
+                  onPress={() => setLanguageMenuVisible(true)}
                   disabled={isLoading}
-                  style={styles.signUpButton}
-                  labelStyle={styles.buttonLabel}
+                  style={styles.languageButton}
+                  labelStyle={styles.languageButtonLabel}
                 >
-                  Create Account
+                  {selectedLanguageLabel}
                 </Button>
               </View>
-            </BlurView>
+
+              {/* Sign Up Button */}
+              <Button
+                mode="contained"
+                onPress={handleSignUp}
+                loading={isLoading}
+                disabled={isLoading}
+                style={styles.signUpButton}
+                labelStyle={styles.buttonLabel}
+              >
+                Create Account
+              </Button>
+            </View>
 
             {/* Sign In Link Section */}
             <View style={styles.footerSection}>
@@ -334,17 +331,19 @@ const styles = StyleSheet.create({
     color: colorPalette.neutral[600],
     fontWeight: "500",
   },
-  blurContainer: {
-    borderRadius: 24,
-    overflow: "hidden",
-    marginBottom: 24,
-  },
   formCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     paddingHorizontal: 28,
     paddingVertical: 24,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.5)",
+    borderRadius: 24,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
   formTitle: {
     fontSize: 28,

@@ -7,7 +7,10 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import {
+  onDocumentCreated,
+  onDocumentUpdated,
+} from "firebase-functions/v2/firestore";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 
@@ -238,3 +241,75 @@ export const calculateUnreadCount = async (userId: string): Promise<number> => {
     return 0;
   }
 };
+
+/**
+ * Cloud Function triggered when a chat document is updated
+ * Auto-purges chat and all its messages if ALL participants have deleted it
+ */
+export const autoPurgeChatOnDelete = onDocumentUpdated(
+  {
+    document: "chats/{chatId}",
+    maxInstances: 10,
+  },
+  async (event) => {
+    try {
+      const chatId = event.params.chatId;
+      const chatData = event.data?.after.data();
+
+      if (!chatData) {
+        logger.warn("Chat data not found for ID:", chatId);
+        return;
+      }
+
+      const participants: string[] = chatData.participants || [];
+      const deletedBy: string[] = chatData.deletedBy || [];
+
+      logger.log("Checking if chat should be purged:", chatId, {
+        participants: participants.length,
+        deletedBy: deletedBy.length,
+      });
+
+      // Check if all participants have deleted the chat
+      if (
+        deletedBy.length > 0 &&
+        deletedBy.length === participants.length &&
+        participants.every((uid) => deletedBy.includes(uid))
+      ) {
+        logger.log("🗑️ All participants deleted chat, purging:", chatId);
+
+        // Delete all messages in this chat
+        const messagesSnapshot = await db
+          .collection("messages")
+          .where("chatId", "==", chatId)
+          .get();
+
+        const batch = db.batch();
+        let messageCount = 0;
+
+        messagesSnapshot.docs.forEach((doc) => {
+          batch.delete(doc.ref);
+          messageCount++;
+        });
+
+        // Delete the chat document itself
+        batch.delete(db.collection("chats").doc(chatId));
+
+        // Commit the batch
+        await batch.commit();
+
+        logger.log(
+          `✅ Chat purged successfully: ${chatId} (${messageCount} messages deleted)`
+        );
+      } else {
+        logger.log(
+          "Chat not ready for purging:",
+          chatId,
+          `${deletedBy.length}/${participants.length} participants deleted`
+        );
+      }
+    } catch (error) {
+      logger.error("Error in autoPurgeChatOnDelete:", error);
+      // Don't throw - we don't want to fail the update
+    }
+  }
+);

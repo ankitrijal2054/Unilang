@@ -10,7 +10,6 @@ import {
 import { Appbar, TextInput, Text, Avatar } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import { useAuthStore } from "../../store/authStore";
 import {
   getAllUsers,
@@ -223,25 +222,21 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
           locations={[0, 1]}
           style={styles.headerGradient}
         >
-          <BlurView intensity={50} tint="light" style={styles.headerBlur}>
-            <View style={styles.headerContent}>
-              <View style={styles.headerLeft}>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate("ChatList")}
-                >
-                  <MaterialCommunityIcons
-                    name="arrow-left"
-                    size={28}
-                    color={colorPalette.neutral[900]}
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.headerCenter}>
-                <Text style={styles.headerTitle}>New Chat</Text>
-              </View>
-              <View style={styles.headerRight} />
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <TouchableOpacity onPress={() => navigation.navigate("ChatList")}>
+                <MaterialCommunityIcons
+                  name="arrow-left"
+                  size={28}
+                  color={colorPalette.neutral[900]}
+                />
+              </TouchableOpacity>
             </View>
-          </BlurView>
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>New Chat</Text>
+            </View>
+            <View style={styles.headerRight} />
+          </View>
         </LinearGradient>
       </View>
 
@@ -309,10 +304,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-  },
-  headerBlur: {
-    flex: 1,
-    justifyContent: "center",
   },
   headerContent: {
     flexDirection: "row",

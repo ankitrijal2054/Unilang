@@ -57,6 +57,60 @@ jest.mock("expo-notifications", () => ({
   addNotificationResponseReceivedListener: jest.fn(),
 }));
 
+jest.mock("expo-image-manipulator", () => ({
+  manipulateAsync: jest.fn(() =>
+    Promise.resolve({
+      uri: "file://mock-compressed-image.jpg",
+      width: 800,
+      height: 600,
+    })
+  ),
+  SaveFormat: {
+    JPEG: "jpeg",
+    PNG: "png",
+  },
+}));
+
+jest.mock("expo-image-picker", () => ({
+  requestMediaLibraryPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: "granted" })
+  ),
+  launchImageLibraryAsync: jest.fn(() =>
+    Promise.resolve({
+      canceled: false,
+      assets: [{ uri: "file://mock-image.jpg" }],
+    })
+  ),
+}));
+
+jest.mock("firebase/storage", () => ({
+  getStorage: jest.fn(() => ({})),
+  ref: jest.fn(() => ({})),
+  uploadBytes: jest.fn(() => Promise.resolve({})),
+  getDownloadURL: jest.fn(() =>
+    Promise.resolve("https://storage.example.com/image.jpg")
+  ),
+}));
+
+// Mock React Native Image
+jest.mock("react-native", () => ({
+  Image: {
+    getSize: jest.fn((uri, success) => {
+      success(800, 600);
+    }),
+  },
+  Platform: {
+    OS: "ios",
+    select: jest.fn((obj) => obj.ios),
+  },
+  StyleSheet: {
+    create: jest.fn((styles) => styles),
+  },
+  Dimensions: {
+    get: jest.fn(() => ({ width: 375, height: 667 })),
+  },
+}));
+
 // Mock console methods in tests
 global.console = {
   ...console,

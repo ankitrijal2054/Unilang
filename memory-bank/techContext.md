@@ -94,7 +94,15 @@ const { user, setUser } = useAuthStore();
    - Handles iOS APNs + Android FCM
    - Foreground + background messages
 
-5. **Firestore Offline Persistence**
+5. **Cloud Storage**
+
+   - Firebase Storage for media uploads
+   - Image uploads: `/messages/{chatId}/{messageId}.jpg`
+   - Profile pictures: `/avatars/{userId}.jpg`
+   - Max 10MB per image
+   - Automatic CDN distribution
+
+6. **Firestore Offline Persistence**
    - Automatic local caching
    - Message queuing when offline
    - Auto-sync on reconnect
@@ -225,7 +233,12 @@ Unilang/
 
 ### Firebase
 
-- `firebase` - Firebase SDK (Auth, Firestore, Messaging)
+- `firebase` - Firebase SDK (Auth, Firestore, Messaging, Storage)
+
+### Media & Images
+
+- `expo-image-picker` - Image selection from device library
+- `expo-image-manipulator` - Image compression and resizing (Expo-compatible)
 
 ### UI & Navigation
 
@@ -314,6 +327,7 @@ Unilang/
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
@@ -327,6 +341,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 // Enable offline persistence
 enableIndexedDbPersistence(db);
@@ -439,8 +454,9 @@ npx expo publish
 
 - **No web version (MVP):** Focus on mobile-first
 - **No end-to-end encryption (MVP):** TLS covers transport
-- **No media attachments (MVP):** Text-only for reliability
+- **Image attachments only (Phase 2):** No video/audio/documents yet
 - **Limited user base:** Firebase free tier handles ~100 concurrent users
+- **Expo Go limitations:** Some native modules require development build
 
 ## Upgrade Path (Phase 2+)
 

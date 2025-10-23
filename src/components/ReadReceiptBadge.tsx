@@ -64,15 +64,24 @@ export const ReadReceiptBadge: React.FC<ReadReceiptBadgeProps> = ({
     <View style={styles.container}>
       <Text style={styles.seenByText}>Seen by</Text>
       <View style={styles.avatarRow}>
-        {readers.map((user, index) => (
-          <Avatar.Text
-            key={user.uid}
-            size={20}
-            label={user.name.charAt(0).toUpperCase()}
-            style={[styles.avatar, index > 0 && styles.avatarOverlap]}
-            labelStyle={styles.avatarLabel}
-          />
-        ))}
+        {readers.map((user, index) =>
+          user.avatarUrl ? (
+            <Avatar.Image
+              key={user.uid}
+              size={20}
+              source={{ uri: user.avatarUrl }}
+              style={[styles.avatar, index > 0 && styles.avatarOverlap]}
+            />
+          ) : (
+            <Avatar.Text
+              key={user.uid}
+              size={20}
+              label={user.name.charAt(0).toUpperCase()}
+              style={[styles.avatar, index > 0 && styles.avatarOverlap]}
+              labelStyle={styles.avatarLabel}
+            />
+          )
+        )}
         {remainingCount > 0 && (
           <View style={[styles.moreIndicator, styles.avatarOverlap]}>
             <Text style={styles.moreText}>+{remainingCount}</Text>

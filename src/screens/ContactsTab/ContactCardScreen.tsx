@@ -2,19 +2,13 @@ import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
-  ScrollView,
   Alert,
   SafeAreaView,
   TouchableOpacity,
-} from "react-native";
-import {
-  Appbar,
-  Button,
-  Text,
-  Avatar,
-  Card,
+  Image,
   ActivityIndicator,
-} from "react-native-paper";
+} from "react-native";
+import { Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuthStore } from "../../store/authStore";
@@ -24,7 +18,12 @@ import {
 } from "../../services/userService";
 import { createDirectChat } from "../../services/chatService";
 import { User } from "../../types";
-import { colorPalette } from "../../utils/theme";
+import {
+  colorPalette,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../utils/theme";
 import { formatLastSeen } from "../../utils/formatters";
 
 interface ContactCardScreenProps {
@@ -124,30 +123,44 @@ export const ContactCardScreen: React.FC<ContactCardScreenProps> = ({
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <LinearGradient
-            colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
-            locations={[0, 1]}
-            style={styles.headerGradient}
-          >
-            <View style={styles.headerContent}>
-              <View style={styles.headerLeft}>
-                <TouchableOpacity onPress={() => navigation.popToTop()}>
-                  <MaterialCommunityIcons
-                    name="arrow-left"
-                    size={28}
-                    color={colorPalette.neutral[900]}
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.headerCenter}>
-                <Text style={styles.headerTitle}>Contact</Text>
-              </View>
-              <View style={styles.headerRight} />
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.popToTop()}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons
+                name="arrow-left"
+                size={24}
+                color={colorPalette.neutral[950]}
+              />
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>Contact</Text>
             </View>
-          </LinearGradient>
+          </View>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colorPalette.primary} />
+          <LinearGradient
+            colors={
+              colorPalette.gradientBlueSoft as [string, string, ...string[]]
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.loadingIconContainer}
+          >
+            <MaterialCommunityIcons
+              name="account"
+              size={48}
+              color={colorPalette.background}
+            />
+          </LinearGradient>
+          <ActivityIndicator
+            size="large"
+            color={colorPalette.primary}
+            style={{ marginTop: spacing.lg }}
+          />
+          <Text style={styles.loadingText}>Loading profile...</Text>
         </View>
       </SafeAreaView>
     );
@@ -157,30 +170,42 @@ export const ContactCardScreen: React.FC<ContactCardScreenProps> = ({
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <LinearGradient
-            colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
-            locations={[0, 1]}
-            style={styles.headerGradient}
-          >
-            <View style={styles.headerContent}>
-              <View style={styles.headerLeft}>
-                <TouchableOpacity onPress={() => navigation.popToTop()}>
-                  <MaterialCommunityIcons
-                    name="arrow-left"
-                    size={28}
-                    color={colorPalette.neutral[900]}
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.headerCenter}>
-                <Text style={styles.headerTitle}>Contact</Text>
-              </View>
-              <View style={styles.headerRight} />
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.popToTop()}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons
+                name="arrow-left"
+                size={24}
+                color={colorPalette.neutral[950]}
+              />
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>Contact</Text>
             </View>
-          </LinearGradient>
+          </View>
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Contact not found</Text>
+          <LinearGradient
+            colors={
+              colorPalette.gradientOrange as [string, string, ...string[]]
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.errorIconContainer}
+          >
+            <MaterialCommunityIcons
+              name="account-off"
+              size={48}
+              color={colorPalette.background}
+            />
+          </LinearGradient>
+          <Text style={styles.errorTitle}>Contact Not Found</Text>
+          <Text style={styles.errorText}>
+            This contact could not be loaded.
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -190,53 +215,83 @@ export const ContactCardScreen: React.FC<ContactCardScreenProps> = ({
   const languageName =
     LANGUAGE_NAMES[user.preferred_language] || user.preferred_language;
 
+  // Get initials for avatar
+  const initials = user.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  // Generate gradient colors based on user ID
+  const gradientColors = [
+    colorPalette.gradientBlueSoft,
+    colorPalette.gradientPurpleSoft,
+    colorPalette.gradientPinkSoft,
+    colorPalette.gradientCyanSoft,
+  ][user.uid.charCodeAt(0) % 4];
+
   return (
     <SafeAreaView style={styles.container}>
+      {/* Modern Header */}
       <View style={styles.header}>
-        <LinearGradient
-          colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
-          locations={[0, 1]}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <TouchableOpacity onPress={() => navigation.popToTop()}>
-                <MaterialCommunityIcons
-                  name="arrow-left"
-                  size={28}
-                  color={colorPalette.neutral[900]}
-                />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.headerCenter}>
-              <Text style={styles.headerTitle}>Contact</Text>
-            </View>
-            <View style={styles.headerRight} />
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.popToTop()}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={24}
+              color={colorPalette.neutral[950]}
+            />
+          </TouchableOpacity>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>Contact Profile</Text>
           </View>
-        </LinearGradient>
+        </View>
       </View>
 
-      <ScrollView style={styles.content}>
-        {/* Contact Card */}
-        <Card style={styles.contactCard}>
-          <View style={styles.cardContent}>
-            {/* Avatar */}
-            <View style={styles.avatarSection}>
-              {user.avatarUrl ? (
-                <Avatar.Image size={80} source={{ uri: user.avatarUrl }} />
-              ) : (
-                <Avatar.Text
-                  size={80}
-                  label={user.name.charAt(0).toUpperCase()}
-                />
-              )}
-              {isOnline && <View style={styles.onlineIndicator} />}
-            </View>
+      <View style={styles.content}>
+        {/* Hero Card with Avatar */}
+        <View style={styles.heroCard}>
+          <View style={styles.avatarSection}>
+            {user.avatarUrl ? (
+              <Image
+                source={{ uri: user.avatarUrl }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <LinearGradient
+                colors={gradientColors as [string, string, ...string[]]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.avatarGradient}
+              >
+                <Text style={styles.avatarText}>{initials}</Text>
+              </LinearGradient>
+            )}
+            {isOnline && (
+              <View style={styles.onlineIndicator}>
+                <View style={styles.onlineIndicatorInner} />
+              </View>
+            )}
+          </View>
 
-            {/* Name */}
-            <Text style={styles.name}>{user.name}</Text>
+          <Text style={styles.name}>{user.name}</Text>
 
-            {/* Status */}
+          <View style={styles.statusRow}>
+            <View
+              style={[
+                styles.statusDot,
+                {
+                  backgroundColor: isOnline
+                    ? colorPalette.success
+                    : colorPalette.neutral[400],
+                },
+              ]}
+            />
             <Text
               style={[
                 styles.status,
@@ -249,74 +304,138 @@ export const ContactCardScreen: React.FC<ContactCardScreenProps> = ({
                     user.lastSeen || new Date().toISOString()
                   )}`}
             </Text>
+          </View>
+        </View>
 
-            {/* Info Items */}
-            <View style={styles.infoSection}>
-              {/* Email */}
-              <View style={styles.infoItem}>
-                <MaterialCommunityIcons
-                  name="email"
-                  size={20}
-                  color={colorPalette.primary}
-                />
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Email</Text>
-                  <Text style={styles.infoValue}>{user.email}</Text>
-                </View>
-              </View>
+        {/* Info Card */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoCardHeader}>
+            <MaterialCommunityIcons
+              name="information-outline"
+              size={18}
+              color={colorPalette.neutral[700]}
+            />
+            <Text style={styles.infoCardTitle}>Information</Text>
+          </View>
 
-              {/* Language */}
-              <View style={styles.infoItem}>
-                <MaterialCommunityIcons
-                  name="translate"
-                  size={20}
-                  color={colorPalette.primary}
-                />
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Language</Text>
-                  <Text style={styles.infoValue}>{languageName}</Text>
-                </View>
-              </View>
-
-              {/* Status */}
-              <View style={styles.infoItem}>
-                <MaterialCommunityIcons
-                  name={isOnline ? "check-circle" : "clock-outline"}
-                  size={20}
-                  color={
-                    isOnline ? colorPalette.success : colorPalette.neutral[500]
-                  }
-                />
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Status</Text>
-                  <Text
-                    style={[
-                      styles.infoValue,
-                      isOnline ? styles.onlineText : styles.offlineText,
-                    ]}
-                  >
-                    {isOnline ? "Online" : "Offline"}
-                  </Text>
-                </View>
-              </View>
+          {/* Email */}
+          <View style={styles.infoItem}>
+            <LinearGradient
+              colors={
+                colorPalette.gradientBlueSoft as [string, string, ...string[]]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.infoIconContainer}
+            >
+              <MaterialCommunityIcons
+                name="email"
+                size={16}
+                color={colorPalette.background}
+              />
+            </LinearGradient>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Email</Text>
+              <Text style={styles.infoValue} numberOfLines={1}>
+                {user.email}
+              </Text>
             </View>
           </View>
-        </Card>
+
+          <View style={styles.infoSeparator} />
+
+          {/* Language */}
+          <View style={styles.infoItem}>
+            <LinearGradient
+              colors={
+                colorPalette.gradientPurpleSoft as [string, string, ...string[]]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.infoIconContainer}
+            >
+              <MaterialCommunityIcons
+                name="translate"
+                size={16}
+                color={colorPalette.background}
+              />
+            </LinearGradient>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Language</Text>
+              <Text style={styles.infoValue}>{languageName}</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoSeparator} />
+
+          {/* Status */}
+          <View style={styles.infoItem}>
+            <LinearGradient
+              colors={
+                isOnline
+                  ? (colorPalette.gradientGreen as [
+                      string,
+                      string,
+                      ...string[]
+                    ])
+                  : [colorPalette.neutral[300], colorPalette.neutral[300]]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.infoIconContainer}
+            >
+              <MaterialCommunityIcons
+                name={isOnline ? "check-circle" : "clock-outline"}
+                size={16}
+                color={colorPalette.background}
+              />
+            </LinearGradient>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Status</Text>
+              <Text
+                style={[
+                  styles.infoValue,
+                  isOnline ? styles.onlineText : styles.offlineText,
+                ]}
+              >
+                {isOnline ? "Online" : "Offline"}
+              </Text>
+            </View>
+          </View>
+        </View>
 
         {/* Start Chat Button */}
-        <View style={styles.buttonSection}>
-          <Button
-            mode="contained"
-            icon="message"
-            onPress={handleStartChat}
-            loading={starting}
-            disabled={starting}
-            style={styles.button}
+        <TouchableOpacity
+          onPress={handleStartChat}
+          disabled={starting}
+          activeOpacity={0.8}
+          style={[styles.chatButton, starting && styles.chatButtonDisabled]}
+        >
+          <LinearGradient
+            colors={
+              starting
+                ? [colorPalette.neutral[300], colorPalette.neutral[300]]
+                : (colorPalette.gradientBlue as [string, string, ...string[]])
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.chatButtonGradient}
           >
-            Start Chat
-          </Button>
-        </View>
-      </ScrollView>
+            {starting ? (
+              <ActivityIndicator color={colorPalette.background} />
+            ) : (
+              <>
+                <MaterialCommunityIcons
+                  name="message-text"
+                  size={20}
+                  color={colorPalette.background}
+                />
+                <Text style={styles.chatButtonText}>Start Chat</Text>
+              </>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -324,95 +443,206 @@ export const ContactCardScreen: React.FC<ContactCardScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colorPalette.backgroundSecondary,
+  },
+  header: {
+    height: 72,
+    justifyContent: "center",
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
     backgroundColor: colorPalette.background,
+    ...colorPalette.shadows.small,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.base,
+    gap: spacing.md,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colorPalette.neutral[100],
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    ...typography.h3,
+    color: colorPalette.neutral[950],
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    gap: spacing.md,
+  },
+  loadingIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.medium,
+  },
+  loadingText: {
+    ...typography.caption,
+    color: colorPalette.neutral[600],
+    marginTop: spacing.sm,
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  errorIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+    ...colorPalette.shadows.medium,
+  },
+  errorTitle: {
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+    marginBottom: spacing.xs,
+    textAlign: "center",
   },
   errorText: {
-    fontSize: 16,
+    ...typography.body,
     color: colorPalette.neutral[600],
+    textAlign: "center",
   },
   content: {
-    paddingTop: 16,
-    backgroundColor: colorPalette.background,
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    justifyContent: "space-between",
   },
-  contactCard: {
-    margin: 16,
+  heroCard: {
     backgroundColor: colorPalette.background,
-    borderColor: colorPalette.neutral[200],
-  },
-  cardContent: {
-    padding: 24,
+    borderRadius: borderRadius.xxl,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
     alignItems: "center",
+    ...colorPalette.shadows.medium,
   },
   avatarSection: {
     position: "relative",
-    marginBottom: 16,
+    marginBottom: spacing.md,
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    ...colorPalette.shadows.medium,
+  },
+  avatarGradient: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.medium,
+  },
+  avatarText: {
+    ...typography.h1,
+    fontSize: 40,
+    color: colorPalette.background,
   },
   onlineIndicator: {
     position: "absolute",
-    bottom: 0,
-    right: 0,
+    bottom: 2,
+    right: 2,
     width: 24,
     height: 24,
     borderRadius: 12,
+    backgroundColor: colorPalette.background,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.small,
+  },
+  onlineIndicatorInner: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: colorPalette.success,
-    borderWidth: 3,
-    borderColor: colorPalette.background,
   },
   name: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-    marginBottom: 8,
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+    marginBottom: spacing.xs,
     textAlign: "center",
   },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
   status: {
-    fontSize: 14,
-    marginBottom: 20,
-    textAlign: "center",
+    ...typography.body,
   },
   onlineStatus: {
     color: colorPalette.success,
-    fontWeight: "600",
+    fontWeight: "500",
   },
   offlineStatus: {
     color: colorPalette.neutral[500],
   },
-  infoSection: {
-    width: "100%",
-    gap: 16,
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: colorPalette.neutral[200],
+  infoCard: {
+    backgroundColor: colorPalette.background,
+    borderRadius: borderRadius.xxl,
+    padding: spacing.lg,
+    ...colorPalette.shadows.medium,
+  },
+  infoCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  infoCardTitle: {
+    ...typography.bodyBold,
+    color: colorPalette.neutral[950],
   },
   infoItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: spacing.sm,
+  },
+  infoIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.small,
   },
   infoContent: {
     flex: 1,
   },
   infoLabel: {
-    fontSize: 12,
-    color: colorPalette.neutral[500],
-    fontWeight: "700",
+    ...typography.caption,
+    color: colorPalette.neutral[600],
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
     marginBottom: 4,
   },
   infoValue: {
-    fontSize: 14,
-    color: colorPalette.neutral[900],
-    fontWeight: "600",
+    ...typography.bodyBold,
+    color: colorPalette.neutral[950],
   },
   onlineText: {
     color: colorPalette.success,
@@ -420,58 +650,30 @@ const styles = StyleSheet.create({
   offlineText: {
     color: colorPalette.neutral[500],
   },
-  buttonSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
-  },
-  button: {
-    paddingVertical: 8,
-  },
-  header: {
-    height: 70,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingTop: 12,
-    paddingBottom: 12,
+  infoSeparator: {
+    height: 1,
     backgroundColor: colorPalette.neutral[100],
-    shadowColor: colorPalette.neutral[900],
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 6,
+    marginVertical: spacing.sm,
   },
-  headerGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+  chatButton: {
+    borderRadius: borderRadius.xxl,
+    overflow: "hidden",
+    ...colorPalette.shadows.medium,
   },
-  headerContent: {
+  chatButtonDisabled: {
+    opacity: 0.6,
+  },
+  chatButtonGradient: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-  },
-  headerLeft: {
-    width: 44,
-    height: 44,
     justifyContent: "center",
-    alignItems: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.base + 2,
+    paddingHorizontal: spacing.xl,
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-  },
-  headerRight: {
-    width: 44,
+  chatButtonText: {
+    ...typography.bodyBold,
+    color: colorPalette.background,
+    fontSize: 16,
   },
 });

@@ -102,6 +102,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     [userId: string]: string;
   }>({});
 
+  // Smart Replies state (Phase 3B)
+  const [smartReplies, setSmartReplies] = useState<string[]>([]);
+  const [smartRepliesVisible, setSmartRepliesVisible] = useState(false);
+  const [loadingSmartReplies, setLoadingSmartReplies] = useState(false);
+
   const flatListRef = useRef<SectionList>(null);
   const optimisticMessagesRef = useRef<Set<string>>(new Set());
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -627,6 +632,81 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
   // ================== END TRANSLATION HANDLERS ==================
 
+  // ================== SMART REPLIES AUTO-HIDE LOGIC (Phase 3B) ==================
+
+  // Auto-hide smart replies after 10 seconds
+  useEffect(() => {
+    if (smartRepliesVisible) {
+      const timer = setTimeout(() => {
+        setSmartRepliesVisible(false);
+      }, 10000); // 10 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [smartRepliesVisible]);
+
+  // Hide smart replies when user starts typing
+  useEffect(() => {
+    if (messageText.length > 0 && smartRepliesVisible) {
+      setSmartRepliesVisible(false);
+    }
+  }, [messageText]);
+
+  // ================== SMART REPLIES HANDLERS (Phase 3B) ==================
+
+  /**
+   * Generate smart reply suggestions based on conversation history
+   */
+  const handleGenerateSmartReplies = async () => {
+    try {
+      setLoadingSmartReplies(true);
+
+      // Get last 8 messages for context
+      const recentMessages = messages.slice(-8).map((msg) => ({
+        sender:
+          msg.senderId === user?.uid
+            ? "You"
+            : senderNames[msg.senderId] || "Other",
+        text: msg.text,
+      }));
+
+      // Call N8N API
+      const { generateSmartReplies } = await import("../../services/aiService");
+      const replies = await generateSmartReplies(
+        recentMessages,
+        user?.preferred_language || "en"
+      );
+
+      setSmartReplies(replies);
+      setSmartRepliesVisible(true);
+    } catch (error: any) {
+      console.error("[ChatScreen] Smart replies error:", error);
+      Alert.alert(
+        "Smart Replies Error",
+        error.message || "Could not generate suggestions. Please try again."
+      );
+    } finally {
+      setLoadingSmartReplies(false);
+    }
+  };
+
+  /**
+   * Insert a smart reply into the input
+   */
+  const handleSelectSmartReply = (reply: string) => {
+    setMessageText(reply);
+    setSmartRepliesVisible(false);
+  };
+
+  /**
+   * Hide smart replies manually
+   */
+  const handleHideSmartReplies = () => {
+    setSmartRepliesVisible(false);
+  };
+
+  // ================== END SMART REPLIES HANDLERS ==================
+
   const handleSendImageMessage = async () => {
     if (!selectedImage || !user?.uid) {
       return;
@@ -807,6 +887,63 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
       {/* Typing Indicator - Show between messages and input */}
       <TypingIndicator typingUsers={typingUsers} />
+
+      {/* Smart Replies Section (Phase 3B) */}
+      {!smartRepliesVisible && messages.length > 0 && (
+        <View style={styles.smartRepliesButtonContainer}>
+          <TouchableOpacity
+            style={styles.smartRepliesButton}
+            onPress={handleGenerateSmartReplies}
+            disabled={loadingSmartReplies}
+          >
+            {loadingSmartReplies ? (
+              <ActivityIndicator size={16} color={colorPalette.primary} />
+            ) : (
+              <MaterialCommunityIcons
+                name="robot-outline"
+                size={18}
+                color={colorPalette.primary}
+              />
+            )}
+            <Text style={styles.smartRepliesButtonText}>
+              {loadingSmartReplies ? "Generating..." : "💬 Smart Replies"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Smart Reply Chips */}
+      {smartRepliesVisible && smartReplies.length > 0 && (
+        <View style={styles.smartRepliesContainer}>
+          <View style={styles.smartRepliesHeader}>
+            <MaterialCommunityIcons
+              name="robot-outline"
+              size={18}
+              color={colorPalette.primary}
+            />
+            <Text style={styles.smartRepliesHeaderText}>Smart Replies</Text>
+            <TouchableOpacity onPress={handleHideSmartReplies}>
+              <MaterialCommunityIcons
+                name="close"
+                size={18}
+                color={colorPalette.neutral[500]}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.smartRepliesChips}>
+            {smartReplies.map((reply, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.smartReplyChip}
+                onPress={() => handleSelectSmartReply(reply)}
+              >
+                <Text style={styles.smartReplyChipText}>{reply}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
 
       {/* Image Preview (if selected) */}
       {selectedImage && (
@@ -1092,5 +1229,66 @@ const styles = StyleSheet.create({
   },
   slangModalButton: {
     marginTop: 8,
+  },
+  // ========== Smart Replies Styles (Phase 3B) ==========
+  smartRepliesButtonContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  smartRepliesButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.3)",
+    alignSelf: "flex-start",
+  },
+  smartRepliesButtonText: {
+    fontSize: 14,
+    color: colorPalette.primary,
+    fontWeight: "600",
+  },
+  smartRepliesContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "rgba(59, 130, 246, 0.05)",
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.2)",
+  },
+  smartRepliesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  smartRepliesHeaderText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "600",
+    color: colorPalette.primary,
+  },
+  smartRepliesChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  smartReplyChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "white",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.3)",
+    maxWidth: "100%",
+  },
+  smartReplyChipText: {
+    fontSize: 14,
+    color: colorPalette.neutral[800],
+    fontWeight: "500",
   },
 });

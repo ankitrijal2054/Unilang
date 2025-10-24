@@ -48,7 +48,7 @@ export const COLLECTIONS = {
 export const N8N_WEBHOOKS = {
   TRANSLATE: "https://ankit2054.app.n8n.cloud/webhook/translate",
   ADJUST_TONE: "https://your-instance.app.n8n.cloud/webhook/adjust-tone",
-  SMART_REPLIES: "https://your-instance.app.n8n.cloud/webhook/smart-replies",
+  SMART_REPLIES: "https://ankit2054.app.n8n.cloud/webhook/smart-replies",
 } as const;
 
 // AI feature timeouts (milliseconds)

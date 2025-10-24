@@ -144,13 +144,19 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
         <TouchableOpacity
           style={styles.slangTooltip}
           onPress={() => onSlangInfo(message.translation!.slangExplanation!)}
+          activeOpacity={0.7}
         >
           <MaterialCommunityIcons
-            name="information-outline"
-            size={12}
-            color={colorPalette.warning}
+            name="lightbulb-on-outline"
+            size={14}
+            color={colorPalette.warningDark}
           />
-          <Text style={styles.slangText}>Cultural context</Text>
+          {/*<Text style={styles.slangText}>Cultural context</Text> */}
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={14}
+            color={colorPalette.warningDark}
+          />
         </TouchableOpacity>
       );
     };
@@ -618,22 +624,23 @@ const styles = StyleSheet.create({
   slangTooltip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     backgroundColor: colorPalette.semantic.slangBadge,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colorPalette.warningDark + "30",
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: colorPalette.warningDark + "40",
     alignSelf: "flex-start",
-    marginTop: 6,
-    ...colorPalette.shadows.small,
+    marginTop: 8,
+    ...colorPalette.shadows.medium,
   },
   slangText: {
-    fontSize: 11,
+    fontSize: 12,
     color: colorPalette.warningDark,
     fontWeight: "700",
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
+    flex: 1,
   },
   // ========== Context Menu Styles ==========
   contextMenu: {

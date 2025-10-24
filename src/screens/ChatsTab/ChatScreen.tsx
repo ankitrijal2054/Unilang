@@ -1143,15 +1143,49 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           onDismiss={() => setSlangModalVisible(false)}
           contentContainerStyle={styles.slangModal}
         >
-          <Text style={styles.slangModalTitle}>Cultural Context</Text>
-          <Text style={styles.slangModalText}>{slangExplanation}</Text>
-          <Button
-            mode="contained"
-            onPress={() => setSlangModalVisible(false)}
-            style={styles.slangModalButton}
-          >
-            Close
-          </Button>
+          <View style={styles.slangModalContent}>
+            {/* Icon Header */}
+            <LinearGradient
+              colors={
+                colorPalette.gradientOrange as [string, string, ...string[]]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.slangModalIcon}
+            >
+              <MaterialCommunityIcons
+                name="lightbulb-on"
+                size={32}
+                color="#FFFFFF"
+              />
+            </LinearGradient>
+
+            {/* Title 
+            <Text style={styles.slangModalTitle}>Cultural Context</Text> */}
+
+            {/* Explanation Text */}
+            <View style={styles.slangModalTextContainer}>
+              <Text style={styles.slangModalText}>{slangExplanation}</Text>
+            </View>
+
+            {/* Close Button */}
+            <TouchableOpacity
+              onPress={() => setSlangModalVisible(false)}
+              style={styles.slangModalCloseButton}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={
+                  colorPalette.gradientBlue as [string, string, ...string[]]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.slangModalCloseGradient}
+              >
+                <Text style={styles.slangModalCloseText}>Got it!</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </Modal>
       </Portal>
     </KeyboardAvoidingView>
@@ -1367,26 +1401,64 @@ const styles = StyleSheet.create({
   },
   // ========== Slang Modal Styles (Phase 3) ==========
   slangModal: {
-    backgroundColor: "white",
-    padding: 24,
-    margin: 20,
-    borderRadius: 16,
-    maxHeight: "80%",
+    backgroundColor: "transparent",
+    margin: spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  slangModalContent: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: borderRadius.xxl,
+    padding: spacing.xxxl,
+    maxWidth: 400,
+    width: "100%",
+    alignItems: "center",
+    ...colorPalette.shadows.large,
+  },
+  slangModalIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.lg,
+    ...colorPalette.shadows.medium,
   },
   slangModalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-    marginBottom: 16,
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+    marginBottom: spacing.lg,
+    textAlign: "center",
+  },
+  slangModalTextContainer: {
+    backgroundColor: colorPalette.neutral[50],
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    width: "100%",
   },
   slangModalText: {
-    fontSize: 16,
+    ...typography.body,
     lineHeight: 24,
-    color: colorPalette.neutral[700],
-    marginBottom: 20,
+    color: colorPalette.neutral[800],
+    textAlign: "center",
   },
-  slangModalButton: {
-    marginTop: 8,
+  slangModalCloseButton: {
+    width: "100%",
+    borderRadius: borderRadius.full,
+    overflow: "hidden",
+    ...colorPalette.shadows.medium,
+  },
+  slangModalCloseGradient: {
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.xxxl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  slangModalCloseText: {
+    ...typography.bodyBold,
+    color: "#FFFFFF",
+    fontSize: 16,
   },
   // ========== Smart Replies Styles (Phase 3B) ==========
   smartRepliesButtonContainer: {

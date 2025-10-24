@@ -10,7 +10,7 @@
 - ✅ **Phase 3A COMPLETE:** Real-Time Translation with Slang Detection ✅
 - ✅ **Phase 3B COMPLETE:** Smart Replies (Context-Aware Suggestions) ✅
 - ✅ **Phase 3C COMPLETE:** Tone Adjustment (Formal/Neutral/Casual) ✅
-- ⏳ **Next:** Phase 3E Polish & Testing, or Phase 4 (Message Pagination, Advanced Features)
+- ⏳ **Next:** Phase 3D Debugging (Push Notifications) - NOW IN PROGRESS
 
 **Time Checkpoint:** ~49 hours total (24h MVP + 17h Phase 2 + 8h Phase 3 = 49h used)
 
@@ -241,6 +241,86 @@
 - ✅ Yellow tooltip badge: "Cultural context"
 - ✅ Modal with full explanation on tap
 - ✅ Integrated seamlessly with translation feature
+
+---
+
+## Phase 3D: Push Notification Debugging (Session 15 - Oct 24, 2025)
+
+### 🔴 CRITICAL BUG FOUND & FIXED
+
+**Issue: Missing FCM Token Registration**
+
+**Problem:**
+
+- The `registerForPushNotifications()` function was **imported but never called** in `RootNavigator.tsx`
+- After user login, FCM tokens were never retrieved from the device
+- FCM tokens were never stored in Firestore user documents
+- Cloud Functions had **no tokens** to send push notifications to
+- Result: **Push notifications completely broken**
+
+**Root Cause:**
+
+- `RootNavigator.tsx` lines 218-257: `setupNotificationListeners()` was called but `registerForPushNotifications()` was not
+- The function existed but was "dead code"
+
+**Fix Applied:**
+
+- Added `registerForPushNotifications(user.uid)` call after authentication check in the `setupNotifications` async function
+- Wrapped with proper error handling and logging
+- Token is now retrieved and stored in Firestore immediately after login
+
+**Files Modified:**
+
+1. ✅ `src/navigation/RootNavigator.tsx` - Added FCM token registration (lines 227-235)
+
+**Verification Checklist:**
+
+- ✅ Code compiles without errors
+- ✅ No linting issues
+- ✅ Proper error handling in place
+- ✅ Console logs added for debugging
+
+**Testing Status:** Ready for physical device testing
+
+---
+
+## Push Notification Architecture Review
+
+**Current Flow (Now Fixed):**
+
+```
+User Login
+    ↓
+requestNotificationPermissions() ✅ (in App.tsx)
+    ↓
+setupNotificationListeners() ✅ (in RootNavigator)
+    ↓
+registerForPushNotifications(userId) ✅ (NOW FIXED)
+    ↓
+Expo token retrieved & stored in Firestore
+    ↓
+Cloud Function can now access fcmToken
+    ↓
+When message sent → Notification fired
+```
+
+**Components Verified:**
+
+- ✅ Permission request system working
+- ✅ Token storage service functional (`updateUserFCMToken`)
+- ✅ Notification handler configured
+- ✅ Cloud Function implementation correct
+- ✅ Firestore security rules allow Cloud Functions to read tokens
+
+**Documentation Created:**
+
+- ✅ `PUSH_NOTIFICATION_DEBUG.md` - Comprehensive debugging guide with:
+  - Issue explanation
+  - Step-by-step debugging checklist
+  - Testing procedures
+  - Common issues & solutions
+  - Architecture diagrams
+  - Performance metrics
 
 ---
 

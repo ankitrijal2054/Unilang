@@ -64,10 +64,10 @@ export const subscribeToUserPresence = (
         const data = docSnap.data();
         const user: User = {
           uid: docSnap.id,
-          name: data.name,
-          email: data.email,
-          preferred_language: data.preferred_language,
-          status: data.status,
+          name: data.name || "User",
+          email: data.email || "",
+          preferred_language: data.preferred_language || "en",
+          status: data.status || "offline",
           lastSeen: data.lastSeen,
           fcmToken: data.fcmToken,
           avatarUrl: data.avatarUrl,
@@ -102,10 +102,10 @@ export const getAllUsers = async (): Promise<{
       const data = doc.data();
       users.push({
         uid: doc.id,
-        name: data.name,
-        email: data.email,
-        preferred_language: data.preferred_language,
-        status: data.status,
+        name: data.name || "User",
+        email: data.email || "",
+        preferred_language: data.preferred_language || "en",
+        status: data.status || "offline",
         lastSeen: data.lastSeen,
         fcmToken: data.fcmToken,
         avatarUrl: data.avatarUrl,
@@ -158,10 +158,10 @@ export const getUserById = async (
       const data = userDoc.data();
       const user: User = {
         uid: userDoc.id,
-        name: data.name,
-        email: data.email,
-        preferred_language: data.preferred_language,
-        status: data.status,
+        name: data.name || "User",
+        email: data.email || "",
+        preferred_language: data.preferred_language || "en",
+        status: data.status || "offline",
         lastSeen: data.lastSeen,
         fcmToken: data.fcmToken,
         avatarUrl: data.avatarUrl,

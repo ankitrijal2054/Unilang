@@ -178,7 +178,7 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
             .sort((a, b) => {
               if (a.status === "online" && b.status !== "online") return -1;
               if (a.status !== "online" && b.status === "online") return 1;
-              return a.name.localeCompare(b.name);
+              return (a.name || "").localeCompare(b.name || "");
             });
 
           setAllUsers(filteredUsers);
@@ -194,7 +194,7 @@ export const NewChatScreen: React.FC<NewChatScreenProps> = ({ navigation }) => {
                         return -1;
                       if (a.status !== "online" && b.status === "online")
                         return 1;
-                      return a.name.localeCompare(b.name);
+                      return (a.name || "").localeCompare(b.name || "");
                     })
                 );
               }

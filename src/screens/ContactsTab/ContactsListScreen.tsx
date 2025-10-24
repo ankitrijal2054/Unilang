@@ -187,8 +187,8 @@ export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
               // Online users first
               if (a.status === "online" && b.status !== "online") return -1;
               if (a.status !== "online" && b.status === "online") return 1;
-              // Then by name
-              return a.name.localeCompare(b.name);
+              // Then by name (with null/undefined safety)
+              return (a.name || "").localeCompare(b.name || "");
             });
 
           setAllUsers(filteredUsers);
@@ -208,7 +208,7 @@ export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
                         return -1;
                       if (a.status !== "online" && b.status === "online")
                         return 1;
-                      return a.name.localeCompare(b.name);
+                      return (a.name || "").localeCompare(b.name || "");
                     })
                 );
               }

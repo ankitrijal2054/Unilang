@@ -19,8 +19,14 @@ import { subscribeToNetworkStatus } from "../../utils/networkUtils";
 import { Chat } from "../../types";
 import { SwipeableChatItem } from "../../components/SwipeableChatItem";
 import { DeleteChatModal } from "../../components/DeleteChatModal";
+import { SkeletonChatItem } from "../../components/SkeletonChatItem";
 import { useChatDisplayName } from "../../utils/useChatDisplayName";
-import { colorPalette } from "../../utils/theme";
+import {
+  colorPalette,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../utils/theme";
 
 interface ChatListScreenProps {
   navigation: any;
@@ -200,18 +206,36 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
+      <LinearGradient
+        colors={colorPalette.gradientBlueSoft as [string, string, ...string[]]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.emptyIconContainer}
+      >
+        <MaterialCommunityIcons
+          name="message-text-outline"
+          size={48}
+          color="#FFFFFF"
+        />
+      </LinearGradient>
       <Text style={styles.emptyTitle}>No Chats Yet</Text>
       <Text style={styles.emptySubtitle}>
-        Start a conversation by tapping the button below
+        Start a conversation with someone special
       </Text>
-      <Button
-        mode="contained"
+      <TouchableOpacity
         onPress={handleNewChat}
         style={styles.emptyButton}
-        labelStyle={styles.emptyButtonLabel}
+        activeOpacity={0.7}
       >
-        Start Chatting
-      </Button>
+        <LinearGradient
+          colors={colorPalette.gradientBlue as [string, string, ...string[]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.emptyButtonGradient}
+        >
+          <Text style={styles.emptyButtonLabel}>Start Chatting</Text>
+        </LinearGradient>
+      </TouchableOpacity>
     </View>
   );
 
@@ -261,11 +285,14 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
         </View>
       )}
 
-      {/* Loading state */}
+      {/* Loading state with skeleton loaders */}
       {loading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colorPalette.primary} />
-          <Text style={styles.loadingText}>Loading chats...</Text>
+        <View style={styles.skeletonContainer}>
+          <SkeletonChatItem />
+          <SkeletonChatItem />
+          <SkeletonChatItem />
+          <SkeletonChatItem />
+          <SkeletonChatItem />
         </View>
       ) : chats.length === 0 ? (
         renderEmpty()
@@ -311,20 +338,13 @@ const styles = StyleSheet.create({
     backgroundColor: colorPalette.background,
   },
   header: {
-    height: 70,
+    height: 72,
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: colorPalette.neutral[100],
-    shadowColor: colorPalette.neutral[900],
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 6,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    backgroundColor: colorPalette.background,
+    ...colorPalette.shadows.small,
   },
   headerGradient: {
     position: "absolute",
@@ -337,7 +357,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.base,
   },
   headerLeft: {
     flex: 1,
@@ -353,15 +373,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
-    gap: 16,
+    gap: spacing.base,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
+    ...typography.h2,
+    color: colorPalette.neutral[950],
   },
   headerSubtitle: {
-    fontSize: 16,
+    ...typography.body,
     color: colorPalette.neutral[600],
   },
   centerContainer: {
@@ -369,49 +388,68 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  skeletonContainer: {
+    flex: 1,
+    backgroundColor: colorPalette.background,
+  },
   loadingText: {
-    marginTop: 12,
+    marginTop: spacing.md,
+    ...typography.caption,
     color: colorPalette.neutral[600],
-    fontSize: 14,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: spacing.xxxl,
+  },
+  emptyIconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.xl,
+    ...colorPalette.shadows.medium,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-    marginBottom: 8,
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+    marginBottom: spacing.md,
   },
   emptySubtitle: {
-    fontSize: 14,
+    ...typography.body,
     color: colorPalette.neutral[600],
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: spacing.xxxl,
   },
   emptyButton: {
-    borderRadius: 12,
-    paddingVertical: 6,
+    borderRadius: borderRadius.full,
+    overflow: "hidden",
+    ...colorPalette.shadows.medium,
+  },
+  emptyButtonGradient: {
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.xxxl,
+    borderRadius: borderRadius.full,
   },
   emptyButtonLabel: {
-    fontSize: 14,
-    fontWeight: "700",
+    ...typography.bodyBold,
+    color: "#FFFFFF",
+    textAlign: "center",
   },
   offlineBanner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colorPalette.error,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    backgroundColor: colorPalette.errorDark,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.base,
   },
   offlineBannerText: {
-    color: "#FFF",
-    fontSize: 14,
-    fontWeight: "600",
+    ...typography.captionMedium,
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
   snackbar: {
     position: "absolute",

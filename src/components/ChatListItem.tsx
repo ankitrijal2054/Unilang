@@ -2,11 +2,17 @@ import React, { useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { Text, Badge, Avatar } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Chat } from "../types";
 import { formatChatTime, truncateText } from "../utils/formatters";
 import { useAuthStore } from "../store/authStore";
 import { useChatDisplayName } from "../utils/useChatDisplayName";
-import { colorPalette } from "../utils/theme";
+import {
+  colorPalette,
+  spacing,
+  borderRadius,
+  typography,
+} from "../utils/theme";
 
 interface ChatListItemProps {
   chat: Chat;
@@ -43,18 +49,25 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(
 
     const isGroupChat = chat.type === "group";
 
+    // Group avatar gradient colors
+    const groupGradientColors = (
+      isGroupChat
+        ? colorPalette.gradientPurpleSoft
+        : colorPalette.gradientBlueSoft
+    ) as [string, string, ...string[]];
+
     return (
       <TouchableOpacity
         onPress={onPress}
-        activeOpacity={0.6}
-        style={styles.container}
+        activeOpacity={0.65}
+        style={[styles.container, unreadCount > 0 && styles.containerUnread]}
       >
         {/* Avatar / Icon */}
         <View style={styles.avatarContainer}>
-          {/* Display real avatar for direct chats, fallback to icon */}
+          {/* Display real avatar for direct chats, fallback to gradient icon */}
           {!isGroupChat && otherUserAvatarUrl ? (
             <Avatar.Image
-              size={56}
+              size={60}
               source={{ uri: otherUserAvatarUrl }}
               style={[
                 styles.avatarImage,
@@ -62,19 +75,22 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(
               ]}
             />
           ) : (
-            <View
+            <LinearGradient
+              colors={
+                chat.isDeleted
+                  ? [colorPalette.neutral[300], colorPalette.neutral[400]]
+                  : groupGradientColors
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={[styles.avatar, chat.isDeleted && styles.deletedAvatar]}
             >
               <MaterialCommunityIcons
                 name={isGroupChat ? "account-multiple" : "account"}
-                size={24}
-                color={
-                  chat.isDeleted
-                    ? colorPalette.neutral[400]
-                    : colorPalette.primary
-                }
+                size={26}
+                color="#FFFFFF"
               />
-            </View>
+            </LinearGradient>
           )}
 
           {/* Online indicator */}
@@ -139,41 +155,45 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colorPalette.neutral[100],
+    paddingHorizontal: spacing.base,
+    paddingVertical: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colorPalette.neutral[150],
     backgroundColor: colorPalette.background,
+  },
+  containerUnread: {
+    backgroundColor: colorPalette.neutral[50],
   },
   avatarContainer: {
     position: "relative",
-    marginRight: 14,
+    marginRight: spacing.md,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colorPalette.primary,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
-    opacity: 0.1,
+    ...colorPalette.shadows.small,
   },
   avatarImage: {
-    borderRadius: 28,
+    borderRadius: 30,
+    ...colorPalette.shadows.small,
   },
   deletedAvatar: {
-    backgroundColor: colorPalette.neutral[400],
+    opacity: 0.5,
   },
   onlineIndicator: {
     position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colorPalette.success,
-    borderWidth: 2,
+    bottom: 2,
+    right: 2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colorPalette.semantic.online,
+    borderWidth: 3,
     borderColor: colorPalette.background,
+    ...colorPalette.shadows.small,
   },
   chatInfo: {
     flex: 1,
@@ -182,24 +202,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   chatName: {
-    fontSize: 15,
-    fontWeight: "600",
+    ...typography.bodyBold,
     color: colorPalette.neutral[900],
     flex: 1,
   },
   unreadName: {
+    ...typography.bodyBold,
     fontWeight: "700",
+    color: colorPalette.neutral[950],
   },
   deletedText: {
     color: colorPalette.neutral[500],
+    fontWeight: "500",
   },
   time: {
-    fontSize: 12,
+    ...typography.small,
     color: colorPalette.neutral[500],
-    marginLeft: 8,
+    marginLeft: spacing.sm,
+    fontWeight: "500",
   },
   previewRow: {
     flexDirection: "row",
@@ -207,16 +230,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   preview: {
-    fontSize: 13,
+    ...typography.caption,
     color: colorPalette.neutral[600],
     flex: 1,
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   unreadPreview: {
+    ...typography.captionMedium,
     fontWeight: "700",
-    color: colorPalette.neutral[700],
+    color: colorPalette.neutral[800],
   },
   badge: {
     backgroundColor: colorPalette.primary,
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    fontSize: 12,
+    fontWeight: "700",
+    ...colorPalette.shadows.small,
   },
 });

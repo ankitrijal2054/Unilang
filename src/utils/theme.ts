@@ -22,6 +22,7 @@ const colors = {
   warningDark: "#D97706",
   info: "#3B82F6",
   infoDark: "#2563EB",
+  google: "#4285F4", // Google brand blue
 };
 
 export const lightTheme = {

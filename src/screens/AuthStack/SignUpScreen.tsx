@@ -15,7 +15,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, Snackbar } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { signUp } from "../../services/authService";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { signUp, signInWithGoogle } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
 import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from "../../utils/constants";
 import {
@@ -88,6 +89,40 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An error occurred";
+      setError(errorMessage);
+      setStoreError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken;
+
+      if (!idToken) {
+        setError("Failed to get Google credentials");
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await signInWithGoogle(idToken);
+
+      if (result.success) {
+        console.log("✅ Google sign up successful");
+      } else {
+        setError(result.error || "Google sign up failed");
+        setStoreError(result.error || null);
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Google sign up failed";
+      console.error("Google sign up error:", errorMessage);
       setError(errorMessage);
       setStoreError(errorMessage);
     } finally {
@@ -305,6 +340,29 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                     <Text style={styles.signUpButtonText}>Create Account</Text>
                   )}
                 </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Divider */}
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* Google Sign Up Button */}
+              <TouchableOpacity
+                onPress={handleGoogleSignIn}
+                disabled={isLoading}
+                style={styles.googleButton}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons
+                  name="google"
+                  size={20}
+                  color="#FFFFFF"
+                  style={styles.googleButtonIcon}
+                />
+                <Text style={styles.googleButtonText}>Sign up with Google</Text>
               </TouchableOpacity>
             </View>
 
@@ -605,5 +663,38 @@ const styles = StyleSheet.create({
   languageOptionTextSelected: {
     color: "#FFFFFF",
     fontWeight: "600",
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: spacing.md,
+    gap: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colorPalette.neutral[200],
+  },
+  dividerText: {
+    ...typography.body,
+    color: colorPalette.neutral[600],
+  },
+  googleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colorPalette.google,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+    ...colorPalette.shadows.medium,
+  },
+  googleButtonIcon: {
+    marginRight: spacing.sm,
+  },
+  googleButtonText: {
+    ...typography.bodyBold,
+    color: "#FFFFFF",
+    fontSize: 16,
   },
 });

@@ -21,6 +21,7 @@ import {
   Modal,
   Portal,
   Button,
+  Menu,
 } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
@@ -106,6 +107,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [smartReplies, setSmartReplies] = useState<string[]>([]);
   const [smartRepliesVisible, setSmartRepliesVisible] = useState(false);
   const [loadingSmartReplies, setLoadingSmartReplies] = useState(false);
+
+  // Tone Adjustment state (Phase 3C)
+  const [toneMenuVisible, setToneMenuVisible] = useState(false);
+  const [adjustingTone, setAdjustingTone] = useState(false);
 
   const flatListRef = useRef<SectionList>(null);
   const optimisticMessagesRef = useRef<Set<string>>(new Set());
@@ -707,6 +712,37 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
   // ================== END SMART REPLIES HANDLERS ==================
 
+  // ================== TONE ADJUSTMENT HANDLERS (Phase 3C) ==================
+
+  /**
+   * Adjust message tone (formal/neutral/casual)
+   */
+  const handleAdjustTone = async (tone: "formal" | "neutral" | "casual") => {
+    if (!messageText.trim()) return;
+
+    try {
+      setAdjustingTone(true);
+      setToneMenuVisible(false);
+
+      // Call N8N API
+      const { adjustTone } = await import("../../services/aiService");
+      const adjustedText = await adjustTone(messageText.trim(), tone);
+
+      // Replace message text with adjusted version
+      setMessageText(adjustedText);
+    } catch (error: any) {
+      console.error("[ChatScreen] Tone adjustment error:", error);
+      Alert.alert(
+        "Tone Adjustment Error",
+        error.message || "Could not adjust tone. Please try again."
+      );
+    } finally {
+      setAdjustingTone(false);
+    }
+  };
+
+  // ================== END TONE ADJUSTMENT HANDLERS ==================
+
   const handleSendImageMessage = async () => {
     if (!selectedImage || !user?.uid) {
       return;
@@ -975,6 +1011,54 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
       {/* Message Input */}
       <View style={styles.inputContainer}>
+        {/* Tone Menu Button (Phase 3C) */}
+        <Menu
+          visible={toneMenuVisible}
+          onDismiss={() => setToneMenuVisible(false)}
+          anchor={
+            <IconButton
+              icon={() => (
+                <MaterialCommunityIcons
+                  name="tune-variant"
+                  size={26}
+                  color={
+                    adjustingTone
+                      ? colorPalette.primary
+                      : messageText.trim()
+                      ? colorPalette.primary
+                      : colorPalette.neutral[400]
+                  }
+                />
+              )}
+              onPress={() => setToneMenuVisible(true)}
+              disabled={
+                !messageText.trim() ||
+                sending ||
+                uploadingImage ||
+                adjustingTone
+              }
+              size={48}
+              style={styles.toneButton}
+            />
+          }
+        >
+          <Menu.Item
+            onPress={() => handleAdjustTone("formal")}
+            title="🎩 Formal"
+            leadingIcon="briefcase"
+          />
+          <Menu.Item
+            onPress={() => handleAdjustTone("neutral")}
+            title="😊 Neutral"
+            leadingIcon="emoticon-neutral"
+          />
+          <Menu.Item
+            onPress={() => handleAdjustTone("casual")}
+            title="😎 Casual"
+            leadingIcon="sunglasses"
+          />
+        </Menu>
+
         {/* Attachment Button */}
         <IconButton
           icon={() => (
@@ -991,14 +1075,20 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         />
 
         <TextInput
-          placeholder={selectedImage ? "Add a caption..." : "Type a message..."}
+          placeholder={
+            adjustingTone
+              ? "Adjusting tone..."
+              : selectedImage
+              ? "Add a caption..."
+              : "Type a message..."
+          }
           placeholderTextColor={colorPalette.neutral[400]}
           value={messageText}
           onChangeText={handleTextInputChange}
           mode="outlined"
           multiline
           style={styles.input}
-          editable={!sending && !uploadingImage}
+          editable={!sending && !uploadingImage && !adjustingTone}
           outlineColor={colorPalette.neutral[200]}
           activeOutlineColor={colorPalette.primary}
           outlineStyle={{ borderRadius: 12 }}
@@ -1132,6 +1222,10 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     backgroundColor: colorPalette.background,
     gap: 4,
+  },
+  toneButton: {
+    margin: 0,
+    padding: 0,
   },
   attachButton: {
     margin: 0,

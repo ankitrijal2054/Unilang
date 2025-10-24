@@ -47,7 +47,7 @@ export const COLLECTIONS = {
 // TODO: Replace with your actual N8N instance URLs after setup
 export const N8N_WEBHOOKS = {
   TRANSLATE: "https://ankit2054.app.n8n.cloud/webhook/translate",
-  ADJUST_TONE: "https://your-instance.app.n8n.cloud/webhook/adjust-tone",
+  ADJUST_TONE: "https://ankit2054.app.n8n.cloud/webhook/adjust-tone",
   SMART_REPLIES: "https://ankit2054.app.n8n.cloud/webhook/smart-replies",
 } as const;
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  Animated,
+  TextInput as RNTextInput,
 } from "react-native";
 import {
   Appbar,
@@ -54,6 +56,11 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchInputRef = useRef<RNTextInput>(null);
+  const searchBorderAnim = useRef(new Animated.Value(0)).current;
+  const searchScaleAnim = useRef(new Animated.Value(1)).current;
 
   // Fetch all users on mount
   useEffect(() => {
@@ -88,6 +95,42 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
     setSelectedUserIds(newSelected);
   };
 
+  const handleSearchFocus = () => {
+    setSearchFocused(true);
+    Animated.parallel([
+      Animated.spring(searchBorderAnim, {
+        toValue: 1,
+        useNativeDriver: false,
+        tension: 50,
+        friction: 7,
+      }),
+      Animated.spring(searchScaleAnim, {
+        toValue: 1.02,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+      }),
+    ]).start();
+  };
+
+  const handleSearchBlur = () => {
+    setSearchFocused(false);
+    Animated.parallel([
+      Animated.spring(searchBorderAnim, {
+        toValue: 0,
+        useNativeDriver: false,
+        tension: 50,
+        friction: 7,
+      }),
+      Animated.spring(searchScaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+      }),
+    ]).start();
+  };
+
   const handleContinue = () => {
     if (selectedUserIds.size < 2) {
       Alert.alert("Error", "Please select at least 2 participants");
@@ -95,6 +138,16 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
     }
     setStep("group_name");
   };
+
+  // Filter users based on search query
+  const filteredUsers = allUsers.filter((u) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return (
+      u.name.toLowerCase().includes(query) ||
+      u.email.toLowerCase().includes(query)
+    );
+  });
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {
@@ -245,12 +298,93 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
           </View>
         </View>
 
+        {/* Enhanced Search Bar */}
+        <View style={styles.searchContainer}>
+          <Animated.View
+            style={[
+              styles.searchInputWrapper,
+              {
+                transform: [{ scale: searchScaleAnim }],
+                borderWidth: 2,
+                borderColor: searchBorderAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["transparent", colorPalette.primary],
+                }),
+              },
+            ]}
+          >
+            <View style={styles.searchIconContainer}>
+              <LinearGradient
+                colors={
+                  searchFocused
+                    ? (colorPalette.gradientBlue as [
+                        string,
+                        string,
+                        ...string[]
+                      ])
+                    : [colorPalette.neutral[400], colorPalette.neutral[400]]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.searchIconGradient}
+              >
+                <MaterialCommunityIcons
+                  name="magnify"
+                  size={20}
+                  color={colorPalette.background}
+                />
+              </LinearGradient>
+            </View>
+            <RNTextInput
+              ref={searchInputRef}
+              style={styles.searchInput}
+              placeholder="Search by name or email..."
+              placeholderTextColor={colorPalette.neutral[500]}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onFocus={handleSearchFocus}
+              onBlur={handleSearchBlur}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSearchQuery("");
+                  searchInputRef.current?.focus();
+                }}
+                style={styles.clearButton}
+                activeOpacity={0.7}
+              >
+                <View style={styles.clearButtonInner}>
+                  <MaterialCommunityIcons
+                    name="close"
+                    size={16}
+                    color={colorPalette.neutral[600]}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
+          </Animated.View>
+
+          {/* Search Results Count */}
+          {searchQuery.length > 0 && (
+            <View style={styles.searchResultsContainer}>
+              <Text style={styles.searchResultsText}>
+                {filteredUsers.length}{" "}
+                {filteredUsers.length === 1 ? "result" : "results"} found
+              </Text>
+            </View>
+          )}
+        </View>
+
         <FlatList
-          data={allUsers}
+          data={filteredUsers}
           renderItem={renderUserItem}
           keyExtractor={(item) => item.uid}
           contentContainerStyle={styles.listContent}
           ItemSeparatorComponent={() => <View style={styles.userSeparator} />}
+          keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <LinearGradient
@@ -266,14 +400,18 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
                 style={styles.emptyIconContainer}
               >
                 <MaterialCommunityIcons
-                  name="account-search"
+                  name={searchQuery ? "account-search" : "account-off"}
                   size={48}
                   color={colorPalette.background}
                 />
               </LinearGradient>
-              <Text style={styles.emptyTitle}>No Users Found</Text>
+              <Text style={styles.emptyTitle}>
+                {searchQuery ? "No Matches Found" : "No Users Found"}
+              </Text>
               <Text style={styles.emptySubtitle}>
-                There are no other users available to add to the group.
+                {searchQuery
+                  ? `No users match "${searchQuery}". Try a different search.`
+                  : "There are no other users available to add to the group."}
               </Text>
             </View>
           }
@@ -581,6 +719,60 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colorPalette.neutral[600],
     marginTop: 2,
+  },
+  searchContainer: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    backgroundColor: colorPalette.background,
+  },
+  searchInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colorPalette.background,
+    borderRadius: borderRadius.full,
+    paddingLeft: spacing.xs,
+    paddingRight: spacing.sm,
+    height: 52,
+    ...colorPalette.shadows.medium,
+  },
+  searchIconContainer: {
+    marginRight: spacing.sm,
+  },
+  searchIconGradient: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  searchInput: {
+    flex: 1,
+    ...typography.body,
+    color: colorPalette.neutral[950],
+    paddingVertical: 0,
+    fontSize: 15,
+  },
+  clearButton: {
+    padding: spacing.xs,
+    marginLeft: spacing.xs,
+  },
+  clearButtonInner: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colorPalette.neutral[200],
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  searchResultsContainer: {
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.xs,
+  },
+  searchResultsText: {
+    ...typography.small,
+    color: colorPalette.neutral[600],
+    fontWeight: "500",
   },
   scrollView: {
     flex: 1,

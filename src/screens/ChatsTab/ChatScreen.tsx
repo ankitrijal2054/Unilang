@@ -1366,6 +1366,7 @@ const styles = StyleSheet.create({
   smartRepliesButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -1373,7 +1374,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "rgba(59, 130, 246, 0.3)",
-    alignSelf: "flex-start",
+    alignSelf: "center",
   },
   smartRepliesButtonText: {
     fontSize: 14,

@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from "react";
-import { View, Animated, StyleSheet } from "react-native";
+import React from "react";
+import { View, StyleSheet } from "react-native";
 import { Text } from "react-native-paper";
+import { AnimatedDots } from "./AnimatedDots";
 import { colorPalette } from "../utils/theme";
 
 interface TypingUser {
@@ -14,35 +15,11 @@ interface TypingIndicatorProps {
 
 /**
  * Animated typing indicator component
- * Shows who is currently typing with animated ellipsis
+ * Modern Messenger-style with animated dots in a bubble
  */
 export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
   typingUsers,
 }) => {
-  const dotAnim = useRef(new Animated.Value(0)).current;
-
-  // Animate the ellipsis dots
-  useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(dotAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: false,
-        }),
-        Animated.timing(dotAnim, {
-          toValue: 0,
-          duration: 600,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-
-    animation.start();
-
-    return () => animation.stop();
-  }, [dotAnim]);
-
   // Don't show if no one is typing
   if (typingUsers.length === 0) {
     return null;
@@ -51,52 +28,57 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
   // Generate the typing message text
   const getTypingText = (): string => {
     if (typingUsers.length === 1) {
-      return `${typingUsers[0].userName} is typing`;
+      return `${typingUsers[0].userName}`;
     } else if (typingUsers.length === 2) {
-      return `${typingUsers[0].userName} and ${typingUsers[1].userName} are typing`;
+      return `${typingUsers[0].userName} and ${typingUsers[1].userName}`;
     } else {
-      return `${typingUsers.length} people are typing`;
+      return `${typingUsers.length} people`;
     }
   };
 
-  // Animated dots opacity
-  const dotsOpacity = dotAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.3, 0.6, 1],
-  });
-
   return (
     <View style={styles.container}>
-      <Text style={styles.typingText}>{getTypingText()}</Text>
-      <Animated.View style={[styles.dots, { opacity: dotsOpacity }]}>
-        <Text style={styles.dotsText}>●●●</Text>
-      </Animated.View>
+      <View style={styles.content}>
+        {/* Typing bubble with animated dots */}
+        <View style={styles.bubble}>
+          <AnimatedDots size={8} gap={3} color={colorPalette.neutral[500]} />
+        </View>
+        {/* Typing text */}
+        <Text style={styles.typingText}>{getTypingText()}</Text>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: colorPalette.neutral[100],
-    borderTopWidth: 1,
-    borderTopColor: colorPalette.neutral[200],
+    backgroundColor: "transparent",
+  },
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  bubble: {
+    backgroundColor: colorPalette.neutral[200],
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 18,
+    minWidth: 60,
+    justifyContent: "center",
+    alignItems: "center",
+    // Subtle shadow for depth
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   typingText: {
-    fontSize: 13,
-    fontStyle: "italic",
-    color: colorPalette.neutral[600],
-    flex: 1,
-  },
-  dots: {
-    marginLeft: 6,
-  },
-  dotsText: {
-    fontSize: 8,
+    fontSize: 12,
     color: colorPalette.neutral[500],
-    letterSpacing: 2,
+    fontWeight: "500",
   },
 });

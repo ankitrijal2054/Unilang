@@ -1006,6 +1006,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         <Menu
           visible={toneMenuVisible}
           onDismiss={() => setToneMenuVisible(false)}
+          contentStyle={styles.toneMenu}
           anchor={
             <IconButton
               icon={() => (
@@ -1035,18 +1036,24 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         >
           <Menu.Item
             onPress={() => handleAdjustTone("formal")}
-            title="🎩 Formal"
+            title="Formal"
             leadingIcon="briefcase"
+            titleStyle={styles.toneMenuItem}
+            style={styles.toneMenuItemStyle}
           />
           <Menu.Item
             onPress={() => handleAdjustTone("neutral")}
-            title="😊 Neutral"
+            title="Neutral"
             leadingIcon="emoticon-neutral"
+            titleStyle={styles.toneMenuItem}
+            style={styles.toneMenuItemStyle}
           />
           <Menu.Item
             onPress={() => handleAdjustTone("casual")}
-            title="😎 Casual"
+            title="Casual"
             leadingIcon="sunglasses"
+            titleStyle={styles.toneMenuItem}
+            style={styles.toneMenuItemStyle}
           />
         </Menu>
 
@@ -1229,6 +1236,28 @@ const styles = StyleSheet.create({
     margin: 0,
     marginRight: -8,
     padding: 0,
+  },
+  toneMenu: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingVertical: 4,
+    minWidth: 160,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  toneMenuItemStyle: {
+    minHeight: 40,
+    height: 40,
+    paddingVertical: 0,
+    paddingHorizontal: 12,
+  },
+  toneMenuItem: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colorPalette.neutral[900],
   },
   attachButton: {
     margin: 0,

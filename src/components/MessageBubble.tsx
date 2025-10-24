@@ -481,32 +481,37 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "flex-end",
     gap: 6,
+    maxWidth: "70%",
   },
   ownContainer: {
     justifyContent: "flex-end",
     flexDirection: "column",
     alignItems: "flex-end",
     gap: 2,
+    maxWidth: "70%",
+    alignSelf: "flex-end",
   },
   otherContainer: {
     justifyContent: "flex-start",
+    maxWidth: "70%",
+    alignSelf: "flex-start",
   },
   otherMessageContainer: {
     marginVertical: 8,
     marginHorizontal: 12,
     flexDirection: "row",
     alignItems: "flex-end",
+    alignSelf: "flex-start",
     gap: 8,
+    maxWidth: "70%",
   },
   avatar: {
     backgroundColor: colorPalette.primary,
   },
   messageColumn: {
-    flex: 1,
     alignItems: "flex-start",
   },
   bubble: {
-    maxWidth: "85%",
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 16,
@@ -515,10 +520,12 @@ const styles = StyleSheet.create({
   ownBubble: {
     backgroundColor: colorPalette.primary,
     borderBottomRightRadius: 4,
+    alignSelf: "flex-end",
   },
   otherBubble: {
     backgroundColor: colorPalette.neutral[100],
     borderBottomLeftRadius: 4,
+    alignSelf: "flex-start",
   },
   messageText: {
     fontSize: 14,

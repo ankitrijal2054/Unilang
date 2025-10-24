@@ -212,6 +212,10 @@ export const subscribeToMessages = (
           imageUrl: data.imageUrl,
           imageWidth: data.imageWidth,
           imageHeight: data.imageHeight,
+          // Translation fields (Phase 3)
+          translation: data.translation,
+          translationVisible: data.translationVisible,
+          // Legacy AI field
           ai: data.ai || {
             translated_text: "",
             detected_language: "",

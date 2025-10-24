@@ -18,10 +18,15 @@ import {
   IconButton,
   Text,
   Snackbar,
+  Modal,
+  Portal,
+  Button,
+  Menu,
 } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { AnimatedDots } from "../../components/AnimatedDots";
 import { useAuthStore } from "../../store/authStore";
 import {
   subscribeToMessages,
@@ -49,6 +54,11 @@ import { db } from "../../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { COLLECTIONS } from "../../utils/constants";
 import { colorPalette } from "../../utils/theme";
+import {
+  translateMessage,
+  cacheTranslation,
+  toggleTranslationVisibility,
+} from "../../services/aiService";
 
 interface ChatScreenProps {
   navigation: any;
@@ -83,6 +93,25 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   >([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Translation state (Phase 3)
+  const [translatingMessageId, setTranslatingMessageId] = useState<
+    string | null
+  >(null);
+  const [slangModalVisible, setSlangModalVisible] = useState(false);
+  const [slangExplanation, setSlangExplanation] = useState("");
+  const [senderLanguages, setSenderLanguages] = useState<{
+    [userId: string]: string;
+  }>({});
+
+  // Smart Replies state (Phase 3B)
+  const [smartReplies, setSmartReplies] = useState<string[]>([]);
+  const [smartRepliesVisible, setSmartRepliesVisible] = useState(false);
+  const [loadingSmartReplies, setLoadingSmartReplies] = useState(false);
+
+  // Tone Adjustment state (Phase 3C)
+  const [toneMenuVisible, setToneMenuVisible] = useState(false);
+  const [adjustingTone, setAdjustingTone] = useState(false);
 
   const flatListRef = useRef<SectionList>(null);
   const optimisticMessagesRef = useRef<Set<string>>(new Set());
@@ -161,6 +190,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 (userData) => {
                   if (userData) {
                     setOtherUser(userData);
+
+                    // Cache preferred language for translation (Phase 3)
+                    if (userData.preferred_language) {
+                      setSenderLanguages((prev) => ({
+                        ...prev,
+                        [otherUserId]: userData.preferred_language,
+                      }));
+                    }
                   }
                 }
               );
@@ -308,6 +345,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               setSenderAvatars((prev) => ({
                 ...prev,
                 [participantId]: result.user!.avatarUrl!,
+              }));
+            }
+
+            // Cache preferred language for translation (Phase 3)
+            if (result.user?.preferred_language) {
+              setSenderLanguages((prev) => ({
+                ...prev,
+                [participantId]: result.user!.preferred_language,
               }));
             }
           } else {
@@ -511,6 +556,186 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     setSelectedImage(null);
   };
 
+  // ================== TRANSLATION HANDLERS (Phase 3) ==================
+
+  /**
+   * Handle translate button tap
+   * If translation exists, toggle visibility; otherwise fetch new translation
+   */
+  const handleTranslate = async (messageId: string) => {
+    try {
+      setTranslatingMessageId(messageId);
+
+      const message = messages.find((m) => m.id === messageId);
+      if (!message) return;
+
+      // Check if translation already exists
+      if (message.translation) {
+        // Just toggle visibility
+        const newVisibility = !message.translationVisible;
+        await toggleTranslationVisibility(messageId, newVisibility);
+        return;
+      }
+
+      // Get sender's preferred language
+      let sourceLang = senderLanguages[message.senderId];
+      if (!sourceLang) {
+        const senderData = await getUserById(message.senderId);
+        sourceLang = senderData.user?.preferred_language || "en";
+        setSenderLanguages((prev) => ({
+          ...prev,
+          [message.senderId]: sourceLang,
+        }));
+      }
+
+      // Get receiver's (current user's) preferred language
+      const targetLang = user?.preferred_language || "en";
+
+      // Skip translation if same language
+      if (sourceLang === targetLang) {
+        Alert.alert(
+          "Translation not needed",
+          "This message is already in your language."
+        );
+        return;
+      }
+
+      // Call N8N translation API
+      const result = await translateMessage(
+        message.text,
+        targetLang,
+        sourceLang
+      );
+
+      // Cache translation in Firestore
+      await cacheTranslation(messageId, result);
+    } catch (error: any) {
+      console.error("[ChatScreen] Translation error:", error);
+      Alert.alert(
+        "Translation Error",
+        error.message || "Could not translate message. Please try again."
+      );
+    } finally {
+      setTranslatingMessageId(null);
+    }
+  };
+
+  /**
+   * Handle slang info button tap
+   */
+  const handleSlangInfo = (explanation: string) => {
+    setSlangExplanation(explanation);
+    setSlangModalVisible(true);
+  };
+
+  // ================== END TRANSLATION HANDLERS ==================
+
+  // ================== SMART REPLIES AUTO-HIDE LOGIC (Phase 3B) ==================
+
+  // Auto-hide smart replies after 10 seconds
+  useEffect(() => {
+    if (smartRepliesVisible) {
+      const timer = setTimeout(() => {
+        setSmartRepliesVisible(false);
+      }, 10000); // 10 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [smartRepliesVisible]);
+
+  // Hide smart replies when user starts typing
+  useEffect(() => {
+    if (messageText.length > 0 && smartRepliesVisible) {
+      setSmartRepliesVisible(false);
+    }
+  }, [messageText]);
+
+  // ================== SMART REPLIES HANDLERS (Phase 3B) ==================
+
+  /**
+   * Generate smart reply suggestions based on conversation history
+   */
+  const handleGenerateSmartReplies = async () => {
+    try {
+      setLoadingSmartReplies(true);
+
+      // Get last 8 messages for context
+      const recentMessages = messages.slice(-8).map((msg) => ({
+        sender:
+          msg.senderId === user?.uid
+            ? "You"
+            : senderNames[msg.senderId] || "Other",
+        text: msg.text,
+      }));
+
+      // Call N8N API
+      const { generateSmartReplies } = await import("../../services/aiService");
+      const replies = await generateSmartReplies(
+        recentMessages,
+        user?.preferred_language || "en"
+      );
+
+      setSmartReplies(replies);
+      setSmartRepliesVisible(true);
+    } catch (error: any) {
+      console.error("[ChatScreen] Smart replies error:", error);
+      Alert.alert(
+        "Smart Replies Error",
+        error.message || "Could not generate suggestions. Please try again."
+      );
+    } finally {
+      setLoadingSmartReplies(false);
+    }
+  };
+
+  /**
+   * Insert a smart reply into the input
+   */
+  const handleSelectSmartReply = (reply: string) => {
+    setMessageText(reply);
+    setSmartRepliesVisible(false);
+  };
+
+  /**
+   * Hide smart replies manually
+   */
+  const handleHideSmartReplies = () => {
+    setSmartRepliesVisible(false);
+  };
+
+  // ================== END SMART REPLIES HANDLERS ==================
+
+  // ================== TONE ADJUSTMENT HANDLERS (Phase 3C) ==================
+
+  /**
+   * Adjust message tone (formal/neutral/casual)
+   */
+  const handleAdjustTone = async (tone: "formal" | "neutral" | "casual") => {
+    if (!messageText.trim()) return;
+
+    try {
+      setAdjustingTone(true);
+      setToneMenuVisible(false);
+
+      // Call N8N API
+      const { adjustTone } = await import("../../services/aiService");
+      const adjustedText = await adjustTone(messageText.trim(), tone);
+
+      // Replace message text with adjusted version
+      setMessageText(adjustedText);
+    } catch (error: any) {
+      console.error("[ChatScreen] Tone adjustment error:", error);
+      Alert.alert(
+        "Tone Adjustment Error",
+        error.message || "Could not adjust tone. Please try again."
+      );
+    } finally {
+      setAdjustingTone(false);
+    }
+  };
+
+  // ================== END TONE ADJUSTMENT HANDLERS ==================
+
   const handleSendImageMessage = async () => {
     if (!selectedImage || !user?.uid) {
       return;
@@ -579,6 +804,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     // Show status only for the absolute last non-system message
     const isLatestMessage = !isSystemMessage && item.id === lastMessageId;
 
+    // Get sender's preferred language (for translation button logic)
+    const senderPreferredLang = senderLanguages[item.senderId];
+    const receiverPreferredLang = user?.preferred_language;
+
     return (
       <MessageBubble
         message={item}
@@ -590,6 +819,12 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         senderAvatarUrl={senderAvatarUrl}
         isLatestFromUser={isLatestMessage}
         chatType={chatType}
+        // Translation props (Phase 3)
+        onTranslate={handleTranslate}
+        senderPreferredLang={senderPreferredLang}
+        receiverPreferredLang={receiverPreferredLang}
+        isTranslating={translatingMessageId === item.id}
+        onSlangInfo={handleSlangInfo}
       />
     );
   };
@@ -681,6 +916,62 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       {/* Typing Indicator - Show between messages and input */}
       <TypingIndicator typingUsers={typingUsers} />
 
+      {/* Smart Replies Section (Phase 3B) */}
+      {!smartRepliesVisible &&
+        messages.length > 0 &&
+        messages[messages.length - 1]?.senderId !== user?.uid && (
+          <View style={styles.smartRepliesButtonContainer}>
+            <TouchableOpacity
+              style={styles.smartRepliesButton}
+              onPress={handleGenerateSmartReplies}
+              disabled={loadingSmartReplies}
+            >
+              {loadingSmartReplies ? (
+                <AnimatedDots size={5} />
+              ) : (
+                <MaterialCommunityIcons
+                  name="robot-outline"
+                  size={18}
+                  color={colorPalette.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+      {/* Smart Reply Chips */}
+      {smartRepliesVisible && smartReplies.length > 0 && (
+        <View style={styles.smartRepliesContainer}>
+          <View style={styles.smartRepliesHeader}>
+            <MaterialCommunityIcons
+              name="robot-outline"
+              size={18}
+              color={colorPalette.primary}
+            />
+            <Text style={styles.smartRepliesHeaderText}>Smart Replies</Text>
+            <TouchableOpacity onPress={handleHideSmartReplies}>
+              <MaterialCommunityIcons
+                name="close"
+                size={18}
+                color={colorPalette.neutral[500]}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.smartRepliesChips}>
+            {smartReplies.map((reply, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.smartReplyChip}
+                onPress={() => handleSelectSmartReply(reply)}
+              >
+                <Text style={styles.smartReplyChipText}>{reply}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
       {/* Image Preview (if selected) */}
       {selectedImage && (
         <View style={styles.imagePreviewContainer}>
@@ -711,6 +1002,54 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
       {/* Message Input */}
       <View style={styles.inputContainer}>
+        {/* Tone Menu Button (Phase 3C) */}
+        <Menu
+          visible={toneMenuVisible}
+          onDismiss={() => setToneMenuVisible(false)}
+          anchor={
+            <IconButton
+              icon={() => (
+                <MaterialCommunityIcons
+                  name="tune-variant"
+                  size={26}
+                  color={
+                    adjustingTone
+                      ? colorPalette.primary
+                      : messageText.trim()
+                      ? colorPalette.primary
+                      : colorPalette.neutral[400]
+                  }
+                />
+              )}
+              onPress={() => setToneMenuVisible(true)}
+              disabled={
+                !messageText.trim() ||
+                sending ||
+                uploadingImage ||
+                adjustingTone
+              }
+              size={36}
+              style={styles.toneButton}
+            />
+          }
+        >
+          <Menu.Item
+            onPress={() => handleAdjustTone("formal")}
+            title="🎩 Formal"
+            leadingIcon="briefcase"
+          />
+          <Menu.Item
+            onPress={() => handleAdjustTone("neutral")}
+            title="😊 Neutral"
+            leadingIcon="emoticon-neutral"
+          />
+          <Menu.Item
+            onPress={() => handleAdjustTone("casual")}
+            title="😎 Casual"
+            leadingIcon="sunglasses"
+          />
+        </Menu>
+
         {/* Attachment Button */}
         <IconButton
           icon={() => (
@@ -722,23 +1061,40 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           )}
           onPress={handlePickImage}
           disabled={sending || uploadingImage}
-          size={48}
+          size={36}
           style={styles.attachButton}
         />
 
-        <TextInput
-          placeholder={selectedImage ? "Add a caption..." : "Type a message..."}
-          placeholderTextColor={colorPalette.neutral[400]}
-          value={messageText}
-          onChangeText={handleTextInputChange}
-          mode="outlined"
-          multiline
-          style={styles.input}
-          editable={!sending && !uploadingImage}
-          outlineColor={colorPalette.neutral[200]}
-          activeOutlineColor={colorPalette.primary}
-          outlineStyle={{ borderRadius: 12 }}
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            placeholder={
+              adjustingTone
+                ? "Adjusting tone..."
+                : selectedImage
+                ? "Add a caption..."
+                : "Type a message..."
+            }
+            placeholderTextColor={colorPalette.neutral[400]}
+            value={messageText}
+            onChangeText={handleTextInputChange}
+            mode="outlined"
+            multiline
+            style={styles.input}
+            editable={!sending && !uploadingImage && !adjustingTone}
+            outlineColor={colorPalette.neutral[200]}
+            activeOutlineColor={colorPalette.primary}
+            outlineStyle={{ borderRadius: 12 }}
+          />
+
+          {/* Tone Adjustment Loading Overlay */}
+          {adjustingTone && (
+            <View style={styles.toneAdjustOverlay}>
+              <View style={styles.toneAdjustContent}>
+                <AnimatedDots />
+              </View>
+            </View>
+          )}
+        </View>
 
         <View style={styles.sendButtonWrapper}>
           <IconButton
@@ -762,11 +1118,30 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               uploadingImage
             }
             loading={sending || uploadingImage}
-            size={48}
+            size={40}
             style={styles.sendButton}
           />
         </View>
       </View>
+
+      {/* Slang Explanation Modal (Phase 3) */}
+      <Portal>
+        <Modal
+          visible={slangModalVisible}
+          onDismiss={() => setSlangModalVisible(false)}
+          contentContainerStyle={styles.slangModal}
+        >
+          <Text style={styles.slangModalTitle}>Cultural Context</Text>
+          <Text style={styles.slangModalText}>{slangExplanation}</Text>
+          <Button
+            mode="contained"
+            onPress={() => setSlangModalVisible(false)}
+            style={styles.slangModalButton}
+          >
+            Close
+          </Button>
+        </Modal>
+      </Portal>
     </KeyboardAvoidingView>
   );
 };
@@ -848,11 +1223,21 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     paddingBottom: 8,
     backgroundColor: colorPalette.background,
-    gap: 4,
+    gap: 0,
+  },
+  toneButton: {
+    margin: 0,
+    marginRight: -8,
+    padding: 0,
   },
   attachButton: {
     margin: 0,
+    marginRight: -8,
     padding: 0,
+  },
+  inputWrapper: {
+    flex: 1,
+    position: "relative",
   },
   input: {
     flex: 1,
@@ -864,8 +1249,33 @@ const styles = StyleSheet.create({
   sendButtonWrapper: {
     justifyContent: "center",
     alignItems: "center",
-    height: 56,
-    width: 56,
+    height: 48,
+    width: 48,
+  },
+  // Tone Adjustment Overlay Styles
+  toneAdjustOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  toneAdjustContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sendButton: {
     margin: 0,
@@ -923,5 +1333,90 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 14,
     fontWeight: "600",
+  },
+  // ========== Slang Modal Styles (Phase 3) ==========
+  slangModal: {
+    backgroundColor: "white",
+    padding: 24,
+    margin: 20,
+    borderRadius: 16,
+    maxHeight: "80%",
+  },
+  slangModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colorPalette.neutral[900],
+    marginBottom: 16,
+  },
+  slangModalText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: colorPalette.neutral[700],
+    marginBottom: 20,
+  },
+  slangModalButton: {
+    marginTop: 8,
+  },
+  // ========== Smart Replies Styles (Phase 3B) ==========
+  smartRepliesButtonContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  smartRepliesButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.3)",
+    alignSelf: "center",
+  },
+  smartRepliesButtonText: {
+    fontSize: 14,
+    color: colorPalette.primary,
+    fontWeight: "600",
+  },
+  smartRepliesContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "rgba(59, 130, 246, 0.05)",
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.2)",
+  },
+  smartRepliesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  smartRepliesHeaderText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "600",
+    color: colorPalette.primary,
+  },
+  smartRepliesChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  smartReplyChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "white",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.3)",
+    maxWidth: "100%",
+  },
+  smartReplyChipText: {
+    fontSize: 14,
+    color: colorPalette.neutral[800],
+    fontWeight: "500",
   },
 });

@@ -620,14 +620,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   };
 
   /**
-   * Handle retry translation (for failed translations)
-   */
-  const handleRetryTranslation = async (messageId: string) => {
-    // Same as handleTranslate, but forces a fresh API call
-    handleTranslate(messageId);
-  };
-
-  /**
    * Handle slang info button tap
    */
   const handleSlangInfo = (explanation: string) => {
@@ -828,7 +820,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         chatType={chatType}
         // Translation props (Phase 3)
         onTranslate={handleTranslate}
-        onRetryTranslation={handleRetryTranslation}
         senderPreferredLang={senderPreferredLang}
         receiverPreferredLang={receiverPreferredLang}
         isTranslating={translatingMessageId === item.id}

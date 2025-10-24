@@ -20,7 +20,6 @@ interface MessageBubbleProps {
   chatType: "direct" | "group";
   // Translation props (Phase 3)
   onTranslate?: (messageId: string) => void;
-  onRetryTranslation?: (messageId: string) => void;
   senderPreferredLang?: string;
   receiverPreferredLang?: string;
   isTranslating?: boolean;
@@ -41,7 +40,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
     isLatestFromUser = false,
     chatType,
     onTranslate,
-    onRetryTranslation,
     senderPreferredLang,
     receiverPreferredLang,
     isTranslating = false,
@@ -97,21 +95,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
                 {message.text}
               </Text>
             </View>
-
-            {/* Retry button */}
-            {onRetryTranslation && (
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={() => onRetryTranslation(message.id)}
-              >
-                <MaterialCommunityIcons
-                  name="refresh"
-                  size={12}
-                  color={colorPalette.primary}
-                />
-                <Text style={styles.retryText}>Retry</Text>
-              </TouchableOpacity>
-            )}
           </View>
         );
       }
@@ -168,6 +151,20 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
           />
           <Text style={styles.slangText}>Cultural context</Text>
         </TouchableOpacity>
+      );
+    };
+
+    // Render loading overlay when translating
+    const renderTranslatingOverlay = () => {
+      if (!isTranslating) return null;
+
+      return (
+        <View style={styles.translatingOverlay}>
+          <View style={styles.translatingContent}>
+            <ActivityIndicator size="small" color={colorPalette.primary} />
+            <Text style={styles.translatingText}>Translating...</Text>
+          </View>
+        </View>
       );
     };
 
@@ -321,6 +318,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
 
                     {/* Slang tooltip */}
                     {renderSlangTooltip()}
+
+                    {/* Loading overlay when translating */}
+                    {renderTranslatingOverlay()}
                   </TouchableOpacity>
                 }
               >
@@ -400,6 +400,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
 
                 {/* Slang tooltip */}
                 {renderSlangTooltip()}
+
+                {/* Loading overlay when translating */}
+                {renderTranslatingOverlay()}
               </TouchableOpacity>
             }
           >
@@ -594,20 +597,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontStyle: "italic",
   },
-  retryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginTop: 6,
-    alignSelf: "flex-end",
-  },
-  retryText: {
-    fontSize: 11,
-    color: colorPalette.primary,
-    fontWeight: "600",
-  },
   slangTooltip: {
     flexDirection: "row",
     alignItems: "center",
@@ -648,5 +637,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: colorPalette.neutral[900],
+  },
+  // ========== Translating Overlay Styles ==========
+  translatingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  translatingContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    // Subtle shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  translatingText: {
+    fontSize: 13,
+    color: colorPalette.primary,
+    fontWeight: "500",
   },
 });

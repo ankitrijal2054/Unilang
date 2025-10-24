@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { Text, Avatar, ActivityIndicator } from "react-native-paper";
+import { View, StyleSheet, TouchableOpacity, Clipboard } from "react-native";
+import { Text, Avatar, ActivityIndicator, Menu } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Message } from "../types";
 import { formatTime } from "../utils/formatters";
@@ -48,9 +48,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
     onSlangInfo,
   }) => {
     const [zoomModalVisible, setZoomModalVisible] = useState(false);
+    const [contextMenuVisible, setContextMenuVisible] = useState(false);
 
-    // Determine if translate button should show
-    const showTranslateButton =
+    // Determine if translate option should be available
+    const canTranslate =
       !isOwnMessage &&
       onTranslate &&
       senderPreferredLang &&
@@ -119,57 +120,54 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       return <Text style={textStyle}>{message.text}</Text>;
     };
 
-    // Helper to render translate button and slang tooltip
-    const renderTranslationControls = () => {
-      if (!showTranslateButton) return null;
+    // Handle copy to clipboard
+    const handleCopy = () => {
+      const textToCopy = showTranslation
+        ? message.translation!.text
+        : message.text;
+      Clipboard.setString(textToCopy);
+      setContextMenuVisible(false);
+    };
+
+    // Handle translate from context menu
+    const handleTranslateFromMenu = () => {
+      setContextMenuVisible(false);
+      if (onTranslate) {
+        onTranslate(message.id);
+      }
+    };
+
+    // Handle long press on message
+    const handleLongPress = () => {
+      // Don't show menu for system messages or image messages
+      if (message.type === "system" || message.messageType === "image") {
+        return;
+      }
+      setContextMenuVisible(true);
+    };
+
+    // Render slang tooltip if available
+    const renderSlangTooltip = () => {
+      if (
+        !hasTranslation ||
+        !message.translation!.slangExplanation ||
+        !onSlangInfo
+      ) {
+        return null;
+      }
 
       return (
-        <View style={styles.translationControls}>
-          {/* Translate button */}
-          <TouchableOpacity
-            style={styles.translateButton}
-            onPress={() => onTranslate!(message.id)}
-            disabled={isTranslating}
-          >
-            {isTranslating ? (
-              <ActivityIndicator size={12} color={colorPalette.primary} />
-            ) : (
-              <MaterialCommunityIcons
-                name="translate"
-                size={14}
-                color={colorPalette.primary}
-              />
-            )}
-            <Text style={styles.translateButtonText}>
-              {isTranslating
-                ? "Translating..."
-                : hasTranslation
-                ? showTranslation
-                  ? "Hide"
-                  : "Show Translation"
-                : "Translate"}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Slang tooltip (if translation has cultural context) */}
-          {hasTranslation &&
-            message.translation!.slangExplanation &&
-            onSlangInfo && (
-              <TouchableOpacity
-                style={styles.slangTooltip}
-                onPress={() =>
-                  onSlangInfo(message.translation!.slangExplanation!)
-                }
-              >
-                <MaterialCommunityIcons
-                  name="information-outline"
-                  size={12}
-                  color={colorPalette.warning}
-                />
-                <Text style={styles.slangText}>Cultural context</Text>
-              </TouchableOpacity>
-            )}
-        </View>
+        <TouchableOpacity
+          style={styles.slangTooltip}
+          onPress={() => onSlangInfo(message.translation!.slangExplanation!)}
+        >
+          <MaterialCommunityIcons
+            name="information-outline"
+            size={12}
+            color={colorPalette.warning}
+          />
+          <Text style={styles.slangText}>Cultural context</Text>
+        </TouchableOpacity>
       );
     };
 
@@ -193,33 +191,52 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       return (
         <>
           <View style={[styles.container, styles.ownContainer]}>
-            <View style={[bubbleStyle, isPending && styles.pendingBubble]}>
-              {isImageMessage ? (
-                <ImageMessage
-                  imageUrl={message.imageUrl!}
-                  imageWidth={message.imageWidth}
-                  imageHeight={message.imageHeight}
-                  caption={message.text}
-                  onPress={() => setZoomModalVisible(true)}
-                  isOwnMessage={true}
-                />
-              ) : (
-                <Text style={[textStyle, isPending && styles.pendingText]}>
-                  {message.text}
-                </Text>
-              )}
-
-              <View style={styles.footer}>
-                <Text
-                  style={[
-                    styles.ownTimestamp,
-                    isPending && styles.pendingTimestamp,
-                  ]}
+            <Menu
+              visible={contextMenuVisible}
+              onDismiss={() => setContextMenuVisible(false)}
+              contentStyle={styles.contextMenu}
+              anchor={
+                <TouchableOpacity
+                  style={[bubbleStyle, isPending && styles.pendingBubble]}
+                  onLongPress={handleLongPress}
+                  activeOpacity={0.7}
                 >
-                  {formatTime(message.timestamp)}
-                </Text>
-              </View>
-            </View>
+                  {isImageMessage ? (
+                    <ImageMessage
+                      imageUrl={message.imageUrl!}
+                      imageWidth={message.imageWidth}
+                      imageHeight={message.imageHeight}
+                      caption={message.text}
+                      onPress={() => setZoomModalVisible(true)}
+                      isOwnMessage={true}
+                    />
+                  ) : (
+                    <Text style={[textStyle, isPending && styles.pendingText]}>
+                      {message.text}
+                    </Text>
+                  )}
+
+                  <View style={styles.footer}>
+                    <Text
+                      style={[
+                        styles.ownTimestamp,
+                        isPending && styles.pendingTimestamp,
+                      ]}
+                    >
+                      {formatTime(message.timestamp)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              }
+            >
+              <Menu.Item
+                onPress={handleCopy}
+                title="Copy"
+                leadingIcon="content-copy"
+                titleStyle={styles.menuItemTitle}
+                style={styles.menuItem}
+              />
+            </Menu>
             {/* Read receipt or status indicator below bubble for latest message only */}
             {isLatestFromUser && (
               <View style={styles.statusContainer}>
@@ -273,29 +290,63 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
             {/* Message bubble and name on the right */}
             <View style={styles.messageColumn}>
               <Text style={styles.senderName}>{senderName}</Text>
-              <View style={bubbleStyle}>
-                {isImageMessage ? (
-                  <ImageMessage
-                    imageUrl={message.imageUrl!}
-                    imageWidth={message.imageWidth}
-                    imageHeight={message.imageHeight}
-                    caption={message.text}
-                    onPress={() => setZoomModalVisible(true)}
-                    isOwnMessage={false}
+              <Menu
+                visible={contextMenuVisible}
+                onDismiss={() => setContextMenuVisible(false)}
+                contentStyle={styles.contextMenu}
+                anchor={
+                  <TouchableOpacity
+                    style={bubbleStyle}
+                    onLongPress={handleLongPress}
+                    activeOpacity={0.7}
+                  >
+                    {isImageMessage ? (
+                      <ImageMessage
+                        imageUrl={message.imageUrl!}
+                        imageWidth={message.imageWidth}
+                        imageHeight={message.imageHeight}
+                        caption={message.text}
+                        onPress={() => setZoomModalVisible(true)}
+                        isOwnMessage={false}
+                      />
+                    ) : (
+                      renderMessageText()
+                    )}
+
+                    <View style={styles.footer}>
+                      <Text style={styles.otherTimestamp}>
+                        {formatTime(message.timestamp)}
+                      </Text>
+                    </View>
+
+                    {/* Slang tooltip */}
+                    {renderSlangTooltip()}
+                  </TouchableOpacity>
+                }
+              >
+                <Menu.Item
+                  onPress={handleCopy}
+                  title="Copy"
+                  leadingIcon="content-copy"
+                  titleStyle={styles.menuItemTitle}
+                  style={styles.menuItem}
+                />
+                {canTranslate && (
+                  <Menu.Item
+                    onPress={handleTranslateFromMenu}
+                    title={
+                      hasTranslation
+                        ? showTranslation
+                          ? "Hide Translation"
+                          : "Show Translation"
+                        : "Translate"
+                    }
+                    leadingIcon="translate"
+                    titleStyle={styles.menuItemTitle}
+                    style={styles.menuItem}
                   />
-                ) : (
-                  renderMessageText()
                 )}
-
-                <View style={styles.footer}>
-                  <Text style={styles.otherTimestamp}>
-                    {formatTime(message.timestamp)}
-                  </Text>
-                </View>
-
-                {/* Translation controls (button + slang tooltip) */}
-                {renderTranslationControls()}
-              </View>
+              </Menu>
             </View>
           </View>
 
@@ -318,29 +369,63 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
     return (
       <>
         <View style={[styles.container, styles.otherContainer]}>
-          <View style={bubbleStyle}>
-            {isImageMessage ? (
-              <ImageMessage
-                imageUrl={message.imageUrl!}
-                imageWidth={message.imageWidth}
-                imageHeight={message.imageHeight}
-                caption={message.text}
-                onPress={() => setZoomModalVisible(true)}
-                isOwnMessage={false}
+          <Menu
+            visible={contextMenuVisible}
+            onDismiss={() => setContextMenuVisible(false)}
+            contentStyle={styles.contextMenu}
+            anchor={
+              <TouchableOpacity
+                style={bubbleStyle}
+                onLongPress={handleLongPress}
+                activeOpacity={0.7}
+              >
+                {isImageMessage ? (
+                  <ImageMessage
+                    imageUrl={message.imageUrl!}
+                    imageWidth={message.imageWidth}
+                    imageHeight={message.imageHeight}
+                    caption={message.text}
+                    onPress={() => setZoomModalVisible(true)}
+                    isOwnMessage={false}
+                  />
+                ) : (
+                  renderMessageText()
+                )}
+
+                <View style={styles.footer}>
+                  <Text style={styles.otherTimestamp}>
+                    {formatTime(message.timestamp)}
+                  </Text>
+                </View>
+
+                {/* Slang tooltip */}
+                {renderSlangTooltip()}
+              </TouchableOpacity>
+            }
+          >
+            <Menu.Item
+              onPress={handleCopy}
+              title="Copy"
+              leadingIcon="content-copy"
+              titleStyle={styles.menuItemTitle}
+              style={styles.menuItem}
+            />
+            {canTranslate && (
+              <Menu.Item
+                onPress={handleTranslateFromMenu}
+                title={
+                  hasTranslation
+                    ? showTranslation
+                      ? "Hide Translation"
+                      : "Show Translation"
+                    : "Translate"
+                }
+                leadingIcon="translate"
+                titleStyle={styles.menuItemTitle}
+                style={styles.menuItem}
               />
-            ) : (
-              renderMessageText()
             )}
-
-            <View style={styles.footer}>
-              <Text style={styles.otherTimestamp}>
-                {formatTime(message.timestamp)}
-              </Text>
-            </View>
-
-            {/* Translation controls (button + slang tooltip) */}
-            {renderTranslationControls()}
-          </View>
+          </Menu>
         </View>
 
         {/* Image zoom modal */}
@@ -495,27 +580,6 @@ const styles = StyleSheet.create({
     color: colorPalette.neutral[600],
   },
   // ========== Translation Styles (Phase 3) ==========
-  translationControls: {
-    marginTop: 8,
-    gap: 6,
-  },
-  translateButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: "rgba(59, 130, 246, 0.1)", // Frosted blue
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.3)",
-    alignSelf: "flex-start",
-  },
-  translateButtonText: {
-    fontSize: 12,
-    color: colorPalette.primary,
-    fontWeight: "600",
-  },
   translationDivider: {
     height: 1,
     backgroundColor: colorPalette.neutral[300],
@@ -560,5 +624,29 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colorPalette.warning,
     fontWeight: "600",
+  },
+  // ========== Context Menu Styles ==========
+  contextMenu: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingVertical: 4,
+    minWidth: 160,
+    // Modern shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  menuItem: {
+    minHeight: 40,
+    height: 40,
+    paddingVertical: 0,
+    paddingHorizontal: 12,
+  },
+  menuItemTitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colorPalette.neutral[900],
   },
 });

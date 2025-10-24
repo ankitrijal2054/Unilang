@@ -15,8 +15,9 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
 import { subscribeToUserChats, deleteChat } from "../../services/chatService";
 import { getUserById } from "../../services/userService";
+import { subscribeToMessages } from "../../services/messageService";
 import { subscribeToNetworkStatus } from "../../utils/networkUtils";
-import { Chat } from "../../types";
+import { Chat, Message } from "../../types";
 import { SwipeableChatItem } from "../../components/SwipeableChatItem";
 import { DeleteChatModal } from "../../components/DeleteChatModal";
 import { SkeletonChatItem } from "../../components/SkeletonChatItem";
@@ -43,6 +44,7 @@ const ChatItemWrapper: React.FC<{
 }> = ({ chat, currentUserId, onPress, onDelete }) => {
   const chatName = useChatDisplayName(chat, currentUserId);
   const [otherUserAvatarUrl, setOtherUserAvatarUrl] = useState<string>();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Fetch other user's avatar for direct chats
   useEffect(() => {
@@ -72,12 +74,32 @@ const ChatItemWrapper: React.FC<{
     }
   }, [chat, currentUserId]);
 
+  // Subscribe to messages to calculate unread count
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const unsubscribe = subscribeToMessages(chat.id, (messages: Message[]) => {
+      // Count unread messages: messages sent by others that haven't been read by current user
+      const unread = messages.filter(
+        (msg) =>
+          msg.senderId !== currentUserId &&
+          (!msg.readBy || !msg.readBy.includes(currentUserId))
+      ).length;
+      setUnreadCount(unread);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [chat.id, currentUserId]);
+
   // Use chat document's lastMessage directly (updated via subscribeToUserChats)
   // No need for message store here - that's only for the ChatScreen
   return (
     <SwipeableChatItem
       chat={chat}
       otherUserAvatarUrl={otherUserAvatarUrl}
+      unreadCount={unreadCount}
       onPress={() => onPress(chat, chatName)}
       onDelete={() => onDelete(chat, chatName)}
     />

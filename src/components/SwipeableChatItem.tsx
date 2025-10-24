@@ -17,6 +17,7 @@ interface SwipeableChatItemProps {
   onPress: () => void;
   onDelete: () => void;
   otherUserAvatarUrl?: string;
+  unreadCount?: number;
 }
 
 export const SwipeableChatItem: React.FC<SwipeableChatItemProps> = ({
@@ -24,6 +25,7 @@ export const SwipeableChatItem: React.FC<SwipeableChatItemProps> = ({
   onPress,
   onDelete,
   otherUserAvatarUrl,
+  unreadCount = 0,
 }) => {
   const swipeableRef = useRef<Swipeable>(null);
 
@@ -74,6 +76,7 @@ export const SwipeableChatItem: React.FC<SwipeableChatItemProps> = ({
           chat={chat}
           onPress={onPress}
           otherUserAvatarUrl={otherUserAvatarUrl}
+          unreadCount={unreadCount}
         />
       </View>
     </Swipeable>

@@ -205,13 +205,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   chatName: {
-    ...typography.bodyBold,
-    color: colorPalette.neutral[900],
+    ...typography.body,
+    color: colorPalette.neutral[700],
     flex: 1,
+    fontWeight: "500",
   },
   unreadName: {
     ...typography.bodyBold,
-    fontWeight: "700",
+    fontWeight: "800",
     color: colorPalette.neutral[950],
   },
   deletedText: {
@@ -231,14 +232,15 @@ const styles = StyleSheet.create({
   },
   preview: {
     ...typography.caption,
-    color: colorPalette.neutral[600],
+    color: colorPalette.neutral[500],
     flex: 1,
     marginRight: spacing.sm,
+    fontWeight: "400",
   },
   unreadPreview: {
-    ...typography.captionMedium,
+    ...typography.caption,
     fontWeight: "700",
-    color: colorPalette.neutral[800],
+    color: colorPalette.neutral[900],
   },
   badge: {
     backgroundColor: colorPalette.primary,

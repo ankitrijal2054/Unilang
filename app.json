@@ -18,7 +18,14 @@
       "buildNumber": "1",
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification", "remote-notification"],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.811223427427-k493r9fe7ppe07cmmqv0qlm51o3di9eu"
+            ]
+          }
+        ]
       }
     },
     "android": {
@@ -45,6 +52,12 @@
         {
           "icons": ["./assets/notification-icon.png"],
           "colors": ["#2196F3"]
+        }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.811223427427-k493r9fe7ppe07cmmqv0qlm51o3di9eu"
         }
       ]
     ],

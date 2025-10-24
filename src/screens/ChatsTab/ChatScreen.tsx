@@ -26,6 +26,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { AnimatedDots } from "../../components/AnimatedDots";
 import { useAuthStore } from "../../store/authStore";
 import {
   subscribeToMessages,
@@ -923,8 +924,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             onPress={handleGenerateSmartReplies}
             disabled={loadingSmartReplies}
           >
+            <Text style={styles.smartRepliesButtonText}>
+              {loadingSmartReplies ? null : "Smart Replies"}
+            </Text>
             {loadingSmartReplies ? (
-              <ActivityIndicator size={16} color={colorPalette.primary} />
+              <AnimatedDots size={5} />
             ) : (
               <MaterialCommunityIcons
                 name="robot-outline"
@@ -932,9 +936,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 color={colorPalette.primary}
               />
             )}
-            <Text style={styles.smartRepliesButtonText}>
-              {loadingSmartReplies ? "Generating..." : "💬 Smart Replies"}
-            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -1028,7 +1029,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 uploadingImage ||
                 adjustingTone
               }
-              size={48}
+              size={36}
               style={styles.toneButton}
             />
           }
@@ -1061,29 +1062,40 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           )}
           onPress={handlePickImage}
           disabled={sending || uploadingImage}
-          size={48}
+          size={36}
           style={styles.attachButton}
         />
 
-        <TextInput
-          placeholder={
-            adjustingTone
-              ? "Adjusting tone..."
-              : selectedImage
-              ? "Add a caption..."
-              : "Type a message..."
-          }
-          placeholderTextColor={colorPalette.neutral[400]}
-          value={messageText}
-          onChangeText={handleTextInputChange}
-          mode="outlined"
-          multiline
-          style={styles.input}
-          editable={!sending && !uploadingImage && !adjustingTone}
-          outlineColor={colorPalette.neutral[200]}
-          activeOutlineColor={colorPalette.primary}
-          outlineStyle={{ borderRadius: 12 }}
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            placeholder={
+              adjustingTone
+                ? "Adjusting tone..."
+                : selectedImage
+                ? "Add a caption..."
+                : "Type a message..."
+            }
+            placeholderTextColor={colorPalette.neutral[400]}
+            value={messageText}
+            onChangeText={handleTextInputChange}
+            mode="outlined"
+            multiline
+            style={styles.input}
+            editable={!sending && !uploadingImage && !adjustingTone}
+            outlineColor={colorPalette.neutral[200]}
+            activeOutlineColor={colorPalette.primary}
+            outlineStyle={{ borderRadius: 12 }}
+          />
+
+          {/* Tone Adjustment Loading Overlay */}
+          {adjustingTone && (
+            <View style={styles.toneAdjustOverlay}>
+              <View style={styles.toneAdjustContent}>
+                <AnimatedDots />
+              </View>
+            </View>
+          )}
+        </View>
 
         <View style={styles.sendButtonWrapper}>
           <IconButton
@@ -1107,7 +1119,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               uploadingImage
             }
             loading={sending || uploadingImage}
-            size={48}
+            size={40}
             style={styles.sendButton}
           />
         </View>
@@ -1212,15 +1224,21 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     paddingBottom: 8,
     backgroundColor: colorPalette.background,
-    gap: 4,
+    gap: 0,
   },
   toneButton: {
     margin: 0,
+    marginRight: -8,
     padding: 0,
   },
   attachButton: {
     margin: 0,
+    marginRight: -8,
     padding: 0,
+  },
+  inputWrapper: {
+    flex: 1,
+    position: "relative",
   },
   input: {
     flex: 1,
@@ -1232,8 +1250,33 @@ const styles = StyleSheet.create({
   sendButtonWrapper: {
     justifyContent: "center",
     alignItems: "center",
-    height: 56,
-    width: 56,
+    height: 48,
+    width: 48,
+  },
+  // Tone Adjustment Overlay Styles
+  toneAdjustOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  toneAdjustContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sendButton: {
     margin: 0,

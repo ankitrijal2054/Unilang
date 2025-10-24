@@ -8,6 +8,7 @@ import { StatusIndicator } from "./StatusIndicator";
 import { ReadReceiptBadge } from "./ReadReceiptBadge";
 import { ImageMessage } from "./ImageMessage";
 import { ImageZoomModal } from "./ImageZoomModal";
+import { AnimatedDots } from "./AnimatedDots";
 import { colorPalette } from "../utils/theme";
 
 interface MessageBubbleProps {
@@ -161,8 +162,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       return (
         <View style={styles.translatingOverlay}>
           <View style={styles.translatingContent}>
-            <ActivityIndicator size="small" color={colorPalette.primary} />
-            <Text style={styles.translatingText}>Translating...</Text>
+            <AnimatedDots />
           </View>
         </View>
       );
@@ -653,9 +653,9 @@ const styles = StyleSheet.create({
   translatingContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 4,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
     // Subtle shadow

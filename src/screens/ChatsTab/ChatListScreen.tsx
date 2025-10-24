@@ -241,35 +241,40 @@ export const ChatListScreen: React.FC<ChatListScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
+      {/* Modern Header */}
       <View style={styles.header}>
-        <LinearGradient
-          colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
-          locations={[0, 1]}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.headerTitle}>Messages</Text>
-            </View>
-            <View style={styles.headerRight}>
-              <TouchableOpacity onPress={handleNewChat}>
-                <MaterialCommunityIcons
-                  name="plus"
-                  size={28}
-                  color={colorPalette.neutral[900]}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleNewGroup}>
-                <MaterialCommunityIcons
-                  name="account-group"
-                  size={28}
-                  color={colorPalette.neutral[900]}
-                />
-              </TouchableOpacity>
-            </View>
+        <View style={styles.headerContent}>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>Messages</Text>
+            <Text style={styles.headerSubtitle}>
+              {chats.length} conversation{chats.length !== 1 ? "s" : ""}
+            </Text>
           </View>
-        </LinearGradient>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={handleNewChat}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons
+                name="plus"
+                size={24}
+                color={colorPalette.neutral[950]}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={handleNewGroup}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons
+                name="account-group"
+                size={24}
+                color={colorPalette.neutral[950]}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       {/* Offline Banner - Show right below header */}
@@ -340,48 +345,46 @@ const styles = StyleSheet.create({
   header: {
     height: 72,
     justifyContent: "center",
-    alignItems: "center",
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
     backgroundColor: colorPalette.background,
     ...colorPalette.shadows.small,
-  },
-  headerGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
   },
   headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: spacing.base,
+    gap: spacing.md,
   },
-  headerLeft: {
+  headerTextContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "flex-start",
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerRight: {
-    width: 100,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    gap: spacing.base,
   },
   headerTitle: {
-    ...typography.h2,
+    ...typography.h3,
     color: colorPalette.neutral[950],
   },
   headerSubtitle: {
-    ...typography.body,
+    ...typography.caption,
     color: colorPalette.neutral[600],
+    marginTop: 2,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colorPalette.neutral[100],
+  },
+  loadingText: {
+    ...typography.caption,
+    color: colorPalette.neutral[950],
   },
   centerContainer: {
     flex: 1,
@@ -391,11 +394,6 @@ const styles = StyleSheet.create({
   skeletonContainer: {
     flex: 1,
     backgroundColor: colorPalette.background,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    ...typography.caption,
-    color: colorPalette.neutral[600],
   },
   emptyContainer: {
     flex: 1,

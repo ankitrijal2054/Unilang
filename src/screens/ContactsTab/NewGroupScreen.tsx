@@ -301,70 +301,75 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
         {/* Enhanced Search Bar */}
         <View style={styles.searchContainer}>
           <Animated.View
-            style={[
-              styles.searchInputWrapper,
-              {
-                transform: [{ scale: searchScaleAnim }],
-                borderWidth: 2,
-                borderColor: searchBorderAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["transparent", colorPalette.primary],
-                }),
-              },
-            ]}
+            style={{
+              transform: [{ scale: searchScaleAnim }],
+            }}
           >
-            <View style={styles.searchIconContainer}>
-              <LinearGradient
-                colors={
-                  searchFocused
-                    ? (colorPalette.gradientBlue as [
-                        string,
-                        string,
-                        ...string[]
-                      ])
-                    : [colorPalette.neutral[400], colorPalette.neutral[400]]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.searchIconGradient}
-              >
-                <MaterialCommunityIcons
-                  name="magnify"
-                  size={20}
-                  color={colorPalette.background}
-                />
-              </LinearGradient>
-            </View>
-            <RNTextInput
-              ref={searchInputRef}
-              style={styles.searchInput}
-              placeholder="Search by name or email..."
-              placeholderTextColor={colorPalette.neutral[500]}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onFocus={handleSearchFocus}
-              onBlur={handleSearchBlur}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                onPress={() => {
-                  setSearchQuery("");
-                  searchInputRef.current?.focus();
-                }}
-                style={styles.clearButton}
-                activeOpacity={0.7}
-              >
-                <View style={styles.clearButtonInner}>
+            <Animated.View
+              style={[
+                styles.searchInputWrapper,
+                {
+                  borderWidth: 2,
+                  borderColor: searchBorderAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["transparent", colorPalette.primary],
+                  }),
+                },
+              ]}
+            >
+              <View style={styles.searchIconContainer}>
+                <LinearGradient
+                  colors={
+                    searchFocused
+                      ? (colorPalette.gradientBlue as [
+                          string,
+                          string,
+                          ...string[]
+                        ])
+                      : [colorPalette.neutral[400], colorPalette.neutral[400]]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.searchIconGradient}
+                >
                   <MaterialCommunityIcons
-                    name="close"
-                    size={16}
-                    color={colorPalette.neutral[600]}
+                    name="magnify"
+                    size={20}
+                    color={colorPalette.background}
                   />
-                </View>
-              </TouchableOpacity>
-            )}
+                </LinearGradient>
+              </View>
+              <RNTextInput
+                ref={searchInputRef}
+                style={styles.searchInput}
+                placeholder="Search by name or email..."
+                placeholderTextColor={colorPalette.neutral[500]}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onFocus={handleSearchFocus}
+                onBlur={handleSearchBlur}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setSearchQuery("");
+                    searchInputRef.current?.focus();
+                  }}
+                  style={styles.clearButton}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.clearButtonInner}>
+                    <MaterialCommunityIcons
+                      name="close"
+                      size={16}
+                      color={colorPalette.neutral[600]}
+                    />
+                  </View>
+                </TouchableOpacity>
+              )}
+            </Animated.View>
           </Animated.View>
 
           {/* Search Results Count */}

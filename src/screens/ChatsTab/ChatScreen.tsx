@@ -917,28 +917,27 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       <TypingIndicator typingUsers={typingUsers} />
 
       {/* Smart Replies Section (Phase 3B) */}
-      {!smartRepliesVisible && messages.length > 0 && (
-        <View style={styles.smartRepliesButtonContainer}>
-          <TouchableOpacity
-            style={styles.smartRepliesButton}
-            onPress={handleGenerateSmartReplies}
-            disabled={loadingSmartReplies}
-          >
-            <Text style={styles.smartRepliesButtonText}>
-              {loadingSmartReplies ? null : "Smart Replies"}
-            </Text>
-            {loadingSmartReplies ? (
-              <AnimatedDots size={5} />
-            ) : (
-              <MaterialCommunityIcons
-                name="robot-outline"
-                size={18}
-                color={colorPalette.primary}
-              />
-            )}
-          </TouchableOpacity>
-        </View>
-      )}
+      {!smartRepliesVisible &&
+        messages.length > 0 &&
+        messages[messages.length - 1]?.senderId !== user?.uid && (
+          <View style={styles.smartRepliesButtonContainer}>
+            <TouchableOpacity
+              style={styles.smartRepliesButton}
+              onPress={handleGenerateSmartReplies}
+              disabled={loadingSmartReplies}
+            >
+              {loadingSmartReplies ? (
+                <AnimatedDots size={5} />
+              ) : (
+                <MaterialCommunityIcons
+                  name="robot-outline"
+                  size={18}
+                  color={colorPalette.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
 
       {/* Smart Reply Chips */}
       {smartRepliesVisible && smartReplies.length > 0 && (

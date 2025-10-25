@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -9,6 +9,9 @@ import {
   Platform,
   TouchableOpacity,
   SafeAreaView,
+  ScrollView,
+  Animated,
+  TextInput as RNTextInput,
 } from "react-native";
 import {
   Appbar,
@@ -24,7 +27,12 @@ import { useAuthStore } from "../../store/authStore";
 import { getAllUsers } from "../../services/userService";
 import { createGroupChat } from "../../services/chatService";
 import { User } from "../../types";
-import { colorPalette } from "../../utils/theme";
+import {
+  colorPalette,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../utils/theme";
 
 interface NewGroupScreenProps {
   navigation: any;
@@ -48,6 +56,11 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchInputRef = useRef<RNTextInput>(null);
+  const searchBorderAnim = useRef(new Animated.Value(0)).current;
+  const searchScaleAnim = useRef(new Animated.Value(1)).current;
 
   // Fetch all users on mount
   useEffect(() => {
@@ -82,6 +95,42 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
     setSelectedUserIds(newSelected);
   };
 
+  const handleSearchFocus = () => {
+    setSearchFocused(true);
+    Animated.parallel([
+      Animated.spring(searchBorderAnim, {
+        toValue: 1,
+        useNativeDriver: false,
+        tension: 50,
+        friction: 7,
+      }),
+      Animated.spring(searchScaleAnim, {
+        toValue: 1.02,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+      }),
+    ]).start();
+  };
+
+  const handleSearchBlur = () => {
+    setSearchFocused(false);
+    Animated.parallel([
+      Animated.spring(searchBorderAnim, {
+        toValue: 0,
+        useNativeDriver: false,
+        tension: 50,
+        friction: 7,
+      }),
+      Animated.spring(searchScaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+      }),
+    ]).start();
+  };
+
   const handleContinue = () => {
     if (selectedUserIds.size < 2) {
       Alert.alert("Error", "Please select at least 2 participants");
@@ -89,6 +138,16 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
     }
     setStep("group_name");
   };
+
+  // Filter users based on search query
+  const filteredUsers = allUsers.filter((u) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return (
+      u.name.toLowerCase().includes(query) ||
+      u.email.toLowerCase().includes(query)
+    );
+  });
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {
@@ -132,29 +191,53 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
   const renderUserItem = ({ item }: { item: User }) => {
     const isSelected = selectedUserIds.has(item.uid);
 
+    // Get initials for avatar
+    const initials = item.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+
+    // Generate gradient colors based on user ID
+    const gradientColors = [
+      colorPalette.gradientBlueSoft,
+      colorPalette.gradientPurpleSoft,
+      colorPalette.gradientPinkSoft,
+      colorPalette.gradientCyanSoft,
+    ][item.uid.charCodeAt(0) % 4];
+
     return (
       <TouchableOpacity
         style={styles.userItem}
         onPress={() => toggleUserSelection(item.uid)}
         activeOpacity={0.7}
       >
-        <TouchableOpacity
-          style={styles.checkboxContainer}
-          onPress={() => toggleUserSelection(item.uid)}
+        {/* Avatar */}
+        <LinearGradient
+          colors={gradientColors as [string, string, ...string[]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.userAvatar}
         >
-          <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
-            {isSelected && (
-              <MaterialCommunityIcons
-                name="check"
-                size={16}
-                color={colorPalette.background}
-              />
-            )}
-          </View>
-        </TouchableOpacity>
+          <Text style={styles.userAvatarText}>{initials}</Text>
+        </LinearGradient>
+
+        {/* User Info */}
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{item.name}</Text>
           <Text style={styles.userEmail}>{item.email}</Text>
+        </View>
+
+        {/* Checkbox */}
+        <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
+          {isSelected && (
+            <MaterialCommunityIcons
+              name="check"
+              size={18}
+              color={colorPalette.background}
+            />
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -164,7 +247,26 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colorPalette.primary} />
+          <LinearGradient
+            colors={
+              colorPalette.gradientBlueSoft as [string, string, ...string[]]
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.loadingIconContainer}
+          >
+            <MaterialCommunityIcons
+              name="account-group"
+              size={40}
+              color={colorPalette.background}
+            />
+          </LinearGradient>
+          <ActivityIndicator
+            size="large"
+            color={colorPalette.primary}
+            style={{ marginTop: spacing.lg }}
+          />
+          <Text style={styles.loadingText}>Loading users...</Text>
         </View>
       </SafeAreaView>
     );
@@ -174,54 +276,182 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <LinearGradient
-            colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
-            locations={[0, 1]}
-            style={styles.headerGradient}
-          >
-            <View style={styles.headerContent}>
-              <View style={styles.headerLeft}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                  <MaterialCommunityIcons
-                    name="arrow-left"
-                    size={28}
-                    color={colorPalette.neutral[900]}
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.headerCenter}>
-                <Text style={styles.headerTitle}>New Group</Text>
-                <Text style={styles.headerSubtitle}>
-                  {selectedUserIds.size} selected
-                </Text>
-              </View>
-              <View style={styles.headerRight} />
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons
+                name="arrow-left"
+                size={24}
+                color={colorPalette.neutral[950]}
+              />
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>New Group</Text>
+              <Text style={styles.headerSubtitle}>
+                {selectedUserIds.size} participant
+                {selectedUserIds.size !== 1 ? "s" : ""} selected
+              </Text>
             </View>
-          </LinearGradient>
+          </View>
+        </View>
+
+        {/* Enhanced Search Bar */}
+        <View style={styles.searchContainer}>
+          <Animated.View
+            style={{
+              transform: [{ scale: searchScaleAnim }],
+            }}
+          >
+            <Animated.View
+              style={[
+                styles.searchInputWrapper,
+                {
+                  borderWidth: 2,
+                  borderColor: searchBorderAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["transparent", colorPalette.primary],
+                  }),
+                },
+              ]}
+            >
+              <View style={styles.searchIconContainer}>
+                <LinearGradient
+                  colors={
+                    searchFocused
+                      ? (colorPalette.gradientBlue as [
+                          string,
+                          string,
+                          ...string[]
+                        ])
+                      : [colorPalette.neutral[400], colorPalette.neutral[400]]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.searchIconGradient}
+                >
+                  <MaterialCommunityIcons
+                    name="magnify"
+                    size={20}
+                    color={colorPalette.background}
+                  />
+                </LinearGradient>
+              </View>
+              <RNTextInput
+                ref={searchInputRef}
+                style={styles.searchInput}
+                placeholder="Search by name or email..."
+                placeholderTextColor={colorPalette.neutral[500]}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onFocus={handleSearchFocus}
+                onBlur={handleSearchBlur}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setSearchQuery("");
+                    searchInputRef.current?.focus();
+                  }}
+                  style={styles.clearButton}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.clearButtonInner}>
+                    <MaterialCommunityIcons
+                      name="close"
+                      size={16}
+                      color={colorPalette.neutral[600]}
+                    />
+                  </View>
+                </TouchableOpacity>
+              )}
+            </Animated.View>
+          </Animated.View>
+
+          {/* Search Results Count */}
+          {searchQuery.length > 0 && (
+            <View style={styles.searchResultsContainer}>
+              <Text style={styles.searchResultsText}>
+                {filteredUsers.length}{" "}
+                {filteredUsers.length === 1 ? "result" : "results"} found
+              </Text>
+            </View>
+          )}
         </View>
 
         <FlatList
-          data={allUsers}
+          data={filteredUsers}
           renderItem={renderUserItem}
           keyExtractor={(item) => item.uid}
           contentContainerStyle={styles.listContent}
+          ItemSeparatorComponent={() => <View style={styles.userSeparator} />}
+          keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No users available</Text>
+              <LinearGradient
+                colors={
+                  colorPalette.gradientPurpleSoft as [
+                    string,
+                    string,
+                    ...string[]
+                  ]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.emptyIconContainer}
+              >
+                <MaterialCommunityIcons
+                  name={searchQuery ? "account-search" : "account-off"}
+                  size={48}
+                  color={colorPalette.background}
+                />
+              </LinearGradient>
+              <Text style={styles.emptyTitle}>
+                {searchQuery ? "No Matches Found" : "No Users Found"}
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                {searchQuery
+                  ? `No users match "${searchQuery}". Try a different search.`
+                  : "There are no other users available to add to the group."}
+              </Text>
             </View>
           }
         />
 
         <View style={styles.footer}>
-          <Button
-            mode="contained"
+          <TouchableOpacity
+            style={[
+              styles.continueButton,
+              selectedUserIds.size < 2 && styles.continueButtonDisabled,
+            ]}
             onPress={handleContinue}
             disabled={selectedUserIds.size < 2}
-            loading={false}
-            style={styles.button}
+            activeOpacity={0.8}
           >
-            Continue ({selectedUserIds.size}/max)
-          </Button>
+            <LinearGradient
+              colors={
+                selectedUserIds.size < 2
+                  ? [colorPalette.neutral[300], colorPalette.neutral[300]]
+                  : (colorPalette.gradientBlue as [string, string, ...string[]])
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.continueButtonGradient}
+            >
+              <Text style={styles.continueButtonText}>
+                Continue ({selectedUserIds.size} selected)
+              </Text>
+              <MaterialCommunityIcons
+                name="arrow-right"
+                size={20}
+                color={colorPalette.background}
+              />
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
 
         <Snackbar
@@ -242,79 +472,194 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
         style={styles.container}
       >
         <View style={styles.header}>
-          <LinearGradient
-            colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
-            locations={[0, 1]}
-            style={styles.headerGradient}
-          >
-            <View style={styles.headerContent}>
-              <View style={styles.headerLeft}>
-                <TouchableOpacity
-                  onPress={() => setStep("select_participants")}
-                >
-                  <MaterialCommunityIcons
-                    name="arrow-left"
-                    size={28}
-                    color={colorPalette.neutral[900]}
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.headerCenter}>
-                <Text style={styles.headerTitle}>Group Name</Text>
-              </View>
-              <View style={styles.headerRight} />
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => setStep("select_participants")}
+              disabled={creating}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons
+                name="arrow-left"
+                size={24}
+                color={colorPalette.neutral[950]}
+              />
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>Group Name</Text>
+              <Text style={styles.headerSubtitle}>
+                {selectedUserIds.size + 1} member
+                {selectedUserIds.size + 1 !== 1 ? "s" : ""}
+              </Text>
             </View>
-          </LinearGradient>
+          </View>
         </View>
 
-        <View style={styles.contentContainer}>
-          <View style={styles.formContainer}>
-            <Text style={styles.label}>Group Name</Text>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Group Icon Preview */}
+          <View style={styles.groupPreviewContainer}>
+            <LinearGradient
+              colors={
+                colorPalette.gradientPurple as [string, string, ...string[]]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.groupIcon}
+            >
+              <MaterialCommunityIcons
+                name="account-group"
+                size={48}
+                color={colorPalette.background}
+              />
+            </LinearGradient>
+          </View>
+
+          {/* Group Name Input Card */}
+          <View style={styles.inputCard}>
+            <Text style={styles.inputLabel}>Group Name</Text>
             <TextInput
-              placeholder="Enter group name"
+              placeholder="Enter group name..."
               value={groupName}
               onChangeText={setGroupName}
               mode="outlined"
               style={styles.input}
+              outlineStyle={styles.inputOutline}
               editable={!creating}
               autoFocus
+              maxLength={50}
             />
+          </View>
 
-            <View style={styles.summaryContainer}>
-              <Text style={styles.summaryLabel}>
-                Members ({selectedUserIds.size + 1}):
+          {/* Members Summary Card */}
+          <View style={styles.membersCard}>
+            <View style={styles.membersCardHeader}>
+              <MaterialCommunityIcons
+                name="account-group"
+                size={20}
+                color={colorPalette.primary}
+              />
+              <Text style={styles.membersCardTitle}>
+                Members ({selectedUserIds.size + 1})
               </Text>
-              <Text style={styles.summaryText}>{user?.name} (You)</Text>
-              {Array.from(selectedUserIds).map((userId) => {
-                const member = allUsers.find((u) => u.uid === userId);
-                return (
-                  <Text key={userId} style={styles.summaryText}>
-                    {member?.name}
-                  </Text>
-                );
-              })}
             </View>
-          </View>
 
-          <View style={styles.footer}>
-            <Button
-              mode="outlined"
-              onPress={() => setStep("select_participants")}
-              disabled={creating}
-              style={[styles.button, styles.backButton]}
-            >
-              Back
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleCreateGroup}
-              loading={creating}
-              disabled={!groupName.trim() || creating}
-              style={[styles.button, styles.createButton]}
-            >
-              Create Group
-            </Button>
+            {/* Current User */}
+            <View style={styles.memberPreviewItem}>
+              <LinearGradient
+                colors={
+                  colorPalette.gradientBlueSoft as [string, string, ...string[]]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.memberPreviewAvatar}
+              >
+                <Text style={styles.memberPreviewAvatarText}>
+                  {user?.name
+                    ?.split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </Text>
+              </LinearGradient>
+              <View style={styles.memberPreviewInfo}>
+                <Text style={styles.memberPreviewName}>{user?.name}</Text>
+                <Text style={styles.memberPreviewRole}>Admin</Text>
+              </View>
+            </View>
+
+            {/* Selected Members */}
+            {Array.from(selectedUserIds).map((userId) => {
+              const member = allUsers.find((u) => u.uid === userId);
+              if (!member) return null;
+
+              const initials = member.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2);
+
+              const gradientColors = [
+                colorPalette.gradientBlueSoft,
+                colorPalette.gradientPurpleSoft,
+                colorPalette.gradientPinkSoft,
+                colorPalette.gradientCyanSoft,
+              ][member.uid.charCodeAt(0) % 4];
+
+              return (
+                <View key={userId} style={styles.memberPreviewItem}>
+                  <LinearGradient
+                    colors={gradientColors as [string, string, ...string[]]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.memberPreviewAvatar}
+                  >
+                    <Text style={styles.memberPreviewAvatarText}>
+                      {initials}
+                    </Text>
+                  </LinearGradient>
+                  <View style={styles.memberPreviewInfo}>
+                    <Text style={styles.memberPreviewName}>{member.name}</Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
+        </ScrollView>
+
+        {/* Fixed Footer with Action Buttons */}
+        <View style={styles.groupNameFooter}>
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => setStep("select_participants")}
+            disabled={creating}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.secondaryButtonText}>Back</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.createGroupButton,
+              (!groupName.trim() || creating) &&
+                styles.createGroupButtonDisabled,
+            ]}
+            onPress={handleCreateGroup}
+            disabled={!groupName.trim() || creating}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={
+                !groupName.trim() || creating
+                  ? [colorPalette.neutral[300], colorPalette.neutral[300]]
+                  : (colorPalette.gradientBlue as [string, string, ...string[]])
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.createGroupButtonGradient}
+            >
+              {creating ? (
+                <ActivityIndicator
+                  size="small"
+                  color={colorPalette.background}
+                />
+              ) : (
+                <>
+                  <MaterialCommunityIcons
+                    name="check"
+                    size={20}
+                    color={colorPalette.background}
+                  />
+                  <Text style={styles.createGroupButtonText}>Create Group</Text>
+                </>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -324,172 +669,354 @@ export const NewGroupScreen: React.FC<NewGroupScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colorPalette.background,
+    backgroundColor: colorPalette.backgroundSecondary,
   },
   centerContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colorPalette.background,
+    backgroundColor: colorPalette.backgroundSecondary,
+    gap: spacing.md,
   },
-  header: {
-    height: 70,
+  loadingIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: colorPalette.neutral[100],
-    shadowColor: colorPalette.neutral[900],
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 6,
+    ...colorPalette.shadows.medium,
   },
-  headerGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+  loadingText: {
+    ...typography.caption,
+    color: colorPalette.neutral[600],
+    marginTop: spacing.sm,
+  },
+  header: {
+    height: 72,
+    justifyContent: "center",
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    backgroundColor: colorPalette.background,
+    ...colorPalette.shadows.small,
   },
   headerContent: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.base,
+    gap: spacing.md,
   },
-  headerLeft: {
-    width: 44,
-    height: 44,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colorPalette.neutral[100],
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+  },
+  headerSubtitle: {
+    ...typography.caption,
+    color: colorPalette.neutral[600],
+    marginTop: 2,
+  },
+  searchContainer: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    backgroundColor: colorPalette.background,
+  },
+  searchInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colorPalette.background,
+    borderRadius: borderRadius.full,
+    paddingLeft: spacing.xs,
+    paddingRight: spacing.sm,
+    height: 52,
+    ...colorPalette.shadows.medium,
+  },
+  searchIconContainer: {
+    marginRight: spacing.sm,
+  },
+  searchIconGradient: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
   },
-  headerCenter: {
+  searchInput: {
     flex: 1,
+    ...typography.body,
+    color: colorPalette.neutral[950],
+    paddingVertical: 0,
+    fontSize: 15,
+  },
+  clearButton: {
+    padding: spacing.xs,
+    marginLeft: spacing.xs,
+  },
+  clearButtonInner: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colorPalette.neutral[200],
+    justifyContent: "center",
     alignItems: "center",
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
+  searchResultsContainer: {
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    color: colorPalette.neutral[700],
-    marginTop: 4,
+  searchResultsText: {
+    ...typography.small,
+    color: colorPalette.neutral[600],
+    fontWeight: "500",
   },
-  headerRight: {
-    width: 44,
-  },
-  contentContainer: {
+  scrollView: {
     flex: 1,
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 20,
   },
-  formContainer: {
-    gap: 16,
+  scrollContent: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.lg,
+    gap: spacing.lg,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-    marginBottom: 8,
+  groupPreviewContainer: {
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  groupIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.large,
+  },
+  inputCard: {
+    backgroundColor: colorPalette.background,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    ...colorPalette.shadows.medium,
+  },
+  inputLabel: {
+    ...typography.bodyBold,
+    color: colorPalette.neutral[950],
+    marginBottom: spacing.sm,
   },
   input: {
-    backgroundColor: "rgba(248, 250, 252, 0.8)",
-    borderRadius: 12,
+    backgroundColor: colorPalette.backgroundSecondary,
+    borderRadius: borderRadius.md,
+    ...typography.body,
+  },
+  inputOutline: {
+    borderRadius: borderRadius.md,
+  },
+  membersCard: {
+    backgroundColor: colorPalette.background,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    ...colorPalette.shadows.medium,
+  },
+  membersCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  membersCardTitle: {
+    ...typography.h4,
+    color: colorPalette.neutral[950],
+  },
+  memberPreviewItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    gap: spacing.md,
+  },
+  memberPreviewAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.small,
+  },
+  memberPreviewAvatarText: {
+    ...typography.bodyBold,
+    color: colorPalette.background,
     fontSize: 16,
   },
-  summaryContainer: {
-    backgroundColor: colorPalette.neutral[50],
-    borderRadius: 12,
-    padding: 16,
+  memberPreviewInfo: {
+    flex: 1,
+    gap: 2,
   },
-  summaryLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-    marginBottom: 8,
+  memberPreviewName: {
+    ...typography.bodyBold,
+    color: colorPalette.neutral[950],
   },
-  summaryText: {
-    fontSize: 14,
-    color: colorPalette.neutral[700],
-    marginBottom: 4,
+  memberPreviewRole: {
+    ...typography.small,
+    color: colorPalette.primary,
+  },
+  groupNameFooter: {
+    flexDirection: "row",
+    gap: spacing.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.base,
+    backgroundColor: colorPalette.background,
+    borderTopWidth: 1,
+    borderTopColor: colorPalette.neutral[100],
+    ...colorPalette.shadows.small,
+  },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: colorPalette.neutral[100],
+    borderRadius: borderRadius.full,
+    paddingVertical: spacing.base,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  secondaryButtonText: {
+    ...typography.bodyBold,
+    color: colorPalette.neutral[950],
+  },
+  createGroupButton: {
+    flex: 2,
+    borderRadius: borderRadius.full,
+    overflow: "hidden",
+    ...colorPalette.shadows.medium,
+  },
+  createGroupButtonDisabled: {
+    opacity: 0.6,
+  },
+  createGroupButtonGradient: {
+    flexDirection: "row",
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.lg,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  createGroupButtonText: {
+    ...typography.bodyBold,
+    color: colorPalette.background,
   },
   listContent: {
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
   },
   userItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colorPalette.neutral[100],
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
     backgroundColor: colorPalette.background,
+    gap: spacing.md,
+  },
+  userSeparator: {
+    height: 1,
+    backgroundColor: colorPalette.neutral[100],
+    marginLeft: spacing.base + 56 + spacing.md,
+  },
+  userAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.small,
+  },
+  userAvatarText: {
+    ...typography.h4,
+    color: colorPalette.background,
   },
   userInfo: {
-    marginLeft: 12,
     flex: 1,
+    gap: 4,
   },
   userName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colorPalette.neutral[900],
+    ...typography.bodyBold,
+    color: colorPalette.neutral[950],
   },
   userEmail: {
-    fontSize: 12,
+    ...typography.small,
     color: colorPalette.neutral[600],
-    marginTop: 2,
+  },
+  checkbox: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: colorPalette.neutral[400],
+    backgroundColor: colorPalette.background,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkboxChecked: {
+    backgroundColor: colorPalette.primary,
+    borderColor: colorPalette.primary,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 40,
+    paddingVertical: spacing.xxl * 2,
+    paddingHorizontal: spacing.lg,
   },
-  emptyText: {
-    fontSize: 16,
-    color: colorPalette.neutral[600],
-  },
-  footer: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 16,
-    paddingBottom: 8,
-  },
-  button: {
-    flex: 1,
-  },
-  backButton: {
-    flex: 1,
-  },
-  createButton: {
-    flex: 1.2,
-  },
-  checkboxContainer: {
-    width: 24,
-    height: 24,
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colorPalette.neutral[400],
+    marginBottom: spacing.lg,
+    ...colorPalette.shadows.medium,
+  },
+  emptyTitle: {
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    ...typography.body,
+    color: colorPalette.neutral[600],
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  footer: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.base,
     backgroundColor: colorPalette.background,
+    borderTopWidth: 1,
+    borderTopColor: colorPalette.neutral[100],
+    ...colorPalette.shadows.small,
   },
-  checkbox: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colorPalette.neutral[400],
+  continueButton: {
+    borderRadius: borderRadius.full,
+    overflow: "hidden",
+    ...colorPalette.shadows.medium,
   },
-  checkboxChecked: {
-    backgroundColor: colorPalette.primary,
-    borderColor: colorPalette.primary,
+  continueButtonDisabled: {
+    opacity: 0.6,
+  },
+  continueButtonGradient: {
+    flexDirection: "row",
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.lg,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  continueButtonText: {
+    ...typography.bodyBold,
+    color: colorPalette.background,
+    fontSize: 16,
   },
 });

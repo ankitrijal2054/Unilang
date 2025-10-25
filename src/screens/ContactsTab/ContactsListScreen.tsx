@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -6,8 +6,11 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   SafeAreaView,
+  Animated,
+  TextInput as RNTextInput,
+  Image,
 } from "react-native";
-import { Appbar, TextInput, Text, Avatar } from "react-native-paper";
+import { Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuthStore } from "../../store/authStore";
@@ -17,7 +20,12 @@ import {
 } from "../../services/userService";
 import { createDirectChat } from "../../services/chatService";
 import { User } from "../../types";
-import { colorPalette } from "../../utils/theme";
+import {
+  colorPalette,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../utils/theme";
 import { formatLastSeen } from "../../utils/formatters";
 
 interface ContactsListScreenProps {
@@ -42,6 +50,22 @@ const UserItem: React.FC<UserItemProps> = ({
 }) => {
   const isOnline = user.status === "online";
 
+  // Get initials for avatar
+  const initials = user.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  // Generate gradient colors based on user ID
+  const gradientColors = [
+    colorPalette.gradientBlueSoft,
+    colorPalette.gradientPurpleSoft,
+    colorPalette.gradientPinkSoft,
+    colorPalette.gradientCyanSoft,
+  ][user.uid.charCodeAt(0) % 4];
+
   return (
     <TouchableOpacity
       onPress={() => !loading && onPress(user)}
@@ -49,18 +73,25 @@ const UserItem: React.FC<UserItemProps> = ({
       disabled={isCurrentUser || loading}
       style={[styles.userItemContainer, isCurrentUser && styles.disabledItem]}
     >
-      {/* Avatar - show real avatar if available, else icon */}
+      {/* Avatar with Gradient or Image */}
       <View style={styles.avatarContainer}>
         {user.avatarUrl ? (
-          <Avatar.Image
-            size={48}
-            source={{ uri: user.avatarUrl }}
-            style={styles.avatar}
-          />
+          <Image source={{ uri: user.avatarUrl }} style={styles.userAvatar} />
         ) : (
-          <Avatar.Icon size={48} icon="account" style={styles.avatar} />
+          <LinearGradient
+            colors={gradientColors as [string, string, ...string[]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.userAvatar}
+          >
+            <Text style={styles.userAvatarText}>{initials}</Text>
+          </LinearGradient>
         )}
-        {isOnline && !isCurrentUser && <View style={styles.onlineIndicator} />}
+        {isOnline && !isCurrentUser && (
+          <View style={styles.onlineIndicator}>
+            <View style={styles.onlineIndicatorInner} />
+          </View>
+        )}
       </View>
 
       {/* User Info */}
@@ -78,28 +109,43 @@ const UserItem: React.FC<UserItemProps> = ({
         >
           {user.email}
         </Text>
-        <Text
-          style={[
-            styles.userStatus,
-            isOnline ? styles.onlineStatus : styles.offlineStatus,
-            isCurrentUser && styles.disabledText,
-          ]}
-        >
-          {isOnline
-            ? "Active now"
-            : `Last seen ${formatLastSeen(
-                user.lastSeen || new Date().toISOString()
-              )}`}
-        </Text>
+        {!isCurrentUser && (
+          <View style={styles.statusRow}>
+            <View
+              style={[
+                styles.statusDot,
+                {
+                  backgroundColor: isOnline
+                    ? colorPalette.success
+                    : colorPalette.neutral[400],
+                },
+              ]}
+            />
+            <Text
+              style={[
+                styles.userStatus,
+                isOnline ? styles.onlineStatus : styles.offlineStatus,
+              ]}
+            >
+              {isOnline
+                ? "Active now"
+                : `Last seen ${formatLastSeen(
+                    user.lastSeen || new Date().toISOString()
+                  )}`}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Arrow Icon */}
       {!isCurrentUser && (
-        <MaterialCommunityIcons
-          name="chevron-right"
-          size={24}
-          color={colorPalette.neutral[500]}
-        />
+        <View style={styles.arrowContainer}>
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={20}
+            color={colorPalette.neutral[400]}
+          />
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -112,6 +158,10 @@ export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(true);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchInputRef = useRef<RNTextInput>(null);
+  const searchBorderAnim = useRef(new Animated.Value(0)).current;
+  const searchScaleAnim = useRef(new Animated.Value(1)).current;
 
   // Fetch all users and setup real-time listeners
   useEffect(() => {
@@ -137,8 +187,8 @@ export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
               // Online users first
               if (a.status === "online" && b.status !== "online") return -1;
               if (a.status !== "online" && b.status === "online") return 1;
-              // Then by name
-              return a.name.localeCompare(b.name);
+              // Then by name (with null/undefined safety)
+              return (a.name || "").localeCompare(b.name || "");
             });
 
           setAllUsers(filteredUsers);
@@ -158,7 +208,7 @@ export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
                         return -1;
                       if (a.status !== "online" && b.status === "online")
                         return 1;
-                      return a.name.localeCompare(b.name);
+                      return (a.name || "").localeCompare(b.name || "");
                     })
                 );
               }
@@ -195,6 +245,42 @@ export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
     );
   }, [allUsers, searchText]);
 
+  const handleSearchFocus = () => {
+    setSearchFocused(true);
+    Animated.parallel([
+      Animated.spring(searchBorderAnim, {
+        toValue: 1,
+        useNativeDriver: false,
+        tension: 50,
+        friction: 7,
+      }),
+      Animated.spring(searchScaleAnim, {
+        toValue: 1.02,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+      }),
+    ]).start();
+  };
+
+  const handleSearchBlur = () => {
+    setSearchFocused(false);
+    Animated.parallel([
+      Animated.spring(searchBorderAnim, {
+        toValue: 0,
+        useNativeDriver: false,
+        tension: 50,
+        friction: 7,
+      }),
+      Animated.spring(searchScaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+      }),
+    ]).start();
+  };
+
   const handleUserPress = async (selectedUser: User) => {
     // Navigate to contact card to show user profile
     navigation.navigate("ContactCard", {
@@ -229,55 +315,139 @@ export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
+      {/* Modern Header */}
       <View style={styles.header}>
-        <LinearGradient
-          colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
-          locations={[0, 1]}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <TouchableOpacity onPress={() => navigation.goBack()}>
-                <MaterialCommunityIcons
-                  name="arrow-left"
-                  size={28}
-                  color={colorPalette.neutral[900]}
-                />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.headerCenter}>
-              <Text style={styles.headerTitle}>Contacts</Text>
-            </View>
-            <View style={styles.headerRight} />
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={24}
+              color={colorPalette.neutral[950]}
+            />
+          </TouchableOpacity>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>Contacts</Text>
+            <Text style={styles.headerSubtitle}>
+              {allUsers.length} contact{allUsers.length !== 1 ? "s" : ""}{" "}
+              available
+            </Text>
           </View>
-        </LinearGradient>
+        </View>
       </View>
 
-      {/* Search Input */}
+      {/* Enhanced Search Bar */}
       <View style={styles.searchContainer}>
-        <TextInput
-          placeholder="Search by name or email..."
-          placeholderTextColor={colorPalette.neutral[400]}
-          value={searchText}
-          onChangeText={setSearchText}
-          mode="outlined"
-          left={
-            <TextInput.Icon icon="magnify" color={colorPalette.neutral[400]} />
-          }
-          style={styles.searchInput}
-          editable={!loading}
-          outlineColor={colorPalette.neutral[200]}
-          activeOutlineColor={colorPalette.primary}
-          outlineStyle={{ borderRadius: 12 }}
-        />
+        <Animated.View
+          style={{
+            transform: [{ scale: searchScaleAnim }],
+          }}
+        >
+          <Animated.View
+            style={[
+              styles.searchInputWrapper,
+              {
+                borderWidth: 2,
+                borderColor: searchBorderAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["transparent", colorPalette.primary],
+                }),
+              },
+            ]}
+          >
+            <View style={styles.searchIconContainer}>
+              <LinearGradient
+                colors={
+                  searchFocused
+                    ? (colorPalette.gradientBlue as [
+                        string,
+                        string,
+                        ...string[]
+                      ])
+                    : [colorPalette.neutral[400], colorPalette.neutral[400]]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.searchIconGradient}
+              >
+                <MaterialCommunityIcons
+                  name="magnify"
+                  size={20}
+                  color={colorPalette.background}
+                />
+              </LinearGradient>
+            </View>
+            <RNTextInput
+              ref={searchInputRef}
+              style={styles.searchInput}
+              placeholder="Search by name or email..."
+              placeholderTextColor={colorPalette.neutral[500]}
+              value={searchText}
+              onChangeText={setSearchText}
+              onFocus={handleSearchFocus}
+              onBlur={handleSearchBlur}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!loading}
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSearchText("");
+                  searchInputRef.current?.focus();
+                }}
+                style={styles.clearButton}
+                activeOpacity={0.7}
+              >
+                <View style={styles.clearButtonInner}>
+                  <MaterialCommunityIcons
+                    name="close"
+                    size={16}
+                    color={colorPalette.neutral[600]}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
+          </Animated.View>
+        </Animated.View>
+
+        {/* Search Results Count */}
+        {searchText.length > 0 && (
+          <View style={styles.searchResultsContainer}>
+            <Text style={styles.searchResultsText}>
+              {filteredUsers.length}{" "}
+              {filteredUsers.length === 1 ? "result" : "results"} found
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Users List */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colorPalette.primary} />
-          <Text style={styles.loadingText}>Loading users...</Text>
+          <LinearGradient
+            colors={
+              colorPalette.gradientBlueSoft as [string, string, ...string[]]
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.loadingIconContainer}
+          >
+            <MaterialCommunityIcons
+              name="account-multiple"
+              size={40}
+              color={colorPalette.background}
+            />
+          </LinearGradient>
+          <ActivityIndicator
+            size="large"
+            color={colorPalette.primary}
+            style={{ marginTop: spacing.lg }}
+          />
+          <Text style={styles.loadingText}>Loading contacts...</Text>
         </View>
       ) : (
         <FlatList
@@ -285,6 +455,8 @@ export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
           renderItem={renderUserItem}
           keyExtractor={(item) => item.uid}
           ListEmptyComponent={renderEmpty}
+          ItemSeparatorComponent={() => <View style={styles.userSeparator} />}
+          keyboardShouldPersistTaps="handled"
           scrollEnabled={true}
           removeClippedSubviews={true}
           maxToRenderPerBatch={20}
@@ -298,152 +470,231 @@ export const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colorPalette.background,
+    backgroundColor: colorPalette.backgroundSecondary,
   },
   header: {
-    height: 70,
+    height: 72,
     justifyContent: "center",
-    alignItems: "center",
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: colorPalette.neutral[100],
-    shadowColor: colorPalette.neutral[900],
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  headerGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    backgroundColor: colorPalette.background,
+    ...colorPalette.shadows.small,
   },
   headerContent: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.base,
+    gap: spacing.md,
   },
-  headerLeft: {
-    width: 44,
-    height: 44,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colorPalette.neutral[100],
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+  },
+  headerSubtitle: {
+    ...typography.caption,
+    color: colorPalette.neutral[600],
+    marginTop: 2,
+  },
+  searchContainer: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    backgroundColor: colorPalette.background,
+  },
+  searchInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colorPalette.background,
+    borderRadius: borderRadius.full,
+    paddingLeft: spacing.xs,
+    paddingRight: spacing.sm,
+    height: 52,
+    ...colorPalette.shadows.medium,
+  },
+  searchIconContainer: {
+    marginRight: spacing.sm,
+  },
+  searchIconGradient: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
   },
-  headerCenter: {
+  searchInput: {
     flex: 1,
+    ...typography.body,
+    color: colorPalette.neutral[950],
+    paddingVertical: 0,
+    fontSize: 15,
+  },
+  clearButton: {
+    padding: spacing.xs,
+    marginLeft: spacing.xs,
+  },
+  clearButtonInner: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colorPalette.neutral[200],
+    justifyContent: "center",
     alignItems: "center",
   },
-  headerRight: {
-    width: 44,
+  searchResultsContainer: {
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-  },
-  searchContainer: {
-    padding: 12,
-    backgroundColor: colorPalette.background,
-    borderBottomWidth: 1,
-    borderBottomColor: colorPalette.neutral[200],
-  },
-  searchInput: {
-    backgroundColor: "rgba(248, 250, 252, 0.8)",
-    borderRadius: 12,
-    fontSize: 16,
+  searchResultsText: {
+    ...typography.small,
+    color: colorPalette.neutral[600],
+    fontWeight: "500",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    gap: spacing.md,
+  },
+  loadingIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.medium,
   },
   loadingText: {
-    marginTop: 12,
+    ...typography.caption,
     color: colorPalette.neutral[600],
-    fontSize: 14,
+    marginTop: spacing.sm,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingVertical: spacing.xxl * 2,
+    paddingHorizontal: spacing.lg,
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.lg,
+    ...colorPalette.shadows.medium,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-    marginTop: 16,
-    marginBottom: 8,
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
   emptySubtitle: {
-    fontSize: 13,
+    ...typography.body,
     color: colorPalette.neutral[600],
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 22,
   },
   userItemContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colorPalette.neutral[100],
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
     backgroundColor: colorPalette.background,
+    gap: spacing.md,
   },
   disabledItem: {
-    opacity: 0.6,
+    opacity: 0.5,
+  },
+  userSeparator: {
+    height: 1,
+    backgroundColor: colorPalette.neutral[100],
+    marginLeft: spacing.base + 60 + spacing.md,
   },
   avatarContainer: {
     position: "relative",
-    marginRight: 12,
   },
-  avatar: {
-    backgroundColor: colorPalette.primary,
+  userAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.small,
+  },
+  userAvatarText: {
+    ...typography.h4,
+    color: colorPalette.background,
   },
   onlineIndicator: {
     position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    bottom: 2,
+    right: 2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colorPalette.background,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.small,
+  },
+  onlineIndicatorInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: colorPalette.success,
-    borderWidth: 2,
-    borderColor: colorPalette.background,
   },
   userInfo: {
     flex: 1,
-    gap: 2,
+    gap: 4,
   },
   userName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-    marginBottom: 2,
+    ...typography.bodyBold,
+    color: colorPalette.neutral[950],
   },
   userEmail: {
-    fontSize: 13,
+    ...typography.small,
     color: colorPalette.neutral[600],
-    marginBottom: 2,
+  },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   userStatus: {
-    fontSize: 12,
+    ...typography.small,
   },
   onlineStatus: {
     color: colorPalette.success,
-    fontWeight: "600",
+    fontWeight: "500",
   },
   offlineStatus: {
     color: colorPalette.neutral[500],
   },
   disabledText: {
     opacity: 0.5,
+  },
+  arrowContainer: {
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

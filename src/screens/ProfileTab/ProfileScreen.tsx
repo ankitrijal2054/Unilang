@@ -2,25 +2,16 @@ import React, { useState } from "react";
 import {
   StyleSheet,
   View,
-  ScrollView,
   Alert,
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
+  Image,
+  TextInput as RNTextInput,
 } from "react-native";
-import {
-  Appbar,
-  Text,
-  Button,
-  Divider,
-  TextInput,
-  Dialog,
-  Portal,
-  RadioButton,
-  Avatar,
-} from "react-native-paper";
+import { Text, Dialog, Portal, RadioButton } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
@@ -29,7 +20,12 @@ import { signOutUser } from "../../services/authService";
 import { uploadProfilePicture } from "../../services/storageService";
 import { AvatarPickerModal } from "../../components/AvatarPickerModal";
 import { SUPPORTED_LANGUAGES } from "../../utils/constants";
-import { colorPalette } from "../../utils/theme";
+import {
+  colorPalette,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../utils/theme";
 
 interface ProfileScreenProps {
   navigation: any;
@@ -56,30 +52,42 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <LinearGradient
-            colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
-            locations={[0, 1]}
-            style={styles.headerGradient}
-          >
-            <View style={styles.headerContent}>
-              <View style={styles.headerLeft}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                  <MaterialCommunityIcons
-                    name="arrow-left"
-                    size={28}
-                    color={colorPalette.neutral[900]}
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.headerCenter}>
-                <Text style={styles.headerTitle}>Profile</Text>
-              </View>
-              <View style={styles.headerRight} />
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons
+                name="arrow-left"
+                size={24}
+                color={colorPalette.neutral[950]}
+              />
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>My Profile</Text>
             </View>
-          </LinearGradient>
+          </View>
         </View>
         <View style={styles.emptyContainer}>
-          <Text>No user data available</Text>
+          <LinearGradient
+            colors={
+              colorPalette.gradientOrange as [string, string, ...string[]]
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.emptyIconContainer}
+          >
+            <MaterialCommunityIcons
+              name="account-off"
+              size={48}
+              color={colorPalette.background}
+            />
+          </LinearGradient>
+          <Text style={styles.emptyTitle}>No User Data</Text>
+          <Text style={styles.emptyText}>
+            User information could not be loaded.
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -88,6 +96,22 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const currentLanguageName = SUPPORTED_LANGUAGES.find(
     (lang) => lang.code === selectedLanguage
   )?.name;
+
+  // Get initials for avatar
+  const initials = user.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  // Generate gradient colors based on user ID
+  const gradientColors = [
+    colorPalette.gradientBlueSoft,
+    colorPalette.gradientPurpleSoft,
+    colorPalette.gradientPinkSoft,
+    colorPalette.gradientCyanSoft,
+  ][user.uid.charCodeAt(0) % 4];
 
   const handleAvatarSelected = async (imageUri: string) => {
     if (!user?.uid) {
@@ -173,7 +197,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           user: { ...user, preferred_language: selectedLanguage },
         });
         setShowLanguageDialog(false);
-        Alert.alert("Success", "Language updated successfully");
         console.log("✅ Language updated:", selectedLanguage);
       } else {
         Alert.alert("Error", "Failed to update language. Please try again.");
@@ -218,238 +241,275 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     setEditingName(false);
   };
 
+  const isOnline = user.status === "online";
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.container}
       >
+        {/* Modern Header */}
         <View style={styles.header}>
-          <LinearGradient
-            colors={[colorPalette.neutral[100], colorPalette.neutral[100]]}
-            locations={[0, 1]}
-            style={styles.headerGradient}
-          >
-            <View style={styles.headerContent}>
-              <View style={styles.headerLeft}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                  <MaterialCommunityIcons
-                    name="arrow-left"
-                    size={28}
-                    color={colorPalette.neutral[900]}
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.headerCenter}>
-                <Text style={styles.headerTitle}>Profile</Text>
-              </View>
-              <View style={styles.headerRight} />
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons
+                name="arrow-left"
+                size={24}
+                color={colorPalette.neutral[950]}
+              />
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>My Profile</Text>
             </View>
-          </LinearGradient>
+          </View>
         </View>
 
-        <ScrollView style={styles.content}>
-          {/* Avatar Section */}
-          <View style={styles.avatarSection}>
+        <View style={styles.content}>
+          {/* Profile Card with Avatar */}
+          <View style={styles.profileCard}>
             <TouchableOpacity
               onPress={() => setShowAvatarPicker(true)}
               disabled={isUploadingAvatar}
               activeOpacity={0.7}
             >
-              <View style={styles.avatarContainer}>
+              <View style={styles.avatarSection}>
                 {isUploadingAvatar ? (
-                  <View style={styles.circularAvatar}>
+                  <View style={styles.avatarGradient}>
                     <ActivityIndicator
                       size="large"
                       color={colorPalette.primary}
                     />
                   </View>
-                ) : user?.avatarUrl ? (
-                  <Avatar.Image
-                    size={100}
+                ) : user.avatarUrl ? (
+                  <Image
                     source={{ uri: user.avatarUrl }}
                     style={styles.avatarImage}
                   />
                 ) : (
-                  <View style={styles.circularAvatar}>
-                    <MaterialCommunityIcons
-                      name="account-circle"
-                      size={100}
-                      color={colorPalette.primary}
-                    />
-                  </View>
+                  <LinearGradient
+                    colors={gradientColors as [string, string, ...string[]]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.avatarGradient}
+                  >
+                    <Text style={styles.avatarText}>{initials}</Text>
+                  </LinearGradient>
                 )}
 
                 {/* Camera Icon Overlay */}
                 {!isUploadingAvatar && (
                   <View style={styles.cameraIconContainer}>
-                    <MaterialCommunityIcons
-                      name="camera-plus"
-                      size={24}
-                      color="#fff"
-                    />
+                    <LinearGradient
+                      colors={
+                        colorPalette.gradientBlue as [
+                          string,
+                          string,
+                          ...string[]
+                        ]
+                      }
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.cameraIconGradient}
+                    >
+                      <MaterialCommunityIcons
+                        name="camera-plus"
+                        size={20}
+                        color={colorPalette.background}
+                      />
+                    </LinearGradient>
                   </View>
                 )}
               </View>
             </TouchableOpacity>
-          </View>
 
-          {/* User Info Section */}
-          <View style={styles.infoSection}>
-            <Text style={styles.sectionTitle}>Account Information</Text>
-            <Divider />
-
-            {/* Email - Read Only */}
-            <View style={styles.infoRow}>
-              <View style={styles.infoLabel}>
-                <MaterialCommunityIcons
-                  name="email"
-                  size={20}
-                  color={colorPalette.primary}
-                />
-                <Text style={styles.infoLabelText}>Email</Text>
-              </View>
-              <Text style={styles.infoValue}>{user.email}</Text>
-            </View>
-
-            <Divider style={styles.infoDivider} />
-
-            {/* Display Name - Editable */}
+            {/* Name Section */}
             {!editingName ? (
-              <>
-                <View style={styles.infoRow}>
-                  <View style={styles.infoLabel}>
-                    <MaterialCommunityIcons
-                      name="account"
-                      size={20}
-                      color={colorPalette.primary}
-                    />
-                    <Text style={styles.infoLabelText}>Display Name</Text>
-                  </View>
-                  <View style={styles.nameValueContainer}>
-                    <Text style={styles.infoValue}>{user.name}</Text>
-                    <Button
-                      compact
-                      onPress={() => {
-                        setNewName(user.name);
-                        setEditingName(true);
-                      }}
-                    >
-                      Edit
-                    </Button>
-                  </View>
-                </View>
-              </>
-            ) : (
-              <>
-                <View style={styles.editNameContainer}>
+              <View style={styles.nameSection}>
+                <Text style={styles.userName}>{user.name}</Text>
+                <TouchableOpacity
+                  style={styles.editNameButton}
+                  onPress={() => {
+                    setNewName(user.name);
+                    setEditingName(true);
+                  }}
+                  activeOpacity={0.7}
+                >
                   <MaterialCommunityIcons
-                    name="account"
-                    size={20}
+                    name="pencil"
+                    size={16}
                     color={colorPalette.primary}
                   />
-                  <TextInput
-                    style={styles.nameInput}
-                    placeholder="Enter your name"
-                    value={newName}
-                    onChangeText={setNewName}
-                    mode="flat"
-                    dense
-                    editable={!isSavingName}
-                  />
-                </View>
-                <View style={styles.editButtonsContainer}>
-                  <Button
-                    mode="outlined"
+                  <Text style={styles.editNameButtonText}>Edit Name</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.editNameContainer}>
+                <RNTextInput
+                  style={styles.nameInput}
+                  placeholder="Enter your name"
+                  value={newName}
+                  onChangeText={setNewName}
+                  editable={!isSavingName}
+                  autoFocus
+                />
+                <View style={styles.editButtons}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
                     onPress={handleCancelNameEdit}
                     disabled={isSavingName}
-                    compact
+                    activeOpacity={0.7}
                   >
-                    Cancel
-                  </Button>
-                  <Button
-                    mode="contained"
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.saveButton}
                     onPress={handleSaveName}
-                    loading={isSavingName}
                     disabled={isSavingName}
-                    compact
+                    activeOpacity={0.7}
                   >
-                    Save
-                  </Button>
+                    <LinearGradient
+                      colors={
+                        colorPalette.gradientBlue as [
+                          string,
+                          string,
+                          ...string[]
+                        ]
+                      }
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.saveButtonGradient}
+                    >
+                      {isSavingName ? (
+                        <ActivityIndicator
+                          size="small"
+                          color={colorPalette.background}
+                        />
+                      ) : (
+                        <Text style={styles.saveButtonText}>Save</Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
                 </View>
-              </>
+              </View>
             )}
 
-            <Divider style={styles.infoDivider} />
-
-            {/* Preferred Language */}
-            <View style={styles.infoRow}>
-              <View style={styles.infoLabel}>
-                <MaterialCommunityIcons
-                  name="translate"
-                  size={20}
-                  color={colorPalette.primary}
-                />
-                <Text style={styles.infoLabelText}>Language</Text>
-              </View>
-              <View style={styles.nameValueContainer}>
-                <Text style={styles.infoValue}>{currentLanguageName}</Text>
-                <Button compact onPress={() => setShowLanguageDialog(true)}>
-                  Change
-                </Button>
-              </View>
+            {/* Email Display */}
+            <View style={styles.emailRow}>
+              <MaterialCommunityIcons
+                name="email"
+                size={16}
+                color={colorPalette.neutral[600]}
+              />
+              <Text style={styles.emailText} numberOfLines={1}>
+                {user.email}
+              </Text>
             </View>
 
-            <Divider style={styles.infoDivider} />
-
-            {/* Status - Read Only */}
-            <View style={styles.infoRow}>
-              <View style={styles.infoLabel}>
-                <Text
-                  style={[
-                    styles.statusIndicator,
-                    {
-                      color:
-                        user.status === "online"
-                          ? colorPalette.success
-                          : colorPalette.neutral[500],
-                    },
-                  ]}
-                >
-                  ●
-                </Text>
-                <Text style={styles.infoLabelText}>Status</Text>
-              </View>
-              <Text
+            {/* Status Display */}
+            <View style={styles.statusRow}>
+              <View
                 style={[
-                  styles.infoValue,
+                  styles.statusDot,
                   {
-                    color:
-                      user.status === "online"
-                        ? colorPalette.success
-                        : colorPalette.neutral[500],
+                    backgroundColor: isOnline
+                      ? colorPalette.success
+                      : colorPalette.neutral[400],
                   },
                 ]}
+              />
+              <Text
+                style={[
+                  styles.statusText,
+                  isOnline ? styles.onlineStatus : styles.offlineStatus,
+                ]}
               >
-                {user.status === "online" ? "Online" : "Offline"}
+                {isOnline ? "Online" : "Offline"}
               </Text>
             </View>
           </View>
 
-          {/* Sign Out Button */}
-          <View style={styles.actionSection}>
-            <Button
-              mode="contained"
-              onPress={handleLogout}
-              loading={isUpdating}
-              disabled={isUpdating}
-              buttonColor={colorPalette.error}
-              style={styles.logoutButton}
+          {/* Info Card */}
+          <View style={styles.infoCard}>
+            {/* Language */}
+            <TouchableOpacity
+              style={styles.infoItem}
+              onPress={() => setShowLanguageDialog(true)}
+              activeOpacity={0.7}
             >
-              Sign Out
-            </Button>
+              <LinearGradient
+                colors={
+                  colorPalette.gradientPurpleSoft as [
+                    string,
+                    string,
+                    ...string[]
+                  ]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.infoIconContainer}
+              >
+                <MaterialCommunityIcons
+                  name="translate"
+                  size={16}
+                  color={colorPalette.background}
+                />
+              </LinearGradient>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Preferred Language</Text>
+                <Text style={styles.infoValue}>{currentLanguageName}</Text>
+              </View>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={20}
+                color={colorPalette.neutral[400]}
+              />
+            </TouchableOpacity>
           </View>
-        </ScrollView>
+
+          {/* Sign Out Button */}
+          <TouchableOpacity
+            onPress={handleLogout}
+            disabled={isUpdating}
+            activeOpacity={0.8}
+            style={[
+              styles.logoutButton,
+              isUpdating && styles.logoutButtonDisabled,
+            ]}
+          >
+            <LinearGradient
+              colors={
+                isUpdating
+                  ? [colorPalette.neutral[300], colorPalette.neutral[300]]
+                  : (colorPalette.gradientOrange as [
+                      string,
+                      string,
+                      ...string[]
+                    ])
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.logoutButtonGradient}
+            >
+              {isUpdating ? (
+                <ActivityIndicator color={colorPalette.background} />
+              ) : (
+                <>
+                  <MaterialCommunityIcons
+                    name="logout"
+                    size={20}
+                    color={colorPalette.background}
+                  />
+                  <Text style={styles.logoutButtonText}>Sign Out</Text>
+                </>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
 
         {/* Language Selection Dialog */}
         <Portal>
@@ -459,8 +519,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               setSelectedLanguage(user.preferred_language);
               setShowLanguageDialog(false);
             }}
+            style={styles.dialog}
           >
-            <Dialog.Title>Select Language</Dialog.Title>
+            <Dialog.Title style={styles.dialogTitle}>
+              Select Language
+            </Dialog.Title>
             <Dialog.Content>
               <RadioButton.Group
                 value={selectedLanguage}
@@ -478,25 +541,43 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               </RadioButton.Group>
             </Dialog.Content>
             <Dialog.Actions>
-              <Button
+              <TouchableOpacity
                 onPress={() => {
                   setSelectedLanguage(user.preferred_language);
                   setShowLanguageDialog(false);
                 }}
+                style={styles.dialogCancelButton}
+                activeOpacity={0.7}
               >
-                Cancel
-              </Button>
-              <Button
-                mode="contained"
+                <Text style={styles.dialogCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 onPress={handleSaveLanguage}
-                loading={isSavingLanguage}
                 disabled={
                   isSavingLanguage ||
                   selectedLanguage === user.preferred_language
                 }
+                style={styles.dialogSaveButton}
+                activeOpacity={0.7}
               >
-                Save
-              </Button>
+                <LinearGradient
+                  colors={
+                    colorPalette.gradientBlue as [string, string, ...string[]]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.dialogSaveGradient}
+                >
+                  {isSavingLanguage ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={colorPalette.background}
+                    />
+                  ) : (
+                    <Text style={styles.dialogSaveText}>Save</Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
             </Dialog.Actions>
           </Dialog>
         </Portal>
@@ -516,87 +597,286 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colorPalette.backgroundSecondary,
+  },
+  header: {
+    height: 72,
+    justifyContent: "center",
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
     backgroundColor: colorPalette.background,
+    ...colorPalette.shadows.small,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.base,
+    gap: spacing.md,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colorPalette.neutral[100],
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    ...typography.h3,
+    color: colorPalette.neutral[950],
   },
   content: {
     flex: 1,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.base,
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  profileCard: {
+    backgroundColor: colorPalette.background,
+    borderRadius: borderRadius.xxl,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    alignItems: "center",
+    ...colorPalette.shadows.medium,
   },
   avatarSection: {
+    position: "relative",
+    marginBottom: spacing.sm,
+  },
+  avatarImage: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    ...colorPalette.shadows.medium,
+  },
+  avatarGradient: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colorPalette.neutral[200],
-    backgroundColor: colorPalette.background,
+    ...colorPalette.shadows.medium,
   },
-  avatarContainer: {
+  avatarText: {
+    ...typography.h1,
+    fontSize: 44,
+    color: colorPalette.background,
+  },
+  cameraIconContainer: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    borderRadius: 15,
+    overflow: "hidden",
+    ...colorPalette.shadows.small,
+  },
+  cameraIconGradient: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
     alignItems: "center",
+    borderWidth: 2,
+    borderColor: colorPalette.background,
   },
-  avatarEmoji: {
-    fontSize: 48,
+  nameSection: {
+    alignItems: "center",
+    width: "100%",
+    marginBottom: spacing.xs,
   },
-  statusIndicator: {
-    fontSize: 14,
-    marginRight: 12,
-    width: 24,
+  userName: {
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+    marginBottom: spacing.xs,
     textAlign: "center",
   },
-  infoSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-    marginBottom: 12,
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  infoLabel: {
+  editNameButton: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1,
-    gap: 12,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
-  infoLabelText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colorPalette.neutral[700],
-  },
-  infoValue: {
-    fontSize: 14,
-    color: colorPalette.neutral[900],
+  editNameButtonText: {
+    ...typography.small,
+    color: colorPalette.primary,
     fontWeight: "500",
   },
-  nameValueContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 8,
-  },
-  infoDivider: {
-    marginVertical: 0,
-  },
   editNameContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    gap: 12,
+    width: "100%",
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
   nameInput: {
-    flex: 1,
-    backgroundColor: colorPalette.surface,
+    ...typography.body,
+    backgroundColor: colorPalette.neutral[50],
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colorPalette.neutral[200],
   },
-  editButtonsContainer: {
+  editButtons: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: 8,
-    paddingVertical: 8,
-    paddingBottom: 16,
+    gap: spacing.sm,
+  },
+  cancelButton: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colorPalette.neutral[100],
+  },
+  cancelButtonText: {
+    ...typography.small,
+    color: colorPalette.neutral[700],
+    fontWeight: "500",
+  },
+  saveButton: {
+    borderRadius: borderRadius.lg,
+    overflow: "hidden",
+    ...colorPalette.shadows.small,
+  },
+  saveButtonGradient: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    minWidth: 60,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    ...typography.small,
+    color: colorPalette.background,
+    fontWeight: "500",
+  },
+  emailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: colorPalette.neutral[50],
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.xs,
+    width: "100%",
+  },
+  emailText: {
+    ...typography.small,
+    color: colorPalette.neutral[700],
+    textAlign: "center",
+  },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
+    ...typography.small,
+  },
+  onlineStatus: {
+    color: colorPalette.success,
+    fontWeight: "500",
+  },
+  offlineStatus: {
+    color: colorPalette.neutral[500],
+  },
+  infoCard: {
+    backgroundColor: colorPalette.background,
+    borderRadius: borderRadius.xxl,
+    padding: spacing.lg,
+    ...colorPalette.shadows.medium,
+  },
+  infoItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  infoIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.small,
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoLabel: {
+    ...typography.caption,
+    color: colorPalette.neutral[600],
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  infoValue: {
+    ...typography.bodyBold,
+    color: colorPalette.neutral[950],
+  },
+  logoutButton: {
+    borderRadius: borderRadius.xxl,
+    overflow: "hidden",
+    ...colorPalette.shadows.medium,
+  },
+  logoutButtonDisabled: {
+    opacity: 0.6,
+  },
+  logoutButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.base + 2,
+    paddingHorizontal: spacing.xl,
+  },
+  logoutButtonText: {
+    ...typography.bodyBold,
+    color: colorPalette.background,
+    fontSize: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+    ...colorPalette.shadows.medium,
+  },
+  emptyTitle: {
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+    marginBottom: spacing.xs,
+    textAlign: "center",
+  },
+  emptyText: {
+    ...typography.body,
+    color: colorPalette.neutral[600],
+    textAlign: "center",
+  },
+  dialog: {
+    borderRadius: borderRadius.xxl,
+  },
+  dialogTitle: {
+    ...typography.h4,
+    color: colorPalette.neutral[950],
   },
   languageOption: {
     marginVertical: 4,
@@ -605,91 +885,27 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     paddingHorizontal: 0,
   },
-  actionSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    borderTopWidth: 1,
-    borderTopColor: colorPalette.neutral[200],
+  dialogCancelButton: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    marginRight: spacing.sm,
   },
-  logoutButton: {
-    paddingVertical: 8,
+  dialogCancelText: {
+    ...typography.bodyBold,
+    color: colorPalette.neutral[700],
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
+  dialogSaveButton: {
+    borderRadius: borderRadius.lg,
+    overflow: "hidden",
+  },
+  dialogSaveGradient: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    minWidth: 60,
     alignItems: "center",
   },
-  header: {
-    height: 70,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingTop: 12,
-    paddingBottom: 12,
-    backgroundColor: colorPalette.neutral[100],
-    shadowColor: colorPalette.neutral[900],
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  headerGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-  },
-  headerLeft: {
-    width: 44,
-    height: 44,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerRight: {
-    width: 44,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-  },
-  circularAvatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colorPalette.neutral[100],
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  cameraIconContainer: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    backgroundColor: colorPalette.primary,
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#fff",
+  dialogSaveText: {
+    ...typography.bodyBold,
+    color: colorPalette.background,
   },
 });

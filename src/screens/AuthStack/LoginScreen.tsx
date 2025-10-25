@@ -6,13 +6,22 @@ import {
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
+  TouchableOpacity,
+  TextInput as RNTextInput,
+  ActivityIndicator,
 } from "react-native";
-import { TextInput, Button, Text, Snackbar } from "react-native-paper";
+import { Text, Snackbar } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
-import { signIn } from "../../services/authService";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { signIn, signInWithGoogle } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
-import { colorPalette } from "../../utils/theme";
+import {
+  colorPalette,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../utils/theme";
 
 interface LoginScreenProps {
   navigation: any;
@@ -63,10 +72,44 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken;
+
+      if (!idToken) {
+        setError("Failed to get Google credentials");
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await signInWithGoogle(idToken);
+
+      if (result.success) {
+        console.log("✅ Google sign in successful");
+      } else {
+        setError(result.error || "Google sign in failed");
+        setStoreError(result.error || null);
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Google sign in failed";
+      console.error("Google sign in error:", errorMessage);
+      setError(errorMessage);
+      setStoreError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={["#F8FAFC", "#E2E8F0"]}
+        colors={[colorPalette.background, colorPalette.neutral[50]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
@@ -82,92 +125,147 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
           >
             {/* Header Section */}
             <View style={styles.headerSection}>
-              <View style={styles.logoContainer}>
-                <Text style={styles.appName}>Unilang</Text>
-              </View>
+              <LinearGradient
+                colors={
+                  colorPalette.gradientBlue as [string, string, ...string[]]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.logoGradient}
+              >
+                <MaterialCommunityIcons
+                  name="message-text"
+                  size={40}
+                  color="#FFFFFF"
+                />
+              </LinearGradient>
+              <Text style={styles.appName}>Unilang</Text>
               <Text style={styles.tagline}>Chat freely, in any language</Text>
             </View>
 
-            {/* Form Card with Frosted Glass Effect */}
-            <BlurView intensity={90} style={styles.blurContainer}>
-              <View style={styles.formCard}>
-                <Text style={styles.formTitle}>Welcome back</Text>
-                <Text style={styles.formSubtitle}>Sign in to your account</Text>
+            {/* Form Card */}
+            <View style={styles.formCard}>
+              <Text style={styles.formTitle}>Welcome back</Text>
+              <Text style={styles.formSubtitle}>Sign in to your account</Text>
 
-                {/* Email Input */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Email</Text>
-                  <TextInput
+              {/* Email Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Email</Text>
+                <View style={styles.inputWrapper}>
+                  <MaterialCommunityIcons
+                    name="email-outline"
+                    size={18}
+                    color={colorPalette.neutral[500]}
+                    style={styles.inputIcon}
+                  />
+                  <RNTextInput
                     value={email}
                     onChangeText={setEmail}
-                    mode="outlined"
                     placeholder="you@example.com"
+                    placeholderTextColor={colorPalette.neutral[400]}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     editable={!isLoading}
                     style={styles.input}
-                    outlineColor="#E2E8F0"
-                    activeOutlineColor={colorPalette.primary}
                   />
                 </View>
+              </View>
 
-                {/* Password Input */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Password</Text>
-                  <TextInput
+              {/* Password Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Password</Text>
+                <View style={styles.inputWrapper}>
+                  <MaterialCommunityIcons
+                    name="lock-outline"
+                    size={18}
+                    color={colorPalette.neutral[500]}
+                    style={styles.inputIcon}
+                  />
+                  <RNTextInput
                     value={password}
                     onChangeText={setPassword}
-                    mode="outlined"
                     placeholder="••••••••"
+                    placeholderTextColor={colorPalette.neutral[400]}
                     secureTextEntry={!showPassword}
-                    right={
-                      <TextInput.Icon
-                        icon={showPassword ? "eye-off" : "eye"}
-                        onPress={() => setShowPassword(!showPassword)}
-                      />
-                    }
                     editable={!isLoading}
-                    style={styles.input}
-                    outlineColor="#E2E8F0"
-                    activeOutlineColor={colorPalette.primary}
+                    style={[styles.input, { flex: 1 }]}
                   />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
+                    style={styles.visibilityButton}
+                  >
+                    <MaterialCommunityIcons
+                      name={showPassword ? "eye-off" : "eye"}
+                      size={18}
+                      color={colorPalette.neutral[500]}
+                    />
+                  </TouchableOpacity>
                 </View>
-
-                {/* Sign In Button */}
-                <Button
-                  mode="contained"
-                  onPress={handleLogin}
-                  loading={isLoading}
-                  disabled={isLoading}
-                  style={styles.loginButton}
-                  labelStyle={styles.buttonLabel}
-                >
-                  Sign In
-                </Button>
-
-                {/* Divider */}
-                <View style={styles.divider}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>or</Text>
-                  <View style={styles.dividerLine} />
-                </View>
-
-                {/* Info Text */}
-                <Text style={styles.infoText}>
-                  💡 Testing tip: Use email/password to sign in
-                </Text>
               </View>
-            </BlurView>
+
+              {/* Sign In Button */}
+              <TouchableOpacity
+                onPress={handleLogin}
+                disabled={isLoading}
+                style={[
+                  styles.loginButton,
+                  isLoading && styles.loginButtonDisabled,
+                ]}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={
+                    isLoading
+                      ? [colorPalette.neutral[300], colorPalette.neutral[300]]
+                      : (colorPalette.gradientBlue as [
+                          string,
+                          string,
+                          ...string[]
+                        ])
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.loginButtonGradient}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Text style={styles.loginButtonText}>Sign In</Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Divider */}
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* Google Sign In Button */}
+              <TouchableOpacity
+                onPress={handleGoogleSignIn}
+                disabled={isLoading}
+                style={styles.googleButton}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons
+                  name="google"
+                  size={20}
+                  color="#FFFFFF"
+                  style={styles.googleButtonIcon}
+                />
+                <Text style={styles.googleButtonText}>Sign in with Google</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Sign Up Link Section */}
             <View style={styles.footerSection}>
               <Text style={styles.footerText}>Don't have an account? </Text>
-              <Text
-                style={styles.signUpLink}
-                onPress={() => navigation.navigate("SignUp")}
-              >
-                Create one
-              </Text>
+              <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+                <Text style={styles.signUpLink}>Create one</Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -189,7 +287,7 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colorPalette.background,
   },
   gradient: {
     flex: 1,
@@ -200,117 +298,161 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     flexGrow: 1,
     justifyContent: "space-between",
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 32,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xxxl,
   },
   headerSection: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: spacing.xxxl,
+    gap: spacing.md,
   },
-  logoContainer: {
-    marginBottom: 16,
+  logoGradient: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.medium,
   },
   appName: {
-    fontSize: 42,
-    fontWeight: "700",
+    ...typography.h2,
     color: colorPalette.primary,
-    letterSpacing: -0.5,
   },
   tagline: {
-    fontSize: 16,
+    ...typography.body,
     color: colorPalette.neutral[600],
-    fontWeight: "500",
-  },
-  blurContainer: {
-    borderRadius: 24,
-    overflow: "hidden",
-    marginBottom: 24,
   },
   formCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    paddingHorizontal: 28,
-    paddingVertical: 28,
+    backgroundColor: colorPalette.background,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.xxl,
+    borderRadius: borderRadius.xxl,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.5)",
+    borderColor: colorPalette.neutral[100],
+    ...colorPalette.shadows.medium,
   },
   formTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-    marginBottom: 8,
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+    marginBottom: spacing.xs,
   },
   formSubtitle: {
-    fontSize: 14,
+    ...typography.body,
     color: colorPalette.neutral[600],
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
   inputLabel: {
-    fontSize: 13,
-    fontWeight: "600",
+    ...typography.bodyBold,
     color: colorPalette.neutral[700],
-    marginBottom: 8,
-    letterSpacing: 0.5,
+    fontSize: 13,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colorPalette.neutral[50],
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: colorPalette.neutral[150],
+    height: 48,
+  },
+  inputIcon: {
+    marginRight: spacing.sm,
   },
   input: {
-    backgroundColor: "rgba(248, 250, 252, 0.6)",
-    borderRadius: 12,
-    fontSize: 16,
+    flex: 1,
+    height: 48,
+    ...typography.body,
+    color: colorPalette.neutral[950],
+    fontSize: 15,
+    lineHeight: 15,
+    paddingVertical: 0,
+    marginVertical: 0,
+  },
+  visibilityButton: {
+    marginLeft: spacing.sm,
+    padding: spacing.xs,
   },
   loginButton: {
-    marginTop: 8,
-    paddingVertical: 12,
-    backgroundColor: colorPalette.primary,
-    borderRadius: 12,
+    marginTop: spacing.md,
+    borderRadius: borderRadius.lg,
+    overflow: "hidden",
+    ...colorPalette.shadows.medium,
   },
-  buttonLabel: {
+  loginButtonDisabled: {
+    opacity: 0.6,
+  },
+  loginButtonGradient: {
+    paddingVertical: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loginButtonText: {
+    ...typography.bodyBold,
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.3,
   },
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 24,
+    marginVertical: spacing.md,
+    gap: spacing.md,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colorPalette.neutral[200],
+    backgroundColor: colorPalette.neutral[150],
   },
   dividerText: {
-    marginHorizontal: 12,
+    ...typography.caption,
     color: colorPalette.neutral[500],
-    fontSize: 13,
-    fontWeight: "500",
   },
   infoText: {
-    fontSize: 12,
+    ...typography.caption,
     color: colorPalette.neutral[600],
     textAlign: "center",
-    fontStyle: "italic",
     lineHeight: 18,
   },
   footerSection: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 16,
+    paddingTop: spacing.lg,
+    gap: 0,
   },
   footerText: {
+    ...typography.body,
     color: colorPalette.neutral[600],
-    fontSize: 14,
   },
   signUpLink: {
+    ...typography.bodyBold,
     color: colorPalette.primary,
-    fontWeight: "700",
-    fontSize: 14,
   },
   snackbar: {
     backgroundColor: colorPalette.error,
-    marginBottom: 20,
+    marginBottom: spacing.lg,
+  },
+  googleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colorPalette.google,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    marginTop: spacing.md,
+    ...colorPalette.shadows.medium,
+  },
+  googleButtonIcon: {
+    marginRight: spacing.sm,
+  },
+  googleButtonText: {
+    ...typography.bodyBold,
+    color: "#FFFFFF",
+    fontSize: 16,
   },
 });

@@ -53,7 +53,12 @@ import { formatMessageDate, formatRelativeTime } from "../../utils/formatters";
 import { db } from "../../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { COLLECTIONS } from "../../utils/constants";
-import { colorPalette } from "../../utils/theme";
+import {
+  colorPalette,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../utils/theme";
 import {
   translateMessage,
   cacheTranslation,
@@ -1006,6 +1011,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         <Menu
           visible={toneMenuVisible}
           onDismiss={() => setToneMenuVisible(false)}
+          contentStyle={styles.toneMenu}
           anchor={
             <IconButton
               icon={() => (
@@ -1035,18 +1041,24 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         >
           <Menu.Item
             onPress={() => handleAdjustTone("formal")}
-            title="🎩 Formal"
+            title="Formal"
             leadingIcon="briefcase"
+            titleStyle={styles.toneMenuItem}
+            style={styles.toneMenuItemStyle}
           />
           <Menu.Item
             onPress={() => handleAdjustTone("neutral")}
-            title="😊 Neutral"
+            title="Neutral"
             leadingIcon="emoticon-neutral"
+            titleStyle={styles.toneMenuItem}
+            style={styles.toneMenuItemStyle}
           />
           <Menu.Item
             onPress={() => handleAdjustTone("casual")}
-            title="😎 Casual"
+            title="Casual"
             leadingIcon="sunglasses"
+            titleStyle={styles.toneMenuItem}
+            style={styles.toneMenuItemStyle}
           />
         </Menu>
 
@@ -1131,15 +1143,49 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           onDismiss={() => setSlangModalVisible(false)}
           contentContainerStyle={styles.slangModal}
         >
-          <Text style={styles.slangModalTitle}>Cultural Context</Text>
-          <Text style={styles.slangModalText}>{slangExplanation}</Text>
-          <Button
-            mode="contained"
-            onPress={() => setSlangModalVisible(false)}
-            style={styles.slangModalButton}
-          >
-            Close
-          </Button>
+          <View style={styles.slangModalContent}>
+            {/* Icon Header */}
+            <LinearGradient
+              colors={
+                colorPalette.gradientOrange as [string, string, ...string[]]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.slangModalIcon}
+            >
+              <MaterialCommunityIcons
+                name="lightbulb-on"
+                size={32}
+                color="#FFFFFF"
+              />
+            </LinearGradient>
+
+            {/* Title 
+            <Text style={styles.slangModalTitle}>Cultural Context</Text> */}
+
+            {/* Explanation Text */}
+            <View style={styles.slangModalTextContainer}>
+              <Text style={styles.slangModalText}>{slangExplanation}</Text>
+            </View>
+
+            {/* Close Button */}
+            <TouchableOpacity
+              onPress={() => setSlangModalVisible(false)}
+              style={styles.slangModalCloseButton}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={
+                  colorPalette.gradientBlue as [string, string, ...string[]]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.slangModalCloseGradient}
+              >
+                <Text style={styles.slangModalCloseText}>Got it!</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </Modal>
       </Portal>
     </KeyboardAvoidingView>
@@ -1219,20 +1265,40 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
-    paddingHorizontal: 12,
-    paddingVertical: 0,
-    paddingBottom: 8,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    paddingBottom: spacing.md,
     backgroundColor: colorPalette.background,
-    gap: 0,
+    gap: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colorPalette.neutral[150],
+    ...colorPalette.shadows.small,
   },
   toneButton: {
     margin: 0,
-    marginRight: -8,
+    marginRight: -4,
     padding: 0,
+  },
+  toneMenu: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.xs,
+    minWidth: 170,
+    ...colorPalette.shadows.large,
+  },
+  toneMenuItemStyle: {
+    minHeight: 48,
+    height: 48,
+    paddingVertical: 0,
+    paddingHorizontal: spacing.base,
+  },
+  toneMenuItem: {
+    ...typography.bodyMedium,
+    color: colorPalette.neutral[900],
   },
   attachButton: {
     margin: 0,
-    marginRight: -8,
+    marginRight: -4,
     padding: 0,
   },
   inputWrapper: {
@@ -1241,16 +1307,18 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    maxHeight: 100,
-    backgroundColor: "rgba(248, 250, 252, 0.8)",
-    borderRadius: 12,
-    fontSize: 16,
+    maxHeight: 120,
+    backgroundColor: colorPalette.neutral[100],
+    borderRadius: borderRadius.lg,
+    ...typography.body,
   },
   sendButtonWrapper: {
     justifyContent: "center",
     alignItems: "center",
     height: 48,
     width: 48,
+    borderRadius: 24,
+    ...colorPalette.shadows.small,
   },
   // Tone Adjustment Overlay Styles
   toneAdjustOverlay: {
@@ -1259,23 +1327,20 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.85)",
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
+    borderRadius: borderRadius.lg,
     justifyContent: "center",
     alignItems: "center",
   },
   toneAdjustContent: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: borderRadius.md,
+    ...colorPalette.shadows.medium,
   },
   sendButton: {
     margin: 0,
@@ -1336,87 +1401,126 @@ const styles = StyleSheet.create({
   },
   // ========== Slang Modal Styles (Phase 3) ==========
   slangModal: {
-    backgroundColor: "white",
-    padding: 24,
-    margin: 20,
-    borderRadius: 16,
-    maxHeight: "80%",
+    backgroundColor: "transparent",
+    margin: spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  slangModalContent: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: borderRadius.xxl,
+    padding: spacing.xxxl,
+    maxWidth: 400,
+    width: "100%",
+    alignItems: "center",
+    ...colorPalette.shadows.large,
+  },
+  slangModalIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.lg,
+    ...colorPalette.shadows.medium,
   },
   slangModalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-    marginBottom: 16,
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+    marginBottom: spacing.lg,
+    textAlign: "center",
+  },
+  slangModalTextContainer: {
+    backgroundColor: colorPalette.neutral[50],
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    width: "100%",
   },
   slangModalText: {
-    fontSize: 16,
+    ...typography.body,
     lineHeight: 24,
-    color: colorPalette.neutral[700],
-    marginBottom: 20,
+    color: colorPalette.neutral[800],
+    textAlign: "center",
   },
-  slangModalButton: {
-    marginTop: 8,
+  slangModalCloseButton: {
+    width: "100%",
+    borderRadius: borderRadius.full,
+    overflow: "hidden",
+    ...colorPalette.shadows.medium,
+  },
+  slangModalCloseGradient: {
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.xxxl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  slangModalCloseText: {
+    ...typography.bodyBold,
+    color: "#FFFFFF",
+    fontSize: 16,
   },
   // ========== Smart Replies Styles (Phase 3B) ==========
   smartRepliesButtonContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    alignItems: "center",
   },
   smartRepliesButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.3)",
-    alignSelf: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    backgroundColor: colorPalette.semantic.smartReply,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+    borderColor: colorPalette.primary + "30",
+    ...colorPalette.shadows.medium,
   },
   smartRepliesButtonText: {
-    fontSize: 14,
+    ...typography.captionMedium,
     color: colorPalette.primary,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   smartRepliesContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: "rgba(59, 130, 246, 0.05)",
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.base,
+    backgroundColor: colorPalette.semantic.smartReply,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.2)",
+    borderColor: colorPalette.primary + "20",
+    ...colorPalette.shadows.small,
   },
   smartRepliesHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   smartRepliesHeaderText: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: "600",
+    ...typography.bodyBold,
     color: colorPalette.primary,
   },
   smartRepliesChips: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: spacing.sm,
   },
   smartReplyChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: "white",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.3)",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: "#FFFFFF",
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+    borderColor: colorPalette.primary + "30",
     maxWidth: "100%",
+    ...colorPalette.shadows.small,
   },
   smartReplyChipText: {
-    fontSize: 14,
-    color: colorPalette.neutral[800],
-    fontWeight: "500",
+    ...typography.bodyMedium,
+    color: colorPalette.neutral[900],
   },
 });

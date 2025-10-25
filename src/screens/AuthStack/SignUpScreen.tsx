@@ -8,14 +8,23 @@ import {
   Modal,
   FlatList,
   TouchableOpacity,
+  TextInput as RNTextInput,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { TextInput, Button, Text, Snackbar } from "react-native-paper";
+import { Text, Snackbar } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
-import { signUp } from "../../services/authService";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { signUp, signInWithGoogle } from "../../services/authService";
 import { useAuthStore } from "../../store/authStore";
 import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from "../../utils/constants";
-import { colorPalette } from "../../utils/theme";
+import {
+  colorPalette,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../utils/theme";
 
 interface SignUpScreenProps {
   navigation: any;
@@ -87,10 +96,44 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken;
+
+      if (!idToken) {
+        setError("Failed to get Google credentials");
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await signInWithGoogle(idToken);
+
+      if (result.success) {
+        console.log("✅ Google sign up successful");
+      } else {
+        setError(result.error || "Google sign up failed");
+        setStoreError(result.error || null);
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Google sign up failed";
+      console.error("Google sign up error:", errorMessage);
+      setError(errorMessage);
+      setStoreError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={["#F8FAFC", "#E2E8F0"]}
+        colors={[colorPalette.background, colorPalette.neutral[50]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
@@ -106,9 +149,21 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
           >
             {/* Header Section */}
             <View style={styles.headerSection}>
-              <View style={styles.logoContainer}>
-                <Text style={styles.appName}>Unilang</Text>
-              </View>
+              <LinearGradient
+                colors={
+                  colorPalette.gradientBlue as [string, string, ...string[]]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.logoGradient}
+              >
+                <MaterialCommunityIcons
+                  name="message-text"
+                  size={40}
+                  color="#FFFFFF"
+                />
+              </LinearGradient>
+              <Text style={styles.appName}>Unilang</Text>
               <Text style={styles.tagline}>Chat freely, in any language</Text>
             </View>
 
@@ -120,117 +175,203 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
               {/* Name Input */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Full Name</Text>
-                <TextInput
-                  value={name}
-                  onChangeText={setName}
-                  mode="outlined"
-                  placeholder="John Doe"
-                  editable={!isLoading}
-                  style={styles.input}
-                  outlineColor="#E2E8F0"
-                  activeOutlineColor={colorPalette.primary}
-                />
+                <View style={styles.inputWrapper}>
+                  <MaterialCommunityIcons
+                    name="account-outline"
+                    size={18}
+                    color={colorPalette.neutral[500]}
+                    style={styles.inputIcon}
+                  />
+                  <RNTextInput
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="John Doe"
+                    placeholderTextColor={colorPalette.neutral[400]}
+                    editable={!isLoading}
+                    style={styles.input}
+                  />
+                </View>
               </View>
 
               {/* Email Input */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Email</Text>
-                <TextInput
-                  value={email}
-                  onChangeText={setEmail}
-                  mode="outlined"
-                  placeholder="you@example.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  editable={!isLoading}
-                  style={styles.input}
-                  outlineColor="#E2E8F0"
-                  activeOutlineColor={colorPalette.primary}
-                />
+                <View style={styles.inputWrapper}>
+                  <MaterialCommunityIcons
+                    name="email-outline"
+                    size={18}
+                    color={colorPalette.neutral[500]}
+                    style={styles.inputIcon}
+                  />
+                  <RNTextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="you@example.com"
+                    placeholderTextColor={colorPalette.neutral[400]}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    editable={!isLoading}
+                    style={styles.input}
+                  />
+                </View>
               </View>
 
               {/* Password Input */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Password</Text>
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  mode="outlined"
-                  placeholder="••••••••"
-                  secureTextEntry={!showPassword}
-                  right={
-                    <TextInput.Icon
-                      icon={showPassword ? "eye-off" : "eye"}
-                      onPress={() => setShowPassword(!showPassword)}
+                <View style={styles.inputWrapper}>
+                  <MaterialCommunityIcons
+                    name="lock-outline"
+                    size={18}
+                    color={colorPalette.neutral[500]}
+                    style={styles.inputIcon}
+                  />
+                  <RNTextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="••••••••"
+                    placeholderTextColor={colorPalette.neutral[400]}
+                    secureTextEntry={!showPassword}
+                    editable={!isLoading}
+                    style={[styles.input, { flex: 1 }]}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
+                    style={styles.visibilityButton}
+                  >
+                    <MaterialCommunityIcons
+                      name={showPassword ? "eye-off" : "eye"}
+                      size={18}
+                      color={colorPalette.neutral[500]}
                     />
-                  }
-                  editable={!isLoading}
-                  style={styles.input}
-                  outlineColor="#E2E8F0"
-                  activeOutlineColor={colorPalette.primary}
-                />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* Confirm Password Input */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Confirm Password</Text>
-                <TextInput
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  mode="outlined"
-                  placeholder="••••••••"
-                  secureTextEntry={!showConfirmPassword}
-                  right={
-                    <TextInput.Icon
-                      icon={showConfirmPassword ? "eye-off" : "eye"}
-                      onPress={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
+                <View style={styles.inputWrapper}>
+                  <MaterialCommunityIcons
+                    name="lock-outline"
+                    size={18}
+                    color={colorPalette.neutral[500]}
+                    style={styles.inputIcon}
+                  />
+                  <RNTextInput
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    placeholder="••••••••"
+                    placeholderTextColor={colorPalette.neutral[400]}
+                    secureTextEntry={!showConfirmPassword}
+                    editable={!isLoading}
+                    style={[styles.input, { flex: 1 }]}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={isLoading}
+                    style={styles.visibilityButton}
+                  >
+                    <MaterialCommunityIcons
+                      name={showConfirmPassword ? "eye-off" : "eye"}
+                      size={18}
+                      color={colorPalette.neutral[500]}
                     />
-                  }
-                  editable={!isLoading}
-                  style={styles.input}
-                  outlineColor="#E2E8F0"
-                  activeOutlineColor={colorPalette.primary}
-                />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* Language Selector */}
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Preferred Language</Text>
-                <Button
-                  mode="outlined"
+                <TouchableOpacity
                   onPress={() => setLanguageMenuVisible(true)}
                   disabled={isLoading}
                   style={styles.languageButton}
-                  labelStyle={styles.languageButtonLabel}
+                  activeOpacity={0.7}
                 >
-                  {selectedLanguageLabel}
-                </Button>
+                  <View style={styles.languageButtonContent}>
+                    <MaterialCommunityIcons
+                      name="translate"
+                      size={18}
+                      color={colorPalette.neutral[500]}
+                      style={styles.inputIcon}
+                    />
+                    <Text style={styles.languageButtonLabel}>
+                      {selectedLanguageLabel}
+                    </Text>
+                  </View>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={20}
+                    color={colorPalette.neutral[400]}
+                  />
+                </TouchableOpacity>
               </View>
 
               {/* Sign Up Button */}
-              <Button
-                mode="contained"
+              <TouchableOpacity
                 onPress={handleSignUp}
-                loading={isLoading}
                 disabled={isLoading}
-                style={styles.signUpButton}
-                labelStyle={styles.buttonLabel}
+                style={[
+                  styles.signUpButton,
+                  isLoading && styles.signUpButtonDisabled,
+                ]}
+                activeOpacity={0.8}
               >
-                Create Account
-              </Button>
+                <LinearGradient
+                  colors={
+                    isLoading
+                      ? [colorPalette.neutral[300], colorPalette.neutral[300]]
+                      : (colorPalette.gradientBlue as [
+                          string,
+                          string,
+                          ...string[]
+                        ])
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.signUpButtonGradient}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Text style={styles.signUpButtonText}>Create Account</Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Divider */}
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* Google Sign Up Button */}
+              <TouchableOpacity
+                onPress={handleGoogleSignIn}
+                disabled={isLoading}
+                style={styles.googleButton}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons
+                  name="google"
+                  size={20}
+                  color="#FFFFFF"
+                  style={styles.googleButtonIcon}
+                />
+                <Text style={styles.googleButtonText}>Sign up with Google</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Sign In Link Section */}
             <View style={styles.footerSection}>
               <Text style={styles.footerText}>Already have an account? </Text>
-              <Text
-                style={styles.signInLink}
-                onPress={() => navigation.navigate("Login")}
-              >
-                Sign in
-              </Text>
+              <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+                <Text style={styles.signInLink}>Sign in</Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -254,41 +395,60 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
         onRequestClose={() => setLanguageMenuVisible(false)}
       >
         <SafeAreaView style={styles.modalOverlay}>
-          <View style={styles.modalHandle} />
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Language</Text>
-            <TouchableOpacity onPress={() => setLanguageMenuVisible(false)}>
-              <Text style={styles.modalClose}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            data={SUPPORTED_LANGUAGES}
-            keyExtractor={(item) => item.code}
-            renderItem={({ item }) => (
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Language</Text>
               <TouchableOpacity
-                style={[
-                  styles.languageOption,
-                  selectedLanguage === item.code &&
-                    styles.languageOptionSelected,
-                ]}
-                onPress={() => {
-                  setSelectedLanguage(item.code);
-                  setLanguageMenuVisible(false);
-                }}
+                onPress={() => setLanguageMenuVisible(false)}
+                style={styles.modalCloseButton}
               >
-                <Text
-                  style={[
-                    styles.languageOptionText,
-                    selectedLanguage === item.code &&
-                      styles.languageOptionTextSelected,
-                  ]}
-                >
-                  {item.name}
-                </Text>
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color={colorPalette.neutral[600]}
+                />
               </TouchableOpacity>
-            )}
-            contentContainerStyle={styles.languageListContainer}
-          />
+            </View>
+            <FlatList
+              data={SUPPORTED_LANGUAGES}
+              keyExtractor={(item) => item.code}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.languageOption,
+                    selectedLanguage === item.code &&
+                      styles.languageOptionSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectedLanguage(item.code);
+                    setLanguageMenuVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.languageOptionContent}>
+                    <Text
+                      style={[
+                        styles.languageOptionText,
+                        selectedLanguage === item.code &&
+                          styles.languageOptionTextSelected,
+                      ]}
+                    >
+                      {item.name}
+                    </Text>
+                    {selectedLanguage === item.code && (
+                      <MaterialCommunityIcons
+                        name="check-circle"
+                        size={20}
+                        color={colorPalette.primary}
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              )}
+              contentContainerStyle={styles.languageListContainer}
+              scrollEnabled={true}
+            />
+          </View>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -298,7 +458,7 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colorPalette.background,
   },
   gradient: {
     flex: 1,
@@ -309,160 +469,232 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     flexGrow: 1,
     justifyContent: "space-between",
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 32,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxxl,
   },
   headerSection: {
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: spacing.xl,
+    gap: spacing.md,
   },
-  logoContainer: {
-    marginBottom: 16,
+  logoGradient: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    ...colorPalette.shadows.medium,
   },
   appName: {
-    fontSize: 42,
-    fontWeight: "700",
+    ...typography.h2,
     color: colorPalette.primary,
-    letterSpacing: -0.5,
   },
   tagline: {
-    fontSize: 16,
+    ...typography.body,
     color: colorPalette.neutral[600],
-    fontWeight: "500",
   },
   formCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    paddingHorizontal: 28,
-    paddingVertical: 24,
+    backgroundColor: colorPalette.background,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.xl,
+    borderRadius: borderRadius.xxl,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.5)",
-    borderRadius: 24,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    borderColor: colorPalette.neutral[100],
+    ...colorPalette.shadows.medium,
   },
   formTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
-    marginBottom: 4,
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+    marginBottom: spacing.xs,
   },
   formSubtitle: {
-    fontSize: 14,
+    ...typography.body,
     color: colorPalette.neutral[600],
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   inputGroup: {
-    marginBottom: 14,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
   inputLabel: {
-    fontSize: 13,
-    fontWeight: "600",
+    ...typography.bodyBold,
     color: colorPalette.neutral[700],
-    marginBottom: 6,
-    letterSpacing: 0.5,
+    fontSize: 13,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colorPalette.neutral[50],
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: colorPalette.neutral[150],
+    height: 48,
+  },
+  inputIcon: {
+    marginRight: spacing.sm,
   },
   input: {
-    backgroundColor: "rgba(248, 250, 252, 0.6)",
-    borderRadius: 12,
-    fontSize: 16,
+    flex: 1,
+    height: 48,
+    ...typography.body,
+    color: colorPalette.neutral[950],
+    fontSize: 15,
+    lineHeight: 15,
+    paddingVertical: 0,
+    marginVertical: 0,
+  },
+  visibilityButton: {
+    marginLeft: spacing.sm,
+    padding: spacing.xs,
   },
   languageButton: {
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    backgroundColor: "rgba(248, 250, 252, 0.6)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colorPalette.neutral[50],
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colorPalette.neutral[150],
+    height: 48,
+  },
+  languageButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   languageButtonLabel: {
-    fontSize: 16,
+    ...typography.body,
     color: colorPalette.neutral[700],
   },
   signUpButton: {
-    marginTop: 6,
-    paddingVertical: 12,
-    backgroundColor: colorPalette.primary,
-    borderRadius: 12,
+    marginTop: spacing.lg,
+    borderRadius: borderRadius.lg,
+    overflow: "hidden",
+    ...colorPalette.shadows.medium,
   },
-  buttonLabel: {
+  signUpButtonDisabled: {
+    opacity: 0.6,
+  },
+  signUpButtonGradient: {
+    paddingVertical: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  signUpButtonText: {
+    ...typography.bodyBold,
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.3,
   },
   footerSection: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 16,
+    paddingTop: spacing.lg,
+    gap: 0,
   },
   footerText: {
+    ...typography.body,
     color: colorPalette.neutral[600],
-    fontSize: 14,
   },
   signInLink: {
+    ...typography.bodyBold,
     color: colorPalette.primary,
-    fontWeight: "700",
-    fontSize: 14,
   },
   snackbar: {
     backgroundColor: colorPalette.error,
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-    justifyContent: "flex-end",
+    backgroundColor: colorPalette.background,
   },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: colorPalette.neutral[300],
-    borderRadius: 2,
-    alignSelf: "center",
-    marginTop: 8,
+  modalContent: {
+    flex: 1,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colorPalette.neutral[200],
+    borderBottomColor: colorPalette.neutral[100],
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colorPalette.neutral[900],
+    ...typography.h3,
+    color: colorPalette.neutral[950],
   },
-  modalClose: {
-    fontSize: 24,
-    color: colorPalette.neutral[600],
-    fontWeight: "600",
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
   },
   languageListContainer: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
   },
   languageOption: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: colorPalette.neutral[100],
-    borderRadius: 12,
+    marginBottom: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colorPalette.neutral[50],
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colorPalette.neutral[150],
   },
   languageOptionSelected: {
     backgroundColor: colorPalette.primary,
+    borderColor: colorPalette.primary,
+  },
+  languageOptionContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   languageOptionText: {
-    fontSize: 16,
+    ...typography.body,
     color: colorPalette.neutral[900],
-    fontWeight: "500",
   },
   languageOptionTextSelected: {
-    color: "white",
-    fontWeight: "700",
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: spacing.md,
+    gap: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colorPalette.neutral[200],
+  },
+  dividerText: {
+    ...typography.body,
+    color: colorPalette.neutral[600],
+  },
+  googleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colorPalette.google,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+    ...colorPalette.shadows.medium,
+  },
+  googleButtonIcon: {
+    marginRight: spacing.sm,
+  },
+  googleButtonText: {
+    ...typography.bodyBold,
+    color: "#FFFFFF",
+    fontSize: 16,
   },
 });

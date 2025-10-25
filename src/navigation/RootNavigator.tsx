@@ -223,6 +223,18 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
     const setupNotifications = async () => {
       if (!isAuthenticated) return;
 
+      const { user } = useAuthStore.getState();
+      if (!user) return;
+
+      // Register for push notifications and store FCM token in Firestore
+      console.log("🔔 Registering for push notifications for user:", user.uid);
+      const token = await registerForPushNotifications(user.uid);
+      if (token) {
+        console.log("✅ FCM token registered successfully:", token);
+      } else {
+        console.warn("⚠️ Failed to register FCM token");
+      }
+
       const { unsubscribeNotification, unsubscribeResponse } =
         setupNotificationListeners(
           // Handle foreground notification

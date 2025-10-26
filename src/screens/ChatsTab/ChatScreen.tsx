@@ -1195,7 +1195,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colorPalette.background,
+    backgroundColor: "#F5F7FF",
+  },
+  gradient: {
+    flex: 1,
   },
   headerContent: {
     flex: 1,

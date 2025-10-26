@@ -5,6 +5,7 @@ import { ActivityIndicator, View, AppState } from "react-native";
 import { doc, getDoc } from "firebase/firestore";
 import { LoginScreen } from "../screens/AuthStack/LoginScreen";
 import { SignUpScreen } from "../screens/AuthStack/SignUpScreen";
+import { LandingScreen } from "../screens/AuthStack/LandingScreen";
 import { AppStack } from "./AppStack";
 import { useAuthStore } from "../store/authStore";
 import { onAuthStateChanged } from "../services/authService";
@@ -296,6 +297,11 @@ export const RootNavigator = ({}: RootNavigatorProps) => {
         ) : (
           // Auth Stack (unauthenticated user)
           <Stack.Group>
+            <Stack.Screen
+              name="Landing"
+              component={LandingScreen}
+              options={{ title: "Welcome" }}
+            />
             <Stack.Screen
               name="Login"
               component={LoginScreen}

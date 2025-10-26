@@ -23,9 +23,11 @@ interface Feature {
   icon: string;
   title: string;
   description: string;
+  gradient: [string, string];
+  iconColor: string;
 }
 
-const { height } = Dimensions.get("window");
+const { height, width } = Dimensions.get("window");
 
 export const LandingScreen = ({ navigation }: LandingScreenProps) => {
   const features: Feature[] = [
@@ -33,35 +35,46 @@ export const LandingScreen = ({ navigation }: LandingScreenProps) => {
       icon: "message-text",
       title: "Real-time Chat",
       description: "Instant messaging with read receipts",
+      gradient: ["#E3F2FD", "#BBDEFB"],
+      iconColor: "#1976D2",
     },
     {
       icon: "translate",
       title: "AI Translation",
       description: "Break language barriers seamlessly",
+      gradient: ["#F3E5F5", "#E1BEE7"],
+      iconColor: "#7B1FA2",
     },
     {
       icon: "lightbulb-on",
       title: "Smart Replies",
       description: "AI-powered suggestions & tone adjustment",
+      gradient: ["#FFF3E0", "#FFE0B2"],
+      iconColor: "#E65100",
     },
     {
       icon: "account-multiple",
       title: "Group Chat",
       description: "Connect with multiple people at once",
+      gradient: ["#E8F5E9", "#C8E6C9"],
+      iconColor: "#2E7D32",
     },
   ];
 
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={[colorPalette.background, colorPalette.neutral[50]]}
+        colors={["#F5F7FF", "#E8F1FF", "#F0E6FF"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
       >
-        {/* Background Doodle Elements */}
+        {/* Enhanced Background Doodle Elements */}
         <View style={styles.doodleTopLeft}>
           <View style={styles.doodle1} />
+        </View>
+        <View style={styles.doodleTopRight}>
+          <View style={styles.doodle3} />
         </View>
         <View style={styles.doodleBottomRight}>
           <View style={styles.doodle2} />
@@ -70,7 +83,7 @@ export const LandingScreen = ({ navigation }: LandingScreenProps) => {
         <View style={styles.content}>
           {/* Header Section */}
           <View style={styles.headerSection}>
-            {/* Logo - Using gradient blue like LoginScreen */}
+            {/* Logo - Enhanced */}
             <LinearGradient
               colors={
                 colorPalette.gradientBlue as [string, string, ...string[]]
@@ -86,47 +99,24 @@ export const LandingScreen = ({ navigation }: LandingScreenProps) => {
               />
             </LinearGradient>
 
-            {/* Title - Using primary color like LoginScreen */}
+            {/* Title */}
             <Text style={styles.appName}>Unilang</Text>
             <Text style={styles.tagline}>Chat freely, in any language</Text>
           </View>
 
-          {/* Features Grid */}
+          {/* Features Grid - Enhanced */}
           <View style={styles.featuresContainer}>
             {features.map((feature, index) => (
               <View key={index} style={styles.featureCard}>
                 {/* Feature Icon Background */}
                 <LinearGradient
-                  colors={[
-                    index === 0
-                      ? "#E3F2FD"
-                      : index === 1
-                      ? "#F3E5F5"
-                      : index === 2
-                      ? "#FFF3E0"
-                      : "#E8F5E9",
-                    index === 0
-                      ? "#BBDEFB"
-                      : index === 1
-                      ? "#E1BEE7"
-                      : index === 2
-                      ? "#FFE0B2"
-                      : "#C8E6C9",
-                  ]}
+                  colors={feature.gradient as [string, string]}
                   style={styles.featureIconBg}
                 >
                   <MaterialCommunityIcons
                     name={feature.icon as any}
-                    size={24}
-                    color={
-                      index === 0
-                        ? "#1976D2"
-                        : index === 1
-                        ? "#7B1FA2"
-                        : index === 2
-                        ? "#E65100"
-                        : "#2E7D32"
-                    }
+                    size={28}
+                    color={feature.iconColor}
                   />
                 </LinearGradient>
 
@@ -142,7 +132,7 @@ export const LandingScreen = ({ navigation }: LandingScreenProps) => {
 
         {/* Bottom Section - Buttons */}
         <View style={styles.bottomSection}>
-          {/* Sign In Button - Match LoginScreen style */}
+          {/* Sign In Button - Primary CTA */}
           <TouchableOpacity
             onPress={() => navigation.navigate("Login")}
             style={styles.signInButton}
@@ -160,13 +150,13 @@ export const LandingScreen = ({ navigation }: LandingScreenProps) => {
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* Sign Up Button - Match LoginScreen style */}
+          {/* Sign Up Button - Secondary CTA */}
           <TouchableOpacity
             onPress={() => navigation.navigate("SignUp")}
             style={styles.signUpButton}
             activeOpacity={0.8}
           >
-            <Text style={styles.signUpButtonText}>Create Account</Text>
+            <Text style={styles.signUpButtonText}>Create New Account</Text>
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -177,36 +167,49 @@ export const LandingScreen = ({ navigation }: LandingScreenProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colorPalette.background,
+    backgroundColor: "#F5F7FF",
   },
   gradient: {
     flex: 1,
   },
-  // Background Doodle Elements
+  // Enhanced Background Doodle Elements
   doodleTopLeft: {
     position: "absolute",
-    top: -40,
-    left: -40,
+    top: -80,
+    left: -60,
     zIndex: 0,
   },
   doodle1: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: colorPalette.primary,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: "#3B82F6",
+    opacity: 0.06,
+  },
+  doodleTopRight: {
+    position: "absolute",
+    top: 100,
+    right: -100,
+    zIndex: 0,
+  },
+  doodle3: {
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "#8B5CF6",
     opacity: 0.05,
   },
   doodleBottomRight: {
     position: "absolute",
-    bottom: -60,
-    right: -60,
+    bottom: -80,
+    right: -40,
     zIndex: 0,
   },
   doodle2: {
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: colorPalette.primary,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: "#3B82F6",
     opacity: 0.04,
   },
   content: {
@@ -219,22 +222,26 @@ const styles = StyleSheet.create({
   headerSection: {
     alignItems: "center",
     gap: spacing.md,
+    marginBottom: spacing.lg,
   },
   logoGradient: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     justifyContent: "center",
     alignItems: "center",
     ...colorPalette.shadows.medium,
   },
   appName: {
-    ...typography.h2,
+    ...typography.h1,
     color: colorPalette.primary,
+    fontSize: 36,
+    fontWeight: "700",
   },
   tagline: {
     ...typography.body,
     color: colorPalette.neutral[600],
+    fontSize: 16,
   },
   featuresContainer: {
     display: "flex",
@@ -246,7 +253,7 @@ const styles = StyleSheet.create({
   featureCard: {
     width: "48%",
     backgroundColor: colorPalette.white,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     padding: spacing.lg,
     alignItems: "center",
     borderWidth: 1,
@@ -254,9 +261,9 @@ const styles = StyleSheet.create({
     ...colorPalette.shadows.small,
   },
   featureIconBg: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 64,
+    height: 64,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.md,
@@ -266,12 +273,15 @@ const styles = StyleSheet.create({
     color: colorPalette.neutral[950],
     marginBottom: spacing.xs,
     textAlign: "center",
+    fontSize: 14,
+    fontWeight: "600",
   },
   featureDescription: {
     ...typography.caption,
     color: colorPalette.neutral[600],
     textAlign: "center",
     lineHeight: 16,
+    fontSize: 12,
   },
   bottomSection: {
     paddingHorizontal: spacing.lg,
@@ -285,22 +295,28 @@ const styles = StyleSheet.create({
     ...colorPalette.shadows.medium,
   },
   signInButtonGradient: {
-    paddingVertical: spacing.base,
+    paddingVertical: spacing.lg,
     paddingHorizontal: spacing.xl,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: spacing.sm,
+  },
+  buttonIcon: {
+    marginRight: spacing.xs,
   },
   signInButtonText: {
     ...typography.bodyBold,
-    color: colorPalette.white,
+    color: "#FFFFFF",
     fontSize: 16,
+    fontWeight: "600",
   },
   signUpButton: {
-    paddingVertical: spacing.base,
+    paddingVertical: spacing.lg,
     paddingHorizontal: spacing.xl,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colorPalette.primary,
     borderRadius: borderRadius.lg,
     backgroundColor: colorPalette.background,
@@ -309,5 +325,6 @@ const styles = StyleSheet.create({
     ...typography.bodyBold,
     color: colorPalette.primary,
     fontSize: 16,
+    fontWeight: "600",
   },
 });

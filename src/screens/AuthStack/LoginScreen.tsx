@@ -299,13 +299,13 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xxxl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
   },
   headerSection: {
     alignItems: "center",
-    marginBottom: spacing.xxxl,
-    gap: spacing.md,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
   logoGradient: {
     width: 64,
@@ -325,8 +325,8 @@ const styles = StyleSheet.create({
   },
   formCard: {
     backgroundColor: colorPalette.background,
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
     borderRadius: borderRadius.xxl,
     borderWidth: 1,
     borderColor: colorPalette.neutral[100],
@@ -340,10 +340,10 @@ const styles = StyleSheet.create({
   formSubtitle: {
     ...typography.body,
     color: colorPalette.neutral[600],
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   inputGroup: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     gap: spacing.sm,
   },
   inputLabel: {
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
   loginButton: {
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
     borderRadius: borderRadius.lg,
     overflow: "hidden",
     ...colorPalette.shadows.medium,
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: spacing.md,
+    marginVertical: spacing.sm,
     gap: spacing.md,
   },
   dividerLine: {
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: spacing.lg,
+    paddingTop: spacing.sm,
     gap: 0,
   },
   footerText: {
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
     backgroundColor: colorPalette.google,
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
     ...colorPalette.shadows.medium,
   },
   googleButtonIcon: {

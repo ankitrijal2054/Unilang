@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   TextInput as RNTextInput,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, Snackbar } from "react-native-paper";
@@ -387,37 +388,49 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
         {error}
       </Snackbar>
 
-      {/* Language Picker Modal */}
+      {/* Language Picker Modal - Bottom Sheet Style */}
       <Modal
         visible={languageMenuVisible}
         transparent={true}
         animationType="slide"
         onRequestClose={() => setLanguageMenuVisible(false)}
       >
-        <SafeAreaView style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Language</Text>
+        <View style={styles.pickerModalOverlay}>
+          {/* Tap outside to close */}
+          <TouchableOpacity
+            style={styles.pickerModalTapArea}
+            onPress={() => setLanguageMenuVisible(false)}
+            activeOpacity={1}
+          />
+
+          {/* Bottom Sheet Picker */}
+          <View style={styles.pickerBottomSheet}>
+            {/* Handle Bar */}
+            <View style={styles.pickerHandleContainer}>
+              <View style={styles.pickerHandle} />
+            </View>
+
+            {/* Header with Done Button */}
+            <View style={styles.pickerHeader}>
+              <Text style={styles.pickerTitle}>Select Language</Text>
               <TouchableOpacity
                 onPress={() => setLanguageMenuVisible(false)}
-                style={styles.modalCloseButton}
+                style={styles.pickerDoneButton}
               >
-                <MaterialCommunityIcons
-                  name="close"
-                  size={24}
-                  color={colorPalette.neutral[600]}
-                />
+                <Text style={styles.pickerDoneButtonText}>Done</Text>
               </TouchableOpacity>
             </View>
+
+            {/* Scrollable Language Wheel */}
             <FlatList
               data={SUPPORTED_LANGUAGES}
               keyExtractor={(item) => item.code}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[
-                    styles.languageOption,
+                    styles.pickerLanguageOption,
                     selectedLanguage === item.code &&
-                      styles.languageOptionSelected,
+                      styles.pickerLanguageOptionSelected,
                   ]}
                   onPress={() => {
                     setSelectedLanguage(item.code);
@@ -425,31 +438,30 @@ export const SignUpScreen = ({ navigation }: SignUpScreenProps) => {
                   }}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.languageOptionContent}>
-                    <Text
-                      style={[
-                        styles.languageOptionText,
-                        selectedLanguage === item.code &&
-                          styles.languageOptionTextSelected,
-                      ]}
-                    >
-                      {item.name}
-                    </Text>
-                    {selectedLanguage === item.code && (
-                      <MaterialCommunityIcons
-                        name="check-circle"
-                        size={20}
-                        color={colorPalette.primary}
-                      />
-                    )}
-                  </View>
+                  <Text
+                    style={[
+                      styles.pickerLanguageOptionText,
+                      selectedLanguage === item.code &&
+                        styles.pickerLanguageOptionTextSelected,
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                  {selectedLanguage === item.code && (
+                    <MaterialCommunityIcons
+                      name="check-circle"
+                      size={20}
+                      color={colorPalette.primary}
+                    />
+                  )}
                 </TouchableOpacity>
               )}
-              contentContainerStyle={styles.languageListContainer}
+              contentContainerStyle={styles.pickerLanguageListContainer}
               scrollEnabled={true}
+              nestedScrollEnabled={true}
             />
           </View>
-        </SafeAreaView>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -470,13 +482,13 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xxxl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
   },
   headerSection: {
     alignItems: "center",
-    marginBottom: spacing.xl,
-    gap: spacing.md,
+    marginBottom: spacing.md,
+    gap: spacing.xs,
   },
   logoGradient: {
     width: 64,
@@ -496,8 +508,8 @@ const styles = StyleSheet.create({
   },
   formCard: {
     backgroundColor: colorPalette.background,
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderRadius: borderRadius.xxl,
     borderWidth: 1,
     borderColor: colorPalette.neutral[100],
@@ -511,11 +523,11 @@ const styles = StyleSheet.create({
   formSubtitle: {
     ...typography.body,
     color: colorPalette.neutral[600],
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
   inputGroup: {
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    gap: spacing.xs,
   },
   inputLabel: {
     ...typography.bodyBold,
@@ -571,7 +583,7 @@ const styles = StyleSheet.create({
     color: colorPalette.neutral[700],
   },
   signUpButton: {
-    marginTop: spacing.lg,
+    marginTop: spacing.sm,
     borderRadius: borderRadius.lg,
     overflow: "hidden",
     ...colorPalette.shadows.medium,
@@ -593,7 +605,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xs,
     gap: 0,
   },
   footerText: {
@@ -607,62 +619,6 @@ const styles = StyleSheet.create({
   snackbar: {
     backgroundColor: colorPalette.error,
     marginBottom: spacing.lg,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colorPalette.background,
-  },
-  modalContent: {
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colorPalette.neutral[100],
-  },
-  modalTitle: {
-    ...typography.h3,
-    color: colorPalette.neutral[950],
-  },
-  modalCloseButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  languageListContainer: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-  },
-  languageOption: {
-    marginBottom: spacing.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colorPalette.neutral[50],
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colorPalette.neutral[150],
-  },
-  languageOptionSelected: {
-    backgroundColor: colorPalette.primary,
-    borderColor: colorPalette.primary,
-  },
-  languageOptionContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  languageOptionText: {
-    ...typography.body,
-    color: colorPalette.neutral[900],
-  },
-  languageOptionTextSelected: {
-    color: "#FFFFFF",
-    fontWeight: "600",
   },
   divider: {
     flexDirection: "row",
@@ -696,5 +652,81 @@ const styles = StyleSheet.create({
     ...typography.bodyBold,
     color: "#FFFFFF",
     fontSize: 16,
+  },
+  pickerModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  pickerModalTapArea: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  pickerBottomSheet: {
+    backgroundColor: colorPalette.background,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    ...colorPalette.shadows.large,
+  },
+  pickerHandleContainer: {
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  pickerHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: colorPalette.neutral[300],
+    borderRadius: 2,
+  },
+  pickerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  pickerTitle: {
+    ...typography.h3,
+    color: colorPalette.neutral[950],
+  },
+  pickerDoneButton: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  pickerDoneButtonText: {
+    ...typography.bodyBold,
+    color: colorPalette.primary,
+  },
+  pickerLanguageListContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+  },
+  pickerLanguageOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colorPalette.neutral[50],
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colorPalette.neutral[150],
+  },
+  pickerLanguageOptionSelected: {
+    backgroundColor: colorPalette.primary,
+    borderColor: colorPalette.primary,
+  },
+  pickerLanguageOptionText: {
+    ...typography.body,
+    color: colorPalette.neutral[900],
+  },
+  pickerLanguageOptionTextSelected: {
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
 });

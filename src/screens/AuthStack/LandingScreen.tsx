@@ -29,7 +29,36 @@ interface Feature {
 
 const { height, width } = Dimensions.get("window");
 
+// Responsive spacing calculation
+const getResponsiveSpacing = () => {
+  const isSmallDevice = height < 700;
+  const isMediumDevice = height >= 700 && height < 850;
+  const isLargeDevice = height >= 850;
+
+  return {
+    headerGap: isSmallDevice
+      ? spacing.sm
+      : isMediumDevice
+      ? spacing.md
+      : spacing.lg,
+    headerMarginBottom: isSmallDevice
+      ? spacing.md
+      : isMediumDevice
+      ? spacing.lg
+      : spacing.xl,
+    contentPaddingTop: isSmallDevice
+      ? spacing.xl
+      : isMediumDevice
+      ? spacing.xxxl
+      : spacing.xxxl + 16,
+    contentGap: isSmallDevice ? spacing.xs : spacing.sm,
+    bottomSectionPadding: isSmallDevice ? spacing.md : spacing.lg,
+    featureCardGap: isSmallDevice ? spacing.xs : spacing.sm,
+  };
+};
+
 export const LandingScreen = ({ navigation }: LandingScreenProps) => {
+  const responsiveSpacing = getResponsiveSpacing();
   const features: Feature[] = [
     {
       icon: "message-text",
@@ -82,7 +111,15 @@ export const LandingScreen = ({ navigation }: LandingScreenProps) => {
 
         <View style={styles.content}>
           {/* Header Section */}
-          <View style={styles.headerSection}>
+          <View
+            style={[
+              styles.headerSection,
+              {
+                gap: responsiveSpacing.headerGap,
+                marginBottom: responsiveSpacing.headerMarginBottom,
+              },
+            ]}
+          >
             {/* Logo - Enhanced */}
             <LinearGradient
               colors={
@@ -105,7 +142,12 @@ export const LandingScreen = ({ navigation }: LandingScreenProps) => {
           </View>
 
           {/* Features Grid - Enhanced */}
-          <View style={styles.featuresContainer}>
+          <View
+            style={[
+              styles.featuresContainer,
+              { gap: responsiveSpacing.featureCardGap },
+            ]}
+          >
             {features.map((feature, index) => (
               <View key={index} style={styles.featureCard}>
                 {/* Feature Icon Background */}
@@ -131,7 +173,15 @@ export const LandingScreen = ({ navigation }: LandingScreenProps) => {
         </View>
 
         {/* Bottom Section - Buttons */}
-        <View style={styles.bottomSection}>
+        <View
+          style={[
+            styles.bottomSection,
+            {
+              paddingVertical: responsiveSpacing.bottomSectionPadding,
+              paddingHorizontal: responsiveSpacing.bottomSectionPadding,
+            },
+          ]}
+        >
           {/* Sign In Button - Primary CTA */}
           <TouchableOpacity
             onPress={() => navigation.navigate("Login")}
@@ -214,8 +264,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxxl,
+    paddingHorizontal: width < 400 ? spacing.md : spacing.lg,
+    paddingTop: height < 700 ? spacing.xl : spacing.xxxl,
     justifyContent: "space-between",
     zIndex: 1,
   },
@@ -235,13 +285,13 @@ const styles = StyleSheet.create({
   appName: {
     ...typography.h1,
     color: colorPalette.primary,
-    fontSize: 36,
+    fontSize: width < 400 ? 32 : 36,
     fontWeight: "700",
   },
   tagline: {
     ...typography.body,
     color: colorPalette.neutral[600],
-    fontSize: 16,
+    fontSize: width < 400 ? 14 : 16,
   },
   featuresContainer: {
     display: "flex",
@@ -249,12 +299,13 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
     gap: spacing.md,
+    marginVertical: height < 700 ? spacing.sm : spacing.md,
   },
   featureCard: {
     width: "48%",
     backgroundColor: colorPalette.white,
     borderRadius: borderRadius.xl,
-    padding: spacing.lg,
+    padding: width < 400 ? spacing.md : spacing.lg,
     alignItems: "center",
     borderWidth: 1,
     borderColor: colorPalette.neutral[100],
@@ -273,7 +324,7 @@ const styles = StyleSheet.create({
     color: colorPalette.neutral[950],
     marginBottom: spacing.xs,
     textAlign: "center",
-    fontSize: 14,
+    fontSize: width < 400 ? 12 : 14,
     fontWeight: "600",
   },
   featureDescription: {
@@ -281,7 +332,7 @@ const styles = StyleSheet.create({
     color: colorPalette.neutral[600],
     textAlign: "center",
     lineHeight: 16,
-    fontSize: 12,
+    fontSize: width < 400 ? 11 : 12,
   },
   bottomSection: {
     paddingHorizontal: spacing.lg,
@@ -295,7 +346,7 @@ const styles = StyleSheet.create({
     ...colorPalette.shadows.medium,
   },
   signInButtonGradient: {
-    paddingVertical: spacing.lg,
+    paddingVertical: height < 700 ? spacing.md : spacing.lg,
     paddingHorizontal: spacing.xl,
     flexDirection: "row",
     alignItems: "center",
@@ -308,11 +359,11 @@ const styles = StyleSheet.create({
   signInButtonText: {
     ...typography.bodyBold,
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: width < 400 ? 14 : 16,
     fontWeight: "600",
   },
   signUpButton: {
-    paddingVertical: spacing.lg,
+    paddingVertical: height < 700 ? spacing.md : spacing.lg,
     paddingHorizontal: spacing.xl,
     alignItems: "center",
     justifyContent: "center",
@@ -324,7 +375,7 @@ const styles = StyleSheet.create({
   signUpButtonText: {
     ...typography.bodyBold,
     color: colorPalette.primary,
-    fontSize: 16,
+    fontSize: width < 400 ? 14 : 16,
     fontWeight: "600",
   },
 });

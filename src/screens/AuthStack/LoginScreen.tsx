@@ -109,7 +109,7 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={[colorPalette.background, colorPalette.neutral[50]]}
+        colors={["#F5F7FF", "#E8F1FF", "#F0E6FF"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}

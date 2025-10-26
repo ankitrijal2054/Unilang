@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "811223427427",
+    "project_id": "unilang-80e53",
+    "storage_bucket": "unilang-80e53.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:811223427427:android:1a0699e48118b343304b56",
+        "android_client_info": {
+          "package_name": "com.unilang.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "811223427427-1gvdgvdmkno1hs5dqeii59pe22m6l8hq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSj799h2RUxa_rGmvpxa_QLzYdLCB1ecI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "811223427427-1gvdgvdmkno1hs5dqeii59pe22m6l8hq.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "811223427427-k493r9fe7ppe07cmmqv0qlm51o3di9eu.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.unilang.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

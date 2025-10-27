@@ -5,8 +5,16 @@ import {
   getReactNativePersistence,
 } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
-import { getMessaging } from "firebase/messaging";
+import { Platform } from "react-native";
 import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
+
+// Conditional import based on platform
+let messaging: any = null;
+if (Platform.OS !== 'web') {
+  // For native platforms, we'll use @react-native-firebase/messaging
+  // This will be set up after the app initializes
+  messaging = null; // Will be set via setMessagingService
+}
 
 // Firebase configuration from .env
 const firebaseConfig = {
@@ -64,15 +72,12 @@ try {
   // Already enabled, that's fine
 }
 
-// Initialize Messaging (FCM)
-let messaging: any = null;
-try {
-  messaging = getMessaging(app);
-} catch (error) {
-  console.log("Firebase Messaging not available in this environment");
-}
+// Export messaging function
+export const setMessagingService = (messagingService: any) => {
+  messaging = messagingService;
+};
 
-export { messaging };
+export const getMessagingService = () => messaging;
 
 // Export app for any additional Firebase services needed later
 export { app };

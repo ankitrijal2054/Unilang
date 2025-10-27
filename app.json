@@ -41,7 +41,8 @@
         "NOTIFICATIONS",
         "READ_NOTIFICATIONS",
         "POST_NOTIFICATIONS"
-      ]
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -59,7 +60,8 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.811223427427-k493r9fe7ppe07cmmqv0qlm51o3di9eu"
         }
-      ]
+      ],
+      "./app.plugin.js"
     ],
     "scheme": "unilang",
     "extra": {

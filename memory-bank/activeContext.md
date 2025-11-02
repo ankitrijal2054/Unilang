@@ -430,6 +430,75 @@ All screens now fit without scrolling on:
 
 ---
 
-**Last Updated:** October 26, 2025 (Session 16 - Auth Screens Optimization)  
-**Current Focus:** Debugging and UI refinements  
-**Next:** Identify and fix specific bugs/issues
+**Last Updated:** October 26, 2025 (Session 16 - UI Polish + Firebase Debugging)  
+**Current Focus:** Android Push Notifications Debugging  
+**Next:** Complete Firebase initialization fix and testing
+
+---
+
+## Session 16 Continued: Android Push Notifications + Branch Sync (Oct 26, 2025)
+
+### Android Firebase Push Notifications Debugging
+
+**Issue:** "Default FirebaseApp is not initialized in this process com.unilang.app"
+
+**Root Cause:**
+
+- Firebase was not initialized at Android app startup
+- MainApplication.kt was missing FirebaseApp.initializeApp() call
+- google-services.json was missing from project root
+
+**Fixes Applied:**
+
+1. **MainApplication.kt** - Added Firebase initialization:
+
+   - Import: `com.google.firebase.FirebaseApp`
+   - In onCreate(): `FirebaseApp.initializeApp(this)`
+   - File: `android/app/src/main/java/com/unilang/app/MainApplication.kt`
+
+2. **app.json** - Added googleServicesFile configuration:
+
+   - `"android": { "googleServicesFile": "./google-services.json" }`
+   - Ensures file persists through expo prebuild regeneration
+
+3. **app.plugin.js** - Created Expo config plugin:
+
+   - Ensures Firebase/Google Services configuration persists
+   - Auto-applies google-services plugin during prebuild
+   - File: `app.plugin.js` (31 lines)
+
+4. **Build files** - Updated Android gradle files:
+   - `android/build.gradle`: Added google-services classpath
+   - `android/app/build.gradle`: Added google-services plugin + Firebase SDK dependencies
+
+**Files Modified:**
+
+- `android/app/src/main/java/com/unilang/app/MainApplication.kt` - Firebase init
+- `android/app/build.gradle` - Google Services plugin + Firebase deps
+- `android/build.gradle` - Google Services classpath
+- `app.json` - Added googleServicesFile configuration
+- `app.plugin.js` - NEW Expo config plugin
+
+**Testing Status:** In progress - waiting for rebuild
+
+---
+
+### Git Branch Synchronization Workflow
+
+**Issue:** Merge conflicts when merging Debug-and-UI → master
+
+**Solution Implemented:** 5-step branch sync workflow
+
+After merging Debug-and-UI to master via PR:
+
+1. Push Debug-and-UI to origin
+2. Create & merge PR on GitHub
+3. Pull latest master locally (`git pull origin master`)
+4. Merge master back into Debug-and-UI (`git merge master`)
+5. Push updated Debug-and-UI (`git push origin Debug-and-UI`)
+
+**Result:** Both branches synchronized, no future conflicts
+
+**Files Modified:**
+
+- `memory-bank/activeContext.md` - Updated with merge documentation

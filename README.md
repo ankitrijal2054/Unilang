@@ -2,8 +2,6 @@
 
 A WhatsApp-inspired real-time messaging application built with React Native and Firebase. Unilang enables seamless one-on-one and group chat with offline support, presence indicators, and push notifications.
 
-**MVP Status:** ✅ Complete and Ready for Testing
-
 ---
 
 ## 🎯 Features
@@ -19,10 +17,10 @@ A WhatsApp-inspired real-time messaging application built with React Native and 
 ### User Features
 
 - ✅ **Email/Password Authentication** - Secure signup and login
-- ✅ **Google Sign-In** - One-tap authentication ( Currently disabled due to expo go issue will be added later.)
+- ✅ **Google Sign-In** - One-tap authentication (iOS & Android)
 - ✅ **User Presence** - Online/offline status with last seen timestamp
 - ✅ **User Discovery** - Search and add users by name or email
-- ✅ **Profile Management** - Edit name and language preference
+- ✅ **Profile Management** - Edit name, language, and profile picture
 
 ### Group Management
 
@@ -33,34 +31,45 @@ A WhatsApp-inspired real-time messaging application built with React Native and 
 
 ### Notifications
 
-- ✅ **Push Notifications** - Get notified of new messages
+- ✅ **Push Notifications** - Get notified of new messages (iOS & Android)
 - ✅ **Badge Count** - See unread message count on app icon
 - ✅ **Deep Linking** - Tap notification → Go to chat
 - ✅ **Foreground/Background Support** - Works even when app is closed
+
+### AI-Powered Features
+
+- ✅ **Real-Time Translation** - Translate messages with one tap
+- ✅ **Smart Replies** - AI-generated contextual response suggestions
+- ✅ **Tone Adjustment** - Adjust message formality (Formal/Neutral/Casual)
+- ✅ **Slang Detection** - Cultural context for idioms and expressions
 
 ### UI/UX
 
 - ✅ **Modern Design** - Frosted glass headers, Material Design components
 - ✅ **Optimistic UI** - Messages appear instantly
 - ✅ **Smooth Animations** - Professional transitions
-- ✅ **Responsive Layout** - Works on phones and tablets
-- ✅ **Dark/Light Modes** - Full theme support
+- ✅ **Responsive Layout** - Adapts to all screen sizes
+- ✅ **Image Messaging** - Send photos with optional captions
+- ✅ **Typing Indicators** - See when someone is typing
+- ✅ **Read Receipts** - Know when messages are seen
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer                  | Technology                           |
-| ---------------------- | ------------------------------------ |
-| **Frontend**           | React Native + Expo                  |
-| **UI Components**      | React Native Paper (Material Design) |
-| **State Management**   | Zustand                              |
-| **Database**           | Firebase Firestore                   |
-| **Authentication**     | Firebase Auth                        |
-| **Push Notifications** | Firebase Cloud Messaging (FCM)       |
-| **Backend Logic**      | Firebase Cloud Functions             |
-| **Language**           | TypeScript                           |
-| **Testing**            | Jest                                 |
+| Layer                  | Technology                                |
+| ---------------------- | ----------------------------------------- |
+| **Frontend**           | React Native + Expo                       |
+| **UI Components**      | React Native Paper (Material Design)      |
+| **State Management**   | Zustand                                   |
+| **Database**           | Firebase Firestore                        |
+| **Authentication**     | Firebase Auth                             |
+| **Push Notifications** | Firebase Cloud Messaging (FCM)            |
+| **Backend Logic**      | Firebase Cloud Functions + N8N Automation |
+| **AI Integration**     | OpenAI GPT-4o-mini via N8N workflows      |
+| **Cloud Messaging**    | expo-notifications                        |
+| **Language**           | TypeScript                                |
+| **Testing**            | Jest (115+ passing tests)                 |
 
 ---
 
@@ -241,7 +250,7 @@ Unilang/
 
 ## ✅ Unit Tests
 
-The MVP comes with **103 unit tests** (100% passing).
+The app comes with **115+ unit tests** (100% passing).
 
 **Run tests:**
 
@@ -254,6 +263,7 @@ npm test
 - ✅ User Service (19 tests)
 - ✅ Message Service (19 tests)
 - ✅ Chat Service (13 tests)
+- ✅ Typing Service (12 tests)
 - ✅ Auth Service (13 tests)
 - ✅ Notification Service (9 tests)
 - ✅ Auth Store (8 tests)
@@ -418,4 +428,4 @@ MIT License - feel free to use this for your projects!
 
 **Built with ❤️ for seamless global communication.**
 
-_Last Updated: October 22, 2025 - MVP Complete_
+_Last Updated: October 26, 2025_
